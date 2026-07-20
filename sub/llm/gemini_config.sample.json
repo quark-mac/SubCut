@@ -1,0 +1,6 @@
+{
+    "_comment": "复制为 sub/llm/gemini_config.json。密钥建议写到 sub/llm/.env，不要提交。",
+    "model": "gemini-3.5-flash",
+    "api_key_env": "GEMINI_API_KEY",
+    "base_url": ""
+}

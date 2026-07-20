@@ -1,0 +1,9 @@
+{
+    "_comment": "复制为 sub/llm/config.json 并填入你的配置。密钥通过环境变量设置，不写在此文件。",
+
+    "base_url": "https://api.deepseek.com/v1",
+    "model": "deepseek-chat",
+    "api_key_env": "LLM_API_KEY",
+    "batch_size": 30,
+    "context_window": 5
+}

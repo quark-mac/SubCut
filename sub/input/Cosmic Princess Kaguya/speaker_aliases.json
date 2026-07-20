@@ -1,0 +1,30 @@
+{
+  "_comment": "speaker_aliases.json — 字幕原始说话人标签 → 规范化角色名的映射。下游脚本按 key 创建输出目录；以下划线开头的 key 是注释，会被忽略。",
+
+  "_notes": {
+    "main_characters": "Iroha / Kaguya / Yachiyo / FUSHI",
+    "supporting_characters": "Mikado, Koto, Mami, Roka, Noi, Asahi (Iroha's brother, = Mikado IRL), Rai",
+    "uncertain_not_merged": [
+      "幼い彩葉 (1 行) - 童年版 Iroha, 儿童配音, 声线不同, 不合并",
+      "彩葉の父 (1 行) - 父亲是独立角色, 仅 1 行台词不值得训练",
+      "FUSHIアラーム / FUSHIの分身 - 合成音/分身, 声线可能与 FUSHI 本人不同, 暂不合并",
+      "かぐやの泣き声 / かぐやの配信音声 - 描述性标签, 不确定归属",
+      "裸 '涙声' (1 行) - 没有 'かぐや:' 前缀的那条不确定是谁"
+    ],
+    "excluded_groups_and_sfx": "群体合声 (2人/3人/A・B/観客たち)、路人职业 (先生/担任/男性/女性/観客1-4/女子1-2/酔っ払い/店員/見物客/作業員)、音效描述 (琵琶の音/拍手/配信音声/スイッチ音/ドアの開閉音/泣き声が続く/和風の音楽 等约 30 种)、动物 (犬DOGE) 均不进入 aliases；下游 --speakers 选择主角即可自动忽略它们。",
+    "naming_convention": "canonical 用罗马字, 输出目录路径 ASCII 友好；变体保留字幕原始 normalize 后的形式 (去 furigana, 保留 NA: 类前缀整体)"
+  },
+
+  "Iroha":   ["彩葉", "酒寄彩葉", "彩葉:泣きそうな声"],
+  "Kaguya":  ["かぐや", "ウミウシ:かぐや", "配信:かぐや", "かぐや:涙声"],
+  "Yachiyo": ["ヤチヨ", "NA:ヤチヨ", "スピーカー:ヤチヨ", "配信:ヤチヨ", "月見ヤチヨ", "NA:月見ヤチヨ"],
+  "FUSHI":   ["FUSHI"],
+
+  "Mikado":  ["帝", "帝アキラ"],
+  "Koto":    ["琴", "乙事照琴"],
+  "Mami":    ["真実", "諌山真実"],
+  "Roka":    ["芦花", "綾紬芦花"],
+  "Noi":     ["乃依", "駒沢乃依"],
+  "Asahi":   ["朝日", "酒寄朝日"],
+  "Rai":     ["雷", "駒沢雷"]
+}
