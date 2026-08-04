@@ -53,6 +53,8 @@ speaker == NONSPEECH
 
 ## 总体流程
 
+从候选边界到 Gemini speaker 写回的完整交互式演示见 [pipeline_explorer.html](pipeline_explorer.html)。
+
 ```text
 完整字幕
   -> 筛选目标 entry

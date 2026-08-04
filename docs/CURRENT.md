@@ -64,10 +64,14 @@ Gemini:
 
 ```text
 input SRT: normalized.srt
+scene input: --segments-json is required for labeling; report-only is exempt
+existing clips: fail unless --overwrite-clips; prefer a clean output directory
+partial runs: explicit clean output directory required; overwrite cannot bypass
 OVERLAP: forbidden
 explicit anchor: none
 explicit output lock: none
 final OTHER: speaker_raw identity
+keep-tags: preserve input tags only; no MM_* status tags
 code-default grouping: up to 2 scenes / 30 entries / 90 seconds
 ```
 
@@ -91,7 +95,8 @@ The 30-entry/90-second forced scene-refine experiment reduced Gold accuracy from
 - FUSHI system/tutorial voice continuity remains inconsistent.
 - NONSPEECH recall is weak when model-only output is used.
 - Named multi-speaker Gold cues are difficult after removing `OVERLAP`.
-- Normalization still has mixed-speaker cues, duplicate short fragments, and some source timeline errors.
+- Normalization expands multi-speaker blocks with shared source timing; source-label errors, duplicate short fragments, and some source timeline errors remain.
+- Normalization does not inherit unlabeled speaker identities; unlabeled dialogue remains `[?]` for Gemini.
 
 See `docs/reference/current_issues.md` for details.
 
@@ -107,7 +112,7 @@ Do not change these without a dedicated Gold A/B task:
 
 ## Next Recommended Work
 
-The next implementation task should address one normalization issue only, starting with mixed-speaker text in a single subtitle cue. It must not modify scene or Gemini behavior in the same task.
+Regenerate and structurally review the normalized baseline after the no-inheritance and mixed-speaker changes. Then regenerate the semantic scene timeline because normalized idx values have shifted. Do not modify Gemini behavior in the same task.
 
 Before that task, establish a Git baseline commit for the current repository migration.
 

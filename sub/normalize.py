@@ -10,8 +10,8 @@ normalize_report.json}。
 
 CLI:
     python sub/normalize.py "Cosmic Princess Kaguya"
-    python sub/normalize.py "<proj>" --inherit-gap-sec 3.0 --keep-nonspeech
-    python sub/normalize.py "<proj>" --no-merge-overlap --no-keep-unknown
+    python sub/normalize.py "<proj>" --keep-nonspeech
+    python sub/normalize.py "<proj>" --no-keep-unknown
 """
 
 from __future__ import annotations
@@ -57,12 +57,10 @@ from _srt_io import (  # noqa: E402
 
 @dataclass
 class NormalizeConfig:
-    inherit_unlabeled: bool = True
-    inherit_gap_sec: float = 5.0
     keep_nonspeech: bool = False
-    keep_unknown: bool = True          # 未承接的 unlabeled 是否输出 [?]
-    merge_overlap: bool = False           # 默认不做桶内合并（合并下放到 extract_simple 剪辑层）
-    merge_gap_sec: float = 0.1          # 启用合并时：同 speaker 桶内合并的允许 gap
+    keep_unknown: bool = True          # unlabeled 是否输出 [?]
+    merge_overlap: bool = False        # 默认不做桶内合并（合并下放到 extract_simple 剪辑层）
+    merge_gap_sec: float = 0.1         # 启用合并时：同 speaker 桶内合并的允许 gap
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -109,7 +107,7 @@ def normalize_entries(
     """ASS entries → NormalizedEntry 列表 + 统计 dict。
 
     步骤:
-      1. 顺序遍历 entries, 维护 (last_canonical, last_end), 产出 raw 列表
+      1. 顺序遍历 entries, 产出 raw 列表
       2. 同 speaker 分组合并重叠
       3. 全局按 (start, speaker) 排序, 分配 1-based idx
     """
@@ -117,8 +115,6 @@ def normalize_entries(
 
     # ---------- Step 1: 遍历产出 raw entries（idx 暂置 0）----------
     raw: list[NormalizedEntry] = []
-    last_canonical: str | None = None
-    last_end: float = 0.0
 
     for ass_idx, e in enumerate(entries):
         if e.kind == "single":
@@ -131,19 +127,23 @@ def normalize_entries(
                 # decision #2: 保留原 token（normalize 后），不丢弃
                 speaker = sp_norm or "?"
                 stats["alias_miss_singles"] += 1
+            text = _prep_text(e.speaker_text or "")
+            if not text:
+                stats["empty_speech_dropped"] += 1
+                continue
             raw.append(NormalizedEntry(
                 idx=0, start=e.start, end=e.end,
                 speaker=speaker, tags=[],
-                text=_prep_text(e.speaker_text or ""),
+                text=text,
                 source_entries=[ass_idx],
             ))
-            # 更新链：单说话人 (无论 alias 是否命中) 都可作为 inherit anchor
-            last_canonical = speaker
-            last_end = e.end
-
         elif e.kind == "multi":
             stats["multi_entries"] += 1
             for part_raw, part_norm, part_text in e.multi_parts:
+                text = _prep_text(part_text)
+                if not text:
+                    stats["empty_speech_dropped"] += 1
+                    continue
                 stats["multi_parts_emitted"] += 1
                 canonical = to_canonical(part_norm, alias_map)
                 if canonical is not None:
@@ -155,12 +155,9 @@ def normalize_entries(
                 raw.append(NormalizedEntry(
                     idx=0, start=e.start, end=e.end,
                     speaker=speaker, tags=["MULTI"],
-                    text=_prep_text(part_text),
+                    text=text,
                     source_entries=[ass_idx],
                 ))
-            # decision: multi 阻断 inherit 链（多人同时讲，不能继承任何一个）
-            last_canonical = None
-
         elif e.kind == "nonspeech":
             if config.keep_nonspeech:
                 raw.append(NormalizedEntry(
@@ -172,36 +169,17 @@ def normalize_entries(
                 stats["nonspeech_kept"] += 1
             else:
                 stats["nonspeech_dropped"] += 1
-            # nonspeech 不影响 last_canonical 链
-
         elif e.kind == "unlabeled":
-            inherited = (
-                config.inherit_unlabeled
-                and last_canonical is not None
-                and (e.start - last_end) <= config.inherit_gap_sec
-            )
-            if inherited:
+            if config.keep_unknown:
                 raw.append(NormalizedEntry(
                     idx=0, start=e.start, end=e.end,
-                    speaker=last_canonical,  # type: ignore[arg-type]
-                    tags=["INHERITED"],
+                    speaker=SPEAKER_UNKNOWN, tags=[],
                     text=_prep_text(e.text.strip()),
                     source_entries=[ass_idx],
                 ))
-                stats["unlabeled_inherited"] += 1
-                last_end = e.end  # 链延续: 用本条 end 更新窗口
+                stats["unlabeled_unknown"] += 1
             else:
-                if config.keep_unknown:
-                    raw.append(NormalizedEntry(
-                        idx=0, start=e.start, end=e.end,
-                        speaker=SPEAKER_UNKNOWN, tags=[],
-                        text=_prep_text(e.text.strip()),
-                        source_entries=[ass_idx],
-                    ))
-                    stats["unlabeled_unknown"] += 1
-                else:
-                    stats["unlabeled_dropped"] += 1
-                # decision #1: unlabeled 未承接不打断 last_canonical 链
+                stats["unlabeled_dropped"] += 1
 
         else:
             stats["unknown_kind"] += 1
@@ -252,11 +230,11 @@ def _init_stats(entries: list[SubtitleEntry]) -> dict:
         "multi_parts_emitted": 0,
         "alias_hit_in_multi_parts": 0,
         "alias_miss_in_multi_parts": 0,
-        "unlabeled_inherited": 0,
         "unlabeled_unknown": 0,
         "unlabeled_dropped": 0,
         "nonspeech_kept": 0,
         "nonspeech_dropped": 0,
+        "empty_speech_dropped": 0,
         "unknown_kind": 0,
     }
 
@@ -356,19 +334,12 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--output-dir", default=None,
                    help=f"中间产物输出目录（默认 {DEFAULT_INTERMEDIATE_ROOT}/<project>）")
 
-    p.add_argument("--inherit-gap-sec", type=float, default=5.0,
-                   help="unlabeled 承接的最大 gap（秒，默认 5.0）")
-    p.add_argument("--no-inherit-unlabeled", dest="inherit_unlabeled",
-                   action="store_false",
-                   help="禁用 unlabeled 承接（默认启用）")
-    p.set_defaults(inherit_unlabeled=True)
-
     p.add_argument("--keep-nonspeech", dest="keep_nonspeech", action="store_true",
                    help="保留 nonspeech 行为 [NONSPEECH]（默认丢弃）")
     p.set_defaults(keep_nonspeech=False)
 
     p.add_argument("--no-keep-unknown", dest="keep_unknown", action="store_false",
-                   help="不保留未承接的 unlabeled（默认保留为 [?]）")
+                   help="不保留 unlabeled（默认保留为 [?]）")
     p.set_defaults(keep_unknown=True)
 
     p.add_argument("--merge-overlap", dest="merge_overlap", action="store_true",
@@ -407,8 +378,6 @@ def main(argv: list[str] | None = None) -> int:
 
     # 3) 配置
     config = NormalizeConfig(
-        inherit_unlabeled=args.inherit_unlabeled,
-        inherit_gap_sec=args.inherit_gap_sec,
         keep_nonspeech=args.keep_nonspeech,
         keep_unknown=args.keep_unknown,
         merge_overlap=args.merge_overlap,
@@ -451,8 +420,8 @@ def main(argv: list[str] | None = None) -> int:
         "alias_hit_singles", "alias_miss_singles",
         "multi_entries", "multi_parts_emitted",
         "alias_hit_in_multi_parts", "alias_miss_in_multi_parts",
-        "unlabeled_inherited", "unlabeled_unknown", "unlabeled_dropped",
-        "nonspeech_kept", "nonspeech_dropped",
+        "unlabeled_unknown", "unlabeled_dropped",
+        "nonspeech_kept", "nonspeech_dropped", "empty_speech_dropped",
     ]
     for k in keys:
         print(f"  {k:<32s} {stats[k]}")

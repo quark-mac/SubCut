@@ -122,7 +122,7 @@ Gold Set 完成后比较：
 
 ### 利用已有可靠人工标签
 
-不要用 Gemini 覆盖所有 speaker。已有明确人工标签的字幕应保留，Gemini 只填 ? / INHERITED / MULTI / OTHER 候选。
+这条旧策略已被生产流程取代。当前 Gemini 对全部字幕逐条输出 speaker；normalize 对无显式 speaker 的对白只保留 `?`，不做继承。
 
 ### 长片段改用 continuous video
 

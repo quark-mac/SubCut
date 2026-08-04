@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DeepSeek Scene 到 Gemini Speaker 完整机制</title>
+  <style>
+    :root {
+      --ink: #18221f;
+      --muted: #68736f;
+      --paper: #f2efe7;
+      --panel: #fffdf8;
+      --line: #d8d2c5;
+      --deepseek: #b65338;
+      --python: #d7952e;
+      --scene: #277c68;
+      --gemini: #205b82;
+      --output: #503f70;
+      --context: #e1a43e;
+      --target: #25816d;
+      --window: #205b82;
+      --bad: #a64035;
+      --shadow: 0 15px 42px rgba(46, 53, 49, 0.09);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.55;
+    }
+
+    button, input, select { font: inherit; }
+    code, .mono { font-family: Consolas, "SFMono-Regular", monospace; }
+    .page { width: min(1240px, calc(100% - 28px)); margin: 0 auto; padding: 38px 0 64px; }
+
+    header {
+      display: grid;
+      grid-template-columns: 1.3fr 0.7fr;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 26px;
+    }
+
+    .eyebrow { color: var(--deepseek); font-weight: 800; letter-spacing: 0.13em; font-size: 12px; text-transform: uppercase; }
+    h1 { margin: 4px 0 10px; font: 700 58px/1.05 Georgia, "Microsoft YaHei", serif; letter-spacing: 0; }
+    header p { margin: 0; max-width: 820px; color: var(--muted); }
+    .headline-note { border-left: 4px solid var(--gemini); padding: 12px 0 12px 18px; color: var(--muted); }
+    .headline-note strong { color: var(--ink); display: block; font-size: 18px; }
+
+    .panel { background: rgba(255, 253, 248, 0.95); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+      padding: 16px;
+      margin-bottom: 18px;
+      position: sticky;
+      top: 8px;
+      z-index: 20;
+      backdrop-filter: blur(10px);
+    }
+
+    .flow button { border: 0; border-radius: 6px; padding: 11px 7px; background: #ece8df; color: var(--muted); cursor: pointer; font-weight: 750; font-size: 12px; }
+    .flow button.active { color: white; background: var(--ink); }
+
+    .stage { display: none; padding: 24px; margin-bottom: 20px; }
+    .stage.active { display: block; animation: reveal 180ms ease-out; }
+    @keyframes reveal { from { opacity: 0; transform: translateY(5px); } }
+
+    .stage-head { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start; margin-bottom: 18px; }
+    .stage-head h2 { margin: 0; font-size: 25px; }
+    .stage-head p { margin: 4px 0 0; color: var(--muted); max-width: 820px; }
+    .badge { border-radius: 999px; padding: 6px 10px; font-size: 11px; font-weight: 800; color: white; white-space: nowrap; }
+    .badge.deepseek { background: var(--deepseek); }
+    .badge.python { background: var(--python); }
+    .badge.gemini { background: var(--gemini); }
+
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; }
+    .control { min-width: 190px; flex: 1; padding: 12px 14px; background: #f0ede5; border-radius: 7px; }
+    .control label { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; font-size: 12px; }
+    .control output { color: var(--deepseek); }
+    .control input[type="range"] { width: 100%; margin: 10px 0 0; accent-color: var(--deepseek); }
+    .toggle { display: flex; gap: 6px; padding: 4px; border-radius: 7px; background: #e9e5dc; }
+    .toggle button { border: 0; background: transparent; color: var(--muted); border-radius: 8px; padding: 8px 13px; cursor: pointer; font-weight: 700; }
+    .toggle button.active { color: white; background: var(--gemini); }
+
+    .entry-grid { display: grid; grid-template-columns: repeat(12, minmax(54px, 1fr)); gap: 8px; overflow-x: auto; padding-bottom: 6px; }
+    .entry {
+      min-width: 54px;
+      padding: 10px 7px;
+      border-radius: 7px;
+      background: #ede9e0;
+      border: 1px solid transparent;
+      text-align: center;
+      position: relative;
+    }
+    .entry b { display: block; font-size: 13px; }
+    .entry small { display: block; color: var(--muted); font-size: 10px; margin-top: 4px; }
+    .entry.owner { background: rgba(182, 83, 56, 0.11); border-color: rgba(182, 83, 56, 0.48); }
+    .entry.context-entry { background: rgba(215, 149, 46, 0.13); border-color: rgba(215, 149, 46, 0.45); }
+    .entry.target-entry { background: rgba(39, 124, 104, 0.14); border-color: rgba(39, 124, 104, 0.5); }
+    .entry::after { content: ""; position: absolute; right: -6px; top: 50%; width: 4px; height: 4px; border-radius: 50%; background: #b8b1a4; z-index: 2; }
+    .entry:last-child::after { display: none; }
+    .entry.cut::after { width: 9px; height: 24px; border-radius: 5px; top: calc(50% - 12px); right: -9px; background: var(--scene); box-shadow: 0 0 0 3px var(--panel); }
+    .entry.removed-cut::after { width: 9px; height: 24px; border: 2px dashed var(--bad); background: transparent; top: calc(50% - 12px); right: -9px; }
+    .entry.added-cut::after { width: 9px; height: 24px; border-radius: 5px; top: calc(50% - 12px); right: -9px; background: var(--deepseek); box-shadow: 0 0 0 3px var(--panel); }
+    .entry .marker { display: block; margin-top: 6px; color: var(--deepseek); font-size: 9px; font-weight: 800; }
+
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; color: var(--muted); font-size: 12px; margin: 12px 0; }
+    .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -2px; }
+
+    .request-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+    .request-card { padding: 17px; background: #f2efe7; border-radius: 8px; }
+    .request-card h3 { margin: 0 0 8px; font-size: 16px; }
+    .request-card p { margin: 0; color: var(--muted); font-size: 13px; }
+    .owned { color: var(--deepseek); font-weight: 800; }
+
+    .json { margin: 14px 0 0; padding: 14px; border-radius: 7px; background: #202824; color: #e7eee9; overflow-x: auto; font-size: 12px; white-space: pre-wrap; }
+
+    .scene-strip { display: flex; min-height: 104px; border-radius: 8px; overflow: hidden; background: #e6e1d7; margin: 16px 0; }
+    .scene-block { min-width: 90px; padding: 12px; color: white; border-right: 3px solid var(--panel); position: relative; }
+    .scene-block:last-child { border-right: 0; }
+    .scene-block:nth-child(4n+1) { background: #277c68; }
+    .scene-block:nth-child(4n+2) { background: #205b82; }
+    .scene-block:nth-child(4n+3) { background: #9b6530; }
+    .scene-block:nth-child(4n) { background: #6a527f; }
+    .scene-block b, .scene-block small { display: block; }
+    .scene-block small { opacity: 0.78; margin-top: 4px; }
+
+    .checks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .check { padding: 13px; border-radius: 7px; background: rgba(39, 124, 104, 0.09); color: #225f51; font-size: 12px; font-weight: 700; }
+
+    .bridge { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: stretch; }
+    .bridge-card { padding: 18px; border-radius: 8px; background: #f1eee6; }
+    .bridge-card h3 { margin: 0 0 10px; }
+    .bridge-card ul { margin: 0; padding-left: 18px; color: var(--muted); }
+    .arrow { align-self: center; font-size: 30px; color: var(--scene); }
+
+    .batch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; }
+    .batch { padding: 14px; border-radius: 8px; background: #f1eee6; border-top: 4px solid var(--gemini); }
+    .batch h3 { margin: 0 0 6px; font-size: 15px; }
+    .batch small { color: var(--muted); }
+
+    .timeline { position: relative; padding: 28px 0 4px; }
+    .axis { height: 1px; background: var(--line); position: relative; margin-bottom: 15px; }
+    .tick { position: absolute; top: -23px; transform: translateX(-50%); color: var(--muted); font-size: 10px; }
+    .row { display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: center; margin: 10px 0; }
+    .row-label { text-align: right; color: var(--muted); font-size: 11px; }
+    .track { height: 42px; position: relative; overflow: hidden; border-radius: 8px; background: #ebe7de; }
+    .bar { position: absolute; top: 5px; height: 32px; border-radius: 6px; color: white; font-size: 10px; display: flex; justify-content: center; align-items: center; overflow: hidden; white-space: nowrap; padding: 0 4px; }
+    .bar.context { background: var(--context); }
+    .bar.target { background: var(--target); }
+    .bar.media { background: var(--window); }
+    .bar.search { color: var(--bad); background: rgba(166, 64, 53, 0.1); border: 1px dashed var(--bad); }
+
+    .compact-strip { display: flex; min-height: 82px; overflow: hidden; border-radius: 8px; background: #ddd8ce; margin-top: 16px; }
+    .piece { min-width: 74px; padding: 9px; color: white; background: var(--gemini); border-right: 2px solid var(--panel); }
+    .piece:last-child { border-right: 0; }
+    .piece small { display: block; opacity: 0.75; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px; }
+    th, td { text-align: left; padding: 9px; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); }
+
+    .prompt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .prompt-box { padding: 16px; border-radius: 8px; background: #f0ede5; }
+    .prompt-box h3 { margin: 0 0 9px; font-size: 16px; }
+    .prompt-box ul { margin: 0; padding-left: 18px; color: var(--muted); }
+    .no-evidence { border-left: 4px solid var(--bad); }
+
+    .result-flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 10px; align-items: stretch; }
+    .result-box { padding: 16px; border-radius: 8px; background: #f1eee6; }
+    .result-box h3 { margin: 0 0 8px; font-size: 15px; }
+    .result-arrow { align-self: center; font-size: 24px; color: var(--output); }
+    .speaker { display: inline-block; border-radius: 999px; padding: 4px 8px; color: white; background: var(--output); font-size: 11px; font-weight: 800; }
+
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 18px; }
+    .summary-card { padding: 16px; border-radius: 8px; background: #f1eee6; }
+    .summary-card strong { display: block; font-size: 18px; }
+    .summary-card span { color: var(--muted); font-size: 12px; }
+
+    .footnote { margin-top: 18px; color: var(--muted); font-size: 12px; }
+    footer { margin-top: 25px; text-align: center; color: var(--muted); font-size: 11px; }
+
+    @media (max-width: 920px) {
+      h1 { font-size: 46px; }
+      header, .request-layout, .prompt-grid { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: repeat(4, 1fr); position: static; }
+      .bridge { grid-template-columns: 1fr; }
+      .arrow { transform: rotate(90deg); text-align: center; }
+      .checks, .batch-grid, .summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .result-flow { grid-template-columns: 1fr; }
+      .result-arrow { transform: rotate(90deg); text-align: center; }
+    }
+
+    @media (max-width: 580px) {
+      h1 { font-size: 36px; }
+      .page { width: min(100% - 16px, 1240px); padding-top: 22px; }
+      .flow { grid-template-columns: repeat(2, 1fr); }
+      .stage { padding: 15px; }
+      .stage-head { grid-template-columns: 1fr; }
+      .checks, .batch-grid, .summary-grid { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 1fr; gap: 3px; }
+      .row-label { text-align: left; }
+      .entry-grid { grid-template-columns: repeat(12, 62px); }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div>
+        <div class="eyebrow">Subtitle-driven multimodal pipeline</div>
+        <h1>从字幕间隙，<br>到最终说话人</h1>
+        <p>这是一个缩小后的完整演示：DeepSeek 只判断语义边界，Python 保证 scene 完整覆盖，Gemini 再结合 scene、前文字幕和视频音频，为每条字幕选择一个 speaker。</p>
+      </div>
+      <div class="headline-note">
+        <strong>两个模型，职责不重叠。</strong>
+        DeepSeek 不看视频、不改 speaker；Gemini 不决定生产 scene 边界。稳定的 <code>idx</code> 将两个阶段连接起来。
+      </div>
+    </header>
+
+    <nav class="panel flow" aria-label="演示步骤">
+      <button class="active" data-stage="1">1 字幕输入</button>
+      <button data-stage="2">2 边界请求</button>
+      <button data-stage="3">3 Refine</button>
+      <button data-stage="4">4 Scene JSON</button>
+      <button data-stage="5">5 Gemini Batch</button>
+      <button data-stage="6">6 媒体与 Prompt</button>
+      <button data-stage="7">7 结果写回</button>
+    </nav>
+
+    <section id="stage1" class="panel stage active">
+      <div class="stage-head">
+        <div><h2>1. Normalized SRT 提供稳定 entry</h2><p>演示使用 idx 1-12。每个相邻 entry 后面都是一个潜在边界；实际生产会先排除 <code>NONSPEECH</code> 和含 ♪ 的条目。</p></div>
+        <span class="badge python">Python 读取与筛选</span>
+      </div>
+      <div id="inputEntries" class="entry-grid"></div>
+      <div class="legend"><span><i style="background:#ede9e0"></i>目标 entry</span><span>圆点表示相邻字幕间隙，目前还不是 scene 边界</span></div>
+      <pre class="json">entry = { idx, start, end, speaker, tags, text }
+
+稳定标识：idx
+DeepSeek 阶段：用 idx 表达 after_idx 切点
+Gemini 阶段：用 idx 返回 speaker
+写回阶段：用 idx 找回原 start/end/text</pre>
+    </section>
+
+    <section id="stage2" class="panel stage">
+      <div class="stage-head">
+        <div><h2>2. 每个候选边界只归一个 DeepSeek 请求负责</h2><p>调小演示中的请求窗口和上下文，观察相邻请求虽然会看到重叠字幕，但不会共同决定同一个 <code>after_idx</code>。</p></div>
+        <span class="badge deepseek">DeepSeek 文本判断</span>
+      </div>
+      <div class="controls">
+        <div class="control"><label for="ownerSize"><code>llm-window-entries</code><output id="ownerSizeValue"></output></label><input id="ownerSize" type="range" min="2" max="6" step="1" value="4"></div>
+        <div class="control"><label for="boundaryContext"><code>llm-context-entries</code><output id="boundaryContextValue"></output></label><input id="boundaryContext" type="range" min="0" max="3" step="1" value="2"></div>
+      </div>
+      <div id="requestCards" class="request-layout"></div>
+      <div class="footnote">演示自动选择语义切点 after_idx=4、8。真实 DeepSeek 根据地点、事件、叙事结构和对话承接决定，不能因为字幕多或 speaker 轮换就切。</div>
+    </section>
+
+    <section id="stage3" class="panel stage">
+      <div class="stage-head">
+        <div><h2>3. Refine 可以删除旧切点，也可以添加新切点</h2><p>第一遍可能把连续问答切开，或遗漏一个独立事件。Refine 只复核可疑 scene 及邻居，并返回区域内应该保留的全部最终 cuts。</p></div>
+        <span class="badge deepseek">DeepSeek 局部复核</span>
+      </div>
+      <div class="controls">
+        <div class="toggle" role="group"><button id="firstPassButton" class="active">第一遍</button><button id="refinedButton">Refine 后</button></div>
+      </div>
+      <div id="refineEntries" class="entry-grid"></div>
+      <div id="refineExplanation" class="request-card" style="margin-top:16px"></div>
+      <pre id="refineJson" class="json"></pre>
+    </section>
+
+    <section id="stage4" class="panel stage">
+      <div class="stage-head">
+        <div><h2>4. Python 用最终切点组装完整 scene</h2><p>DeepSeek 不返回完整 scene 列表。Python 按 entry 顺序切开，保证模型无法通过漏写范围让字幕消失。</p></div>
+        <span class="badge python">Python 组装与校验</span>
+      </div>
+      <div id="sceneStrip" class="scene-strip"></div>
+      <div class="checks"><div class="check">✓ idx 顺序一致</div><div class="check">✓ 无遗漏 entry</div><div class="check">✓ 无重复 entry</div><div class="check">✓ scene 不重叠</div></div>
+      <pre id="sceneJson" class="json"></pre>
+      <div class="footnote">Scene 标题用于人工编辑和报告，不会发送给 Gemini 作为 speaker evidence。超长 scene 只告警，不会为了请求预算机械切开。</div>
+    </section>
+
+    <section id="stage5" class="panel stage">
+      <div class="stage-head">
+        <div><h2>5. Gemini 标注必须读取 scene JSON，再把完整 scene 组成请求</h2><p>正常标注时 <code>--segments-json</code> 是必填参数；只从已有结果重建报告的 <code>--report-only</code> 不需要它。请求 grouping 可以合并 scene，但不能从 scene 中间按字幕数切开。</p></div>
+        <span class="badge python">Python Request Planning</span>
+      </div>
+      <div class="controls">
+        <div class="control"><label for="scenesPerRequest"><code>max-request-scenes</code><output id="scenesPerRequestValue"></output></label><input id="scenesPerRequest" type="range" min="1" max="3" step="1" value="1"></div>
+      </div>
+      <div id="batchGrid" class="batch-grid"></div>
+      <div class="bridge" style="margin-top:18px">
+        <div class="bridge-card"><h3>DeepSeek scene context</h3><ul><li>定义事件边界</li><li>通常约 20-75 秒</li><li>scene 内 entry 都是 Gemini target</li></ul></div>
+        <div class="arrow">→</div>
+        <div class="bridge-card"><h3>Gemini batch context</h3><ul><li>一次 API 请求可含多个完整 scene</li><li>每个 batch 是独立新请求</li><li>额外的 context-before 只供理解，不要求输出</li></ul></div>
+      </div>
+    </section>
+
+    <section id="stage6" class="panel stage">
+      <div class="stage-head">
+        <div><h2>6. 选中一个 batch，构造媒体和 Prompt</h2><p>切换连续/compact 模式并调整参数。这里的 <code>context-before</code> 与 DeepSeek 的 <code>llm-context-entries</code> 完全不同：它是 Gemini 请求的前文字幕。</p></div>
+        <span class="badge gemini">Gemini 多模态输入</span>
+      </div>
+      <div class="controls">
+        <div class="toggle"><button id="continuousMode">连续</button><button id="compactMode" class="active">Compact</button></div>
+        <div class="control"><label for="geminiContext"><code>context-before</code><output id="geminiContextValue"></output></label><input id="geminiContext" type="range" min="0" max="15" step="1" value="12"></div>
+        <div class="control continuous-control"><label for="preRoll"><code>pre/post-roll</code><output id="preRollValue"></output></label><input id="preRoll" type="range" min="0" max="3" step="0.5" value="1.5"><small>为简化演示，同步设置两个 CLI 参数。</small></div>
+        <div class="control compact-control"><label for="compactRoll"><code>compact pre/post</code><output id="compactRollValue"></output></label><input id="compactRoll" type="range" min="0" max="2" step="0.5" value="1"><small>为简化演示，同步设置两个 CLI 参数。</small></div>
+        <div class="control compact-control"><label for="mergeGap"><code>merge-gap</code><output id="mergeGapValue"></output></label><input id="mergeGap" type="range" min="0" max="3" step="0.5" value="1"></div>
+      </div>
+      <div class="timeline">
+        <div id="mediaAxis" class="axis"></div>
+        <div class="row"><div class="row-label">scene target</div><div id="targetTrack" class="track"></div></div>
+        <div class="row"><div class="row-label">Gemini context</div><div id="geminiContextTrack" class="track"></div></div>
+        <div class="row"><div class="row-label">实际媒体</div><div id="mediaTrack" class="track"></div></div>
+      </div>
+      <div id="compactOutput"></div>
+      <div class="prompt-grid" style="margin-top:18px">
+        <div class="prompt-box"><h3>Gemini 收到</h3><ul><li>角色资料与 canonical 列表</li><li>context idx + compact 时间 + text</li><li>target idx + scene_id + compact 时间 + text</li><li>包含声音和画面的 batch 视频</li></ul></div>
+        <div class="prompt-box no-evidence"><h3>Gemini 默认收不到</h3><ul><li>DeepSeek 的 scene 标题与切分理由</li><li>原始视频时间</li><li>上一批 Gemini 结果或对话历史</li><li>当前 speaker/tags，除非显式实验参数开启</li></ul></div>
+      </div>
+    </section>
+
+    <section id="stage7" class="panel stage">
+      <div class="stage-head">
+        <div><h2>7. Gemini 逐 idx 返回单一 speaker，Python 写回原时间轴</h2><p>Gemini 不允许输出 OVERLAP。<code>OTHER</code> 使用 <code>speaker_raw</code> 写入最终 SRT；只有请求或解析失败时才保留输入 speaker。</p></div>
+        <span class="badge gemini">Gemini + Python</span>
+      </div>
+      <div class="result-flow">
+        <div class="result-box"><h3>Gemini JSON</h3><pre class="mono">{ "scene_id": 2,
+  "idx": 6,
+  "speaker": "OTHER",
+  "speaker_raw": "先生" }</pre></div>
+        <div class="result-arrow">→</div>
+        <div class="result-box"><h3>按 idx 解析</h3><p><code>idx=6</code> 找回 normalized entry 的原始时间与文本。</p><span class="speaker">先生</span></div>
+        <div class="result-arrow">→</div>
+        <div class="result-box"><h3>最终 SRT</h3><pre class="mono">6
+00:00:25,000 --> 00:00:27,000
+[先生] 明日の予定は…</pre></div>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-card"><strong>DeepSeek 决定边界</strong><span>只输出 after_idx cuts，不分配 speaker。</span></div>
+        <div class="summary-card"><strong>Gemini 决定身份</strong><span>每个 target idx 选择一个 speaker。</span></div>
+        <div class="summary-card"><strong>Python 保证结构</strong><span>校验覆盖、制作媒体、映射时间并写回。</span></div>
+      </div>
+      <pre class="json">normalized.srt
+  → DeepSeek cuts
+  → Python scene_segments.json
+  → Gemini batch + compact media
+  → results.jsonl
+  → segment_labeled.srt
+  → Gold structural alignment evaluation</pre>
+    </section>
+
+    <footer>对应生产模块：<code>scene_segmenter.py</code> → <code>gemini_segment_diarize.py</code> → <code>evaluate_gemini_gold.py</code></footer>
+  </main>
+
+  <script>
+    const entries = Array.from({ length: 12 }, (_, index) => {
+      const idx = index + 1;
+      const starts = [0, 4, 8, 12, 22, 25, 29, 33, 45, 49, 58, 62];
+      const speakers = ["Iroha", "Kaguya", "Iroha", "Kaguya", "Yachiyo", "先生", "Yachiyo", "Kaguya", "FUSHI", "Kaguya", "Mami", "Roka"];
+      return { idx, start: starts[index], end: starts[index] + 2, speaker: speakers[index] };
+    });
+
+    const firstCuts = [4, 7, 9];
+    const refinedCuts = [4, 8, 10];
+    const sceneNames = ["屋上の相談", "教室と旁白", "FUSHI チュートリアル", "放課後の会話"];
+    let refined = false;
+    let mediaMode = "compact";
+    const $ = id => document.getElementById(id);
+
+    function renderEntryGrid(container, options = {}) {
+      container.innerHTML = "";
+      for (const entry of entries) {
+        const cell = document.createElement("div");
+        const classes = ["entry"];
+        if (options.owner?.includes(entry.idx)) classes.push("owner");
+        if (options.context?.includes(entry.idx)) classes.push("context-entry");
+        if (options.target?.includes(entry.idx)) classes.push("target-entry");
+        if (options.cuts?.includes(entry.idx)) classes.push("cut");
+        if (options.removed?.includes(entry.idx)) classes.push("removed-cut");
+        if (options.added?.includes(entry.idx)) classes.push("added-cut");
+        cell.className = classes.join(" ");
+        cell.innerHTML = `<b>${entry.idx}</b><small>${entry.start}-${entry.end}s</small><small>${entry.speaker}</small>`;
+        if (options.owner?.includes(entry.idx) && entry.idx < entries.length) cell.innerHTML += '<span class="marker">CUT CANDIDATE</span>';
+        container.appendChild(cell);
+      }
+    }
+
+    function buildScenes(cuts) {
+      const scenes = [];
+      let start = 1;
+      for (const cut of [...cuts, entries.length]) {
+        scenes.push(entries.filter(entry => entry.idx >= start && entry.idx <= cut));
+        start = cut + 1;
+      }
+      return scenes;
+    }
+
+    function renderBoundaryRequests() {
+      const ownerSize = Number($("ownerSize").value);
+      const contextSize = Number($("boundaryContext").value);
+      $("ownerSizeValue").textContent = ownerSize;
+      $("boundaryContextValue").textContent = contextSize;
+      const cards = $("requestCards");
+      cards.innerHTML = "";
+      const candidateCount = entries.length - 1;
+      let requestIndex = 1;
+      for (let ownerStart = 1; ownerStart <= candidateCount; ownerStart += ownerSize) {
+        const ownerEnd = Math.min(candidateCount, ownerStart + ownerSize - 1);
+        const visibleStart = Math.max(1, ownerStart - contextSize);
+        const visibleEnd = Math.min(entries.length, ownerEnd + 1 + contextSize);
+        const owner = entries.filter(entry => entry.idx >= ownerStart && entry.idx <= ownerEnd).map(entry => entry.idx);
+        const visible = entries.filter(entry => entry.idx >= visibleStart && entry.idx <= visibleEnd).map(entry => entry.idx);
+        const card = document.createElement("div");
+        card.className = "request-card";
+        const grid = document.createElement("div");
+        grid.className = "entry-grid";
+        renderEntryGrid(grid, { owner });
+        [...grid.children].forEach((child, index) => {
+          const idx = index + 1;
+          child.style.display = visible.includes(idx) ? "block" : "none";
+        });
+        const returnedCuts = firstCuts.filter(cut => cut >= ownerStart && cut <= ownerEnd);
+        card.innerHTML = `<h3>Boundary request ${requestIndex}</h3><p>负责 after_idx <span class="owned">${ownerStart}-${ownerEnd}</span>；可见字幕 idx ${visibleStart}-${visibleEnd}。上下文中的间隙没有候选标记。</p>`;
+        card.appendChild(grid);
+        const response = document.createElement("pre");
+        response.className = "json";
+        response.textContent = JSON.stringify({ cuts: returnedCuts.map(after_idx => ({ after_idx, title: after_idx === 4 ? "屋上结束" : after_idx === 7 ? "初步旁白边界" : "初步教程边界" })) }, null, 2);
+        card.appendChild(response);
+        cards.appendChild(card);
+        requestIndex += 1;
+      }
+    }
+
+    function renderRefine() {
+      const cuts = refined ? refinedCuts : firstCuts;
+      const removed = refined ? firstCuts.filter(cut => !refinedCuts.includes(cut)) : [];
+      const added = refined ? refinedCuts.filter(cut => !firstCuts.includes(cut)) : [];
+      const stable = cuts.filter(cut => !removed.includes(cut) && !added.includes(cut));
+      renderEntryGrid($("refineEntries"), { cuts: stable, removed, added });
+      $("firstPassButton").classList.toggle("active", !refined);
+      $("refinedButton").classList.toggle("active", refined);
+      $("refineExplanation").innerHTML = refined
+        ? "<h3>Refine 结果</h3><p>删除 after_idx=7：它切在连续旁白与反应之间；添加 after_idx=8 和 10：分别结束旁白事件与 FUSHI 教程。区域结尾边界固定，不影响区域外 scene。</p>"
+        : "<h3>第一遍结果</h3><p>after_idx=7 形成一个短且结构可疑的 scene，after_idx=9 又把 FUSHI 教程切在中间，因此进入局部 refine。</p>";
+      $("refineJson").textContent = JSON.stringify({ cuts: cuts.map(after_idx => ({ after_idx })) }, null, 2);
+    }
+
+    function renderScenes() {
+      const scenes = buildScenes(refinedCuts);
+      const strip = $("sceneStrip");
+      strip.innerHTML = "";
+      scenes.forEach((scene, index) => {
+        const block = document.createElement("div");
+        block.className = "scene-block";
+        block.style.flex = `${scene.length} 1 0`;
+        block.innerHTML = `<b>Scene ${index + 1}</b><small>${sceneNames[index]}</small><small>idx ${scene[0].idx}-${scene[scene.length - 1].idx}</small>`;
+        strip.appendChild(block);
+      });
+      $("sceneJson").textContent = JSON.stringify(scenes.map((scene, index) => ({
+        scene_id: index + 1,
+        enabled: true,
+        name: sceneNames[index],
+        start_idx: scene[0].idx,
+        end_idx: scene[scene.length - 1].idx,
+        start: scene[0].start,
+        end: scene[scene.length - 1].end
+      })), null, 2);
+    }
+
+    function renderBatches() {
+      const perRequest = Number($("scenesPerRequest").value);
+      $("scenesPerRequestValue").textContent = perRequest;
+      const scenes = buildScenes(refinedCuts);
+      const grid = $("batchGrid");
+      grid.innerHTML = "";
+      for (let index = 0; index < scenes.length; index += perRequest) {
+        const group = scenes.slice(index, index + perRequest);
+        const first = group[0][0];
+        const lastScene = group[group.length - 1];
+        const last = lastScene[lastScene.length - 1];
+        const card = document.createElement("div");
+        card.className = "batch";
+        card.innerHTML = `<h3>Gemini request ${Math.floor(index / perRequest) + 1}</h3><small>scene ${index + 1}-${index + group.length}<br>target idx ${first.idx}-${last.idx}<br>${group.reduce((sum, scene) => sum + scene.length, 0)} entries</small>`;
+        grid.appendChild(card);
+      }
+    }
+
+    const mediaDomain = { start: 0, end: 38 };
+    const pct = time => ((time - mediaDomain.start) / (mediaDomain.end - mediaDomain.start)) * 100;
+    function addBar(track, start, end, className, label) {
+      const bar = document.createElement("div");
+      bar.className = `bar ${className}`;
+      bar.style.left = `${pct(Math.max(mediaDomain.start, start))}%`;
+      bar.style.width = `${Math.max(0, pct(Math.min(mediaDomain.end, end)) - pct(Math.max(mediaDomain.start, start)))}%`;
+      bar.textContent = label;
+      bar.title = `${label}: ${start.toFixed(1)}-${end.toFixed(1)}s`;
+      track.appendChild(bar);
+    }
+
+    function mergeWindows(windows, gap) {
+      const merged = [];
+      for (const window of [...windows].sort((a, b) => a.start - b.start)) {
+        const previous = merged[merged.length - 1];
+        if (previous && window.start - previous.end <= gap) previous.end = Math.max(previous.end, window.end);
+        else merged.push({ ...window });
+      }
+      return merged;
+    }
+
+    function renderMedia() {
+      const target = entries.filter(entry => entry.idx >= 5 && entry.idx <= 8);
+      const first = target[0];
+      const last = target[target.length - 1];
+      const contextSeconds = Number($("geminiContext").value);
+      const roll = Number($("preRoll").value);
+      const compactRoll = Number($("compactRoll").value);
+      const mergeGap = Number($("mergeGap").value);
+      const contextStart = first.start - contextSeconds;
+      const context = entries.filter(entry => entry.idx < first.idx && entry.end >= contextStart && entry.start < first.start);
+      const selected = [...context, ...target];
+      $("geminiContextValue").textContent = `${contextSeconds}s`;
+      $("preRollValue").textContent = `±${roll}s`;
+      $("compactRollValue").textContent = `±${compactRoll}s`;
+      $("mergeGapValue").textContent = `${mergeGap}s`;
+      $("continuousMode").classList.toggle("active", mediaMode === "continuous");
+      $("compactMode").classList.toggle("active", mediaMode === "compact");
+      document.querySelectorAll(".continuous-control").forEach(node => node.style.opacity = mediaMode === "continuous" ? "1" : "0.38");
+      document.querySelectorAll(".compact-control").forEach(node => node.style.opacity = mediaMode === "compact" ? "1" : "0.38");
+
+      const targetTrack = $("targetTrack");
+      const contextTrack = $("geminiContextTrack");
+      const mediaTrack = $("mediaTrack");
+      targetTrack.innerHTML = contextTrack.innerHTML = mediaTrack.innerHTML = "";
+      target.forEach(entry => addBar(targetTrack, entry.start, entry.end, "target", String(entry.idx)));
+      addBar(contextTrack, contextStart, first.start, "search", `前 ${contextSeconds}s`);
+      context.forEach(entry => addBar(contextTrack, entry.start, entry.end, "context", String(entry.idx)));
+
+      let windows;
+      if (mediaMode === "continuous") {
+        windows = [{ start: Math.max(0, first.start - contextSeconds - roll), end: last.end + roll }];
+      } else {
+        windows = mergeWindows(selected.map(entry => ({ start: Math.max(0, entry.start - compactRoll), end: entry.end + compactRoll })), mergeGap);
+      }
+      windows.forEach((window, index) => addBar(mediaTrack, window.start, window.end, "media", mediaMode === "continuous" ? "连续 clip" : `W${index + 1}`));
+
+      const output = $("compactOutput");
+      if (mediaMode === "compact") {
+        let offset = 0;
+        output.innerHTML = '<div class="compact-strip" id="pieces"></div>';
+        const pieces = $("pieces");
+        const total = windows.reduce((sum, window) => sum + window.end - window.start, 0);
+        windows.forEach((window, index) => {
+          const duration = window.end - window.start;
+          const piece = document.createElement("div");
+          piece.className = "piece";
+          piece.style.flex = `${duration} 1 0`;
+          piece.innerHTML = `<b>W${index + 1}</b><small>原片 ${window.start.toFixed(1)}-${window.end.toFixed(1)}s</small><small>compact ${offset.toFixed(1)}-${(offset + duration).toFixed(1)}s</small>`;
+          pieces.appendChild(piece);
+          offset += duration;
+        });
+        const note = document.createElement("div");
+        note.className = "footnote";
+        note.textContent = `原片首尾跨度 ${(windows[windows.length - 1].end - windows[0].start).toFixed(1)}s，实际发送 ${total.toFixed(1)}s；中间空白被删除。`;
+        output.appendChild(note);
+      } else {
+        output.innerHTML = '<div class="footnote">连续模式完整保留 clip 内所有画面和空白；compact 参数不生效。</div>';
+      }
+    }
+
+    function renderAxis() {
+      const axis = $("mediaAxis");
+      axis.innerHTML = "";
+      for (let time = 0; time <= 35; time += 5) {
+        const tick = document.createElement("span");
+        tick.className = "tick mono";
+        tick.style.left = `${pct(time)}%`;
+        tick.textContent = `${time}s`;
+        axis.appendChild(tick);
+      }
+    }
+
+    function activateStage(number) {
+      document.querySelectorAll(".stage").forEach(stage => stage.classList.toggle("active", stage.id === `stage${number}`));
+      document.querySelectorAll(".flow button").forEach(button => button.classList.toggle("active", button.dataset.stage === String(number)));
+    }
+
+    document.querySelectorAll(".flow button").forEach(button => button.addEventListener("click", () => activateStage(button.dataset.stage)));
+    $("ownerSize").addEventListener("input", renderBoundaryRequests);
+    $("boundaryContext").addEventListener("input", renderBoundaryRequests);
+    $("firstPassButton").addEventListener("click", () => { refined = false; renderRefine(); });
+    $("refinedButton").addEventListener("click", () => { refined = true; renderRefine(); });
+    $("scenesPerRequest").addEventListener("input", renderBatches);
+    $("continuousMode").addEventListener("click", () => { mediaMode = "continuous"; renderMedia(); });
+    $("compactMode").addEventListener("click", () => { mediaMode = "compact"; renderMedia(); });
+    ["geminiContext", "preRoll", "compactRoll", "mergeGap"].forEach(id => $(id).addEventListener("input", renderMedia));
+
+    renderEntryGrid($("inputEntries"));
+    renderBoundaryRequests();
+    renderRefine();
+    renderScenes();
+    renderBatches();
+    renderAxis();
+    renderMedia();
+  </script>
+</body>
+</html>

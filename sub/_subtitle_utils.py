@@ -9,7 +9,7 @@ _subtitle_utils.py — 字幕解析与说话人规范化（共享模块）。
   "single"     — 单说话人有标签：(角色)台词
   "multi"      — 一行多说话人：-(A)台词\\N-(B)台词
   "nonspeech"  — 整行只有括号包的音效描述：(琵琶の音)
-  "unlabeled"  — 有台词但没标签（承接上文）
+  "unlabeled"  — 有台词但没标签
 
 下游靠 kind 决定保留 / 丢弃 / 拆分。
 """
@@ -146,33 +146,51 @@ def normalize_speaker(raw: str) -> str:
     return s.strip()
 
 
-def is_multispeaker(text: str) -> list[str] | None:
-    """检测一行多说话人。返回 \\N 分割后的各段（原始字符串）或 None。
+def _scan_speaker_blocks(text: str) -> tuple[int, list[tuple[str, str, str]]]:
+    """扫描 speaker block，返回 ``(marker_count, valid_blocks)``。
 
-    判定规则: 至少 2 个 \\N-分隔的 part 以 (说话人) 开头（dash 前缀可有可无）。
-    包含字幕里两种 SDH 常见格式:
-      - 带 dash:  '-(A)台词\\N-(B)台词'
-      - 不带 dash: '(A)台词\\N(B)台词'  (例如本片 #411 的 (彩葉)うぅ~\\N(かぐや)だって…)
-
-    要求 (speaker) 后必须有内容（避免把 '(speaker)' 单独占一行的情况误判为多说话人）。
+    speaker marker 可以与台词同行，也可以独占一行；marker 后连续的无标记行
+    归到最近 speaker。只有清理歌词后仍有文本的 block 才进入 valid_blocks。
     """
-    t = strip_lead(text)
-    parts = re.split(r"\\N|\n", t)
-    if len(parts) < 2:
+    parts = re.split(r"\\N|\n", strip_lead(text))
+    blocks: list[tuple[str, str, list[str]]] = []
+    current: tuple[str, str, list[str]] | None = None
+    marker_count = 0
+
+    for part in parts:
+        sp_raw, rest = extract_leading_speaker(part)
+        if sp_raw is not None:
+            marker_count += 1
+            if current is not None:
+                blocks.append(current)
+            current = (sp_raw, normalize_speaker(sp_raw), [])
+            if rest.strip():
+                current[2].append(rest.strip())
+        elif current is not None and part.strip():
+            current[2].append(part.strip())
+
+    if current is not None:
+        blocks.append(current)
+
+    valid: list[tuple[str, str, str]] = []
+    for sp_raw, sp_norm, text_parts in blocks:
+        block_text = "\\N".join(text_parts).strip()
+        if strip_lyric_lines(block_text):
+            valid.append((sp_raw, sp_norm, block_text))
+
+    return marker_count, valid
+
+
+def is_multispeaker(text: str) -> list[tuple[str, str, str]] | None:
+    """检测一条 cue 中的多个有效 speaker block。
+
+    返回 ``[(raw, normalized, text), ...]``；少于两个有效 block 时返回 None。
+    各 block 只做文本归属，不推测 cue 内部时间，后续仍共享源时间范围。
+    """
+    if len(re.split(r"\\N|\n", strip_lead(text))) < 2:
         return None
-
-    parts_with_speaker = 0
-    for p in parts:
-        ps = p.lstrip(LEAD_CTRL)
-        while ps and ps[0] in DASH_CHARS:
-            ps = ps[1:].lstrip(LEAD_CTRL)
-        if not ps or ps[0] not in OPEN_PARENS:
-            continue
-        end = find_balanced_paren(ps, 0)
-        if end > 0 and ps[end + 1:].strip():
-            parts_with_speaker += 1
-
-    return parts if parts_with_speaker >= 2 else None
+    _marker_count, valid = _scan_speaker_blocks(text)
+    return valid if len(valid) >= 2 else None
 
 
 def _scan_parts_for_speaker(text: str) -> tuple[str, str] | None:
@@ -270,18 +288,14 @@ def parse_ass(path: Path) -> list[SubtitleEntry]:
         speaker_raw = speaker_norm = speaker_text = None
         multi_parts: list[tuple[str, str, str]] = []
 
-        multi = is_multispeaker(text)
-        if multi:
+        has_parts = len(re.split(r"\\N|\n", strip_lead(text))) >= 2
+        marker_count, speaker_blocks = _scan_speaker_blocks(text) if has_parts else (0, [])
+        if len(speaker_blocks) >= 2:
             kind = "multi"
-            for part in multi:
-                p = part.lstrip(LEAD_CTRL)
-                while p and p[0] in DASH_CHARS:
-                    p = p[1:].lstrip(LEAD_CTRL)
-                sp_raw, rest = extract_leading_speaker(p)
-                if sp_raw is not None:
-                    multi_parts.append(
-                        (sp_raw, normalize_speaker(sp_raw), rest.strip())
-                    )
+            multi_parts = speaker_blocks
+        elif marker_count >= 2 and len(speaker_blocks) == 1:
+            kind = "single"
+            speaker_raw, speaker_norm, speaker_text = speaker_blocks[0]
         elif is_nonspeech_only(text):
             kind = "nonspeech"
         else:
@@ -307,19 +321,6 @@ def parse_ass(path: Path) -> list[SubtitleEntry]:
                 speaker_raw = sp_raw
                 speaker_norm = normalize_speaker(sp_raw)
                 speaker_text = rest.strip()
-
-                # 处理 SDH 的"音效/环境标签 + 实际角色"双层格式：
-                #   (音楽が流れる)\N(彩葉)はっ!
-                # 第一个 ( ) 是音效描述，\N 后的第二个 ( ) 才是真正说话人。
-                rest_trim = rest.lstrip() if rest else ""
-                if rest_trim.startswith(("\\N", "\n")):
-                    n_index = 1 if rest_trim[0] == "\n" else 2
-                    after_n = rest_trim[n_index:].lstrip(LEAD_CTRL)
-                    second_sp, second_rest = extract_leading_speaker(after_n)
-                    if second_sp is not None:
-                        speaker_raw = second_sp
-                        speaker_norm = normalize_speaker(second_sp)
-                        speaker_text = second_rest.strip()
 
         try:
             start = ass_time_to_seconds(start_s)
@@ -451,6 +452,39 @@ if __name__ == "__main__":
         sp, _ = extract_leading_speaker(text)
         ok = "OK" if sp == sp_expected else "FAIL"
         print(f"  [{ok}] {text!r} -> speaker={sp!r}")
+
+    print("\n=== is_multispeaker ===")
+    multi_cases = [
+        (
+            "-(彩葉)うわっ\\N-(かぐや)あっ",
+            [("彩葉", "うわっ"), ("かぐや", "あっ")],
+        ),
+        (
+            "(彩葉)うっ\\N(帝)そのままで後悔しない?\\N本気出そうぜ",
+            [("彩葉", "うっ"), ("帝", "そのままで後悔しない?\\N本気出そうぜ")],
+        ),
+        (
+            "(ヤチヨ)\\N毎度ヒリヒリなんだよね~\\N(かぐや)わぁ ハハッ",
+            [("ヤチヨ", "毎度ヒリヒリなんだよね~"), ("かぐや", "わぁ ハハッ")],
+        ),
+        (
+            "(ドアの開閉音)\\N(彩葉)ただいま~\\N(かぐや)\\Nカニ カニ カニ~",
+            [("彩葉", "ただいま~"), ("かぐや", "カニ カニ カニ~")],
+        ),
+        (
+            "-(彩葉)げっ!\\N-(かぐや)ん?\\N(大歓声)",
+            [("彩葉", "げっ!"), ("かぐや", "ん?")],
+        ),
+        (
+            "(彩葉)お金勝手に使うし\\N(かぐや)♪ ハア~",
+            None,
+        ),
+    ]
+    for text, expected in multi_cases:
+        got = is_multispeaker(text)
+        simplified = None if got is None else [(raw, body) for raw, _norm, body in got]
+        ok = "OK" if simplified == expected else "FAIL"
+        print(f"  [{ok}] {text!r} -> {simplified!r}")
 
     # 如果命令行给了字幕路径就解析它
     if len(sys.argv) > 1:

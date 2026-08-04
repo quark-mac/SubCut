@@ -14,7 +14,7 @@ _srt_io.py — 归一化中间字幕的 I/O 层（SRT + JSONL）。
     ...
 
   - speaker ∈ {canonical-name / "?" / "NONSPEECH"}
-  - tags ⊆ {MULTI, INHERITED, MERGED}，任意顺序，0~N 个
+  - tags ⊆ {MULTI, MERGED}，任意顺序，0~N 个
   - text 多行用真换行（ASS \\N 已展开）
 
   JSONL 每行一对象，含 source_entries 溯源；SRT 主体的 idx/start/end/
@@ -34,7 +34,7 @@ from pathlib import Path
 # ============================================================
 
 # 允许的 metadata tag 白名单
-ALLOWED_TAGS: frozenset[str] = frozenset({"MULTI", "INHERITED", "MERGED"})
+ALLOWED_TAGS: frozenset[str] = frozenset({"MULTI", "MERGED"})
 
 # 特殊 speaker 字面量
 SPEAKER_UNKNOWN = "?"
@@ -289,7 +289,7 @@ def _selftest() -> int:
     cases = [
         ("Iroha", [], "うぅ~"),
         ("Kaguya", ["MULTI"], "だってつまんないんだもん"),
-        ("Yachiyo", ["INHERITED", "MERGED"], "今は昔 / その後\n二行目"),
+        ("Yachiyo", ["MULTI", "MERGED"], "今は昔 / その後\n二行目"),
         ("?", [], "..."),
         ("NONSPEECH", [], "(琵琶の音)"),
         ("Iroha", [], ""),  # 空文本边界
@@ -308,7 +308,7 @@ def _selftest() -> int:
         NormalizedEntry(2, 60.123, 63.456, "Iroha", ["MULTI"], "うぅ~", [410]),
         NormalizedEntry(3, 60.123, 63.456, "Kaguya", ["MULTI"],
                         "だって\nつまんないんだもん", [410]),
-        NormalizedEntry(4, 100.0, 105.0, "Kaguya", ["INHERITED", "MERGED"],
+        NormalizedEntry(4, 100.0, 105.0, "Kaguya", ["MULTI", "MERGED"],
                         "first / second", [411, 412]),
         NormalizedEntry(5, 200.5, 201.0, "?", [], "ふぁ... あ...", []),
         NormalizedEntry(6, 300.0, 302.5, "NONSPEECH", [], "(琵琶の音)", [800]),

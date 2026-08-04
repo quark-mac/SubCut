@@ -10,7 +10,7 @@
 
 ### 现状问题
 
-当前 `extract_simple.py` 把 alias 映射、multi 展开、unlabeled 承接、桶内重叠合并混在一处，导致：
+当前 `extract_simple.py` 曾把 alias 映射、multi 展开、unlabeled 处理、桶内重叠合并混在一处，导致：
 
 - 切片脚本同时承担 ETL + 编码，复杂度高
 - 用户想改归属只能改 JSON / 重跑全流程，缺少可编辑的中间产物
@@ -26,8 +26,8 @@
 **1 条 = 1 段 × 1 角色 × 1 时间区间**。其中：
 
 - alias 已固化（`[Kaguya]` 而非 `[かぐや]`）
-- multi 已展开为独立条目，时间允许跨角色重叠
-- unlabeled 承接已完成（已知归属写 canonical，未知标 `[?]`）
+- multi 已按 speaker block 展开为独立条目，未标记续行归到最近 speaker
+- unlabeled 不推断 speaker，统一标 `[?]`，交给 Gemini
 - 同 canonical 桶内已合并重叠
 - nonspeech / 群体 / 路人等按规则过滤或保留
 
@@ -66,7 +66,7 @@ sub/intermediate/<project>/
 |---|---|
 | `[Iroha]` | 已知归属（canonical 名） |
 | `[Ayatsumugi Roka]` | 已知归属（全名 canonical） |
-| `[?]` | 未知归属（unlabeled 未承接到） |
+| `[?]` | 无显式 speaker 的对白，交给 Gemini 判断 |
 | `[NONSPEECH]` | 非语音行（仅 `--keep-nonspeech` 时输出） |
 
 ### Metadata 标签
@@ -76,7 +76,6 @@ sub/intermediate/<project>/
 | 标签 | 含义 | 出现条件 |
 |---|---|---|
 | `{MULTI}` | 来自 multi 行展开 | 原 ASS kind=multi |
-| `{INHERITED}` | 来自 unlabeled 承接 | unlabeled 承接成功 |
 | `{MERGED}` | 由 >=2 条原 entry 合并 | 无重叠则不出现 |
 
 **不含来源索引**。溯源查 JSONL 的 `source_entries` 字段。
@@ -96,7 +95,7 @@ sub/intermediate/<project>/
 | `idx` | int | SRT 序号（1-based） |
 | `start` / `end` | float | 秒，3 位小数 |
 | `speaker` | str | canonical / `?` / `NONSPEECH` |
-| `tags` | list[str] | `{MULTI, INHERITED, MERGED}` 子集 |
+| `tags` | list[str] | `{MULTI, MERGED}` 子集 |
 | `text` | str | 清洗后台词；多级行用 `\n` |
 | `source_entries` | list[int] | 来自哪些原 ASS entry 索引（0-based）。MERGED 后可能 >1 |
 
@@ -111,15 +110,15 @@ sub/intermediate/<project>/
   "project": "Cosmic Princess Kaguya",
   "subtitle_source": "Japanese [SDH].ass",
   "aliases_source": "speaker_aliases.json",
-  "effective_config": { "inherit_unlabeled": true, "inherit_gap_sec": 5.0, ... },
+  "effective_config": { "keep_unknown": true, "merge_overlap": false, ... },
   "stats": {
     "input_ass_total": 2655,
     "input_kind_counts": { "single": 703, "multi": 62, "nonspeech": 183, "unlabeled": 1707 },
     "alias_hit_singles": 517,
     "alias_miss_singles_kept_as_raw": 186,
     "multi_expanded_to": 124,
-    "unlabeled_inherited": 683,
-    "unlabeled_dropped": 1024,
+    "unlabeled_unknown": 1707,
+    "unlabeled_dropped": 0,
     "nonspeech_kept": 0,
     "merged_overlap_pairs_per_speaker": {"Iroha": 18, "Kaguya": 40, ...},
     "output_entries_total": 1456,
@@ -147,15 +146,22 @@ sub/intermediate/<project>/
 
 ### Step 3: 遍历 entries 生成 NormalizedClip
 
-遍历过程维护 `last_canonical` / `last_end` / `inherit_blocked` 状态：
+顺序遍历并直接映射：
 
-- **single** (hit alias): `emit` (canonical, text, no tag); `last_canonical = canonical`.
-- **single** (miss alias): `emit` (raw_normalized_text as speaker, text, no tag); **不阻断**.
-- **multi**: 对每个命中 part `emit` (canonical, text, `{MULTI}`); `last_canonical = None` (阻断).
-- **nonspeech**: `emit` (`NONSPEECH`, text, no tag); 不影响链.
-- **unlabeled**:
-  - 非阻断状态 + gap <= inherit_gap_sec: `emit` (last_canonical, text, `{INHERITED}`), 更新 `last_end`.
-  - 否则: `emit` (`?`, text).
+- **single** (hit alias): `emit` (canonical, text, no tag).
+- **single** (miss alias): `emit` (raw_normalized_text as speaker, text, no tag).
+- **multi**: 对每个 part `emit` (canonical 或原 token, text, `{MULTI}`).
+- **nonspeech**: 按配置丢弃或 `emit` (`NONSPEECH`, text, no tag).
+- **unlabeled**: `emit` (`?`, text)，或在 `--no-keep-unknown` 时丢弃。normalize 不推断 speaker。
+
+multi speaker block 规则：
+
+- `(speaker)` 可以与台词同行，也可以独占一行。
+- marker 后连续的无 marker 行归到最近 speaker。
+- 至少两个清理后非空的 speaker block 才展开为 multi。
+- 歌词或音效清理后为空的 block 不生成 speaker entry。
+- 拆出的所有 part 共享源 cue 时间；normalize 不按文本长度猜测内部切点。
+- `(彩葉・かぐや)` 等联合 speaker token 保持整体，不自动拆成两人。
 
 ### Step 4: 同 speaker 重叠合并
 
@@ -182,11 +188,10 @@ sub/intermediate/<project>/
 
 ```
 python sub/normalize.py "Cosmic Princess Kaguya"
-    --inherit-gap-sec 5.0
-    --no-keep-nonspeech          # 默认不保留；--keep-nonspeech 开启
+    --keep-nonspeech             # 默认不保留
     --no-keep-unknown            # 默认保留未知；--no-keep-unknown 丢弃
-    --merge-overlap              # 默认开启；--no-merge-overlap 关闭
-    --merge-gap-sec 0.0          # 默认 0
+    --merge-overlap              # 默认关闭
+    --merge-gap-sec 0.1          # 默认 0.1，仅启用合并时生效
 ```
 
 生效后的配置写入 `normalize_report.json`.
@@ -227,7 +232,7 @@ for entry in normalized_entries:
 
 | # | 决策项 | 用户选择（已全部确认） |
 |---|---|---|
-| 1 | unlabeled 未成功时是否打断 `last_canonical` 链 | **不打断**。gap 外的标 `[?]`，链仍由最近的 single/multi 维持。 |
+| 1 | unlabeled speaker 处理 | **不继承、不推断**。统一标 `[?]`，交给 Gemini。 |
 | 2 | single 未命中 alias | **保留原 token**。输出 speaker 为 `normalize_speaker` 后的原始值。 |
 | 3 | 配置加载 | **纯 CLI + report 写生效配置**。无独立配置文件。 |
 | 4 | NONSPEECH 格式 | **保留文本括号**：`[NONSPEECH] (琵琶 の音)` |

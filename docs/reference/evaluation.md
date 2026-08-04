@@ -208,4 +208,4 @@ DeepSeek 预算细分 A/B 已完成：在 156 条受影响样本上从 94.87% �
 - 按 request entries、compact duration、角色数量分桶的错误率
 - API 请求数和费用
 
-模型 `confidence` 当前几乎全部为 high，尚未校准，不能作为独立质量指标。
+生产 Gemini 输出已移除未校准的 `confidence` 字段；历史结果中的该字段不参与评估。

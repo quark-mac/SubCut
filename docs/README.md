@@ -12,9 +12,11 @@
 
 ## 设计说明
 
+- **[design/pipeline_explorer.html](design/pipeline_explorer.html)** — 完整交互演示：DeepSeek 边界请求/refine、Python scene 组装、Gemini batching/媒体构造和 speaker 写回。
 - **[design/scene_segmentation.md](design/scene_segmentation.md)** — DeepSeek 如何分批判断边界、两轮 refine、缓存恢复、校验与人工 SRT 回写。
 - **[design/prompt.md](design/prompt.md)** — Gemini 收到的完整 prompt 结构、角色资料分层、判断规则。
 - **[design/batching.md](design/batching.md)** — entry / scene / batch / compact video / context 的概念和关系。
+- **[design/media_windows.html](design/media_windows.html)** — 可交互切换连续/compact 模式，直观看前后扩展、窗口合并和 compact 时间重映射。
 - **[design/normalize_subtitle.md](design/normalize_subtitle.md)** — 字幕规范化流程。
 
 ## 经验和参考

@@ -75,7 +75,7 @@ def _parse_args() -> argparse.Namespace:
         "--mode",
         choices=("all", "review-targets", "unknown", "canonical"),
         default="review-targets",
-        help="处理哪些条目：all=全部；review-targets=?/INHERITED/MULTI；unknown=只处理?；canonical=只处理已有 canonical speaker",
+        help="处理哪些条目：all=全部；review-targets=?/MULTI；unknown=只处理?；canonical=只处理已有 canonical speaker",
     )
     parser.add_argument("--idx", type=int, action="append", default=[], help="只处理指定 idx，可重复")
     parser.add_argument("--start-idx", type=int, default=None, help="起始 idx")
@@ -126,7 +126,7 @@ def _is_review_target(entry: NormalizedEntry) -> bool:
         return False
     if "♪" in entry.text:
         return False
-    return entry.speaker == "?" or "INHERITED" in entry.tags or "MULTI" in entry.tags
+    return entry.speaker == "?" or "MULTI" in entry.tags
 
 
 def _select_entries(entries: list[NormalizedEntry], args: argparse.Namespace) -> list[NormalizedEntry]:
@@ -272,7 +272,7 @@ text:
 }}
 
 规则：
-1. 优先根据视频画面和音频，不要盲信当前字幕 speaker 或 INHERITED 承接。
+1. 优先根据视频画面和音频，不要盲信当前字幕 speaker。
 2. 如果可明确归为 canonical 角色，请输出 canonical 名称。
 3. 如果明显是多人同时说话，speaker 输出 OVERLAP。
 4. 如果是非台词、歌曲、音效或笑声且不适合单说话人片段，speaker 输出 NONSPEECH。

@@ -10,7 +10,6 @@
 - Koto 和忠犬オタ公在赛事解说中容易互换
 - 旧版 OVERLAP 明显过度预测，现已从 Gemini 输出契约移除
 - 长 batch 和高 entry batch 出现 speaker identity drift
-- 模型 confidence 几乎全部 high，不能用于可靠排序
 
 ### 已实施
 
@@ -18,7 +17,8 @@
 - `llm_corrected.srt` 仅在 normalized 缺失时回退
 - Prompt 和写回 lock 均改为三档 none/canonical/all，默认 none
 - `OTHER` 写回使用 `speaker_raw`，不再恢复错误输入标签
-- `{INHERITED}`、`{MULTI}`、`?` 不作为锚点
+- `{MULTI}`、`?` 不作为锚点
+- normalize 不再继承 unlabeled speaker；无标签对白统一保留为 `[?]`
 - Prompt 强调嘴型是否与发声时间同步
 - Prompt 明确无同步嘴型时检查画外音、系统/吉祥物和赛事解说
 - Prompt 明确 Koto 与忠犬オタ公的区别
@@ -45,7 +45,13 @@
 [Iroha] 一段台词 (かぐや) 一段台词
 ```
 
-当前可能没有拆成两个 speaker entry。后续需要专门识别括号 speaker 标记，并按文本和可用时间信息拆分；不能在没有时间依据时盲目均分。
+已实现 speaker block 拆分：marker 可独占一行，后续无 marker 文本归到最近 speaker；至少两个非空对白 block 才展开。拆出的 part 共享源 cue 时间，不在没有时间依据时盲目均分。
+
+仍需 Gemini 或人工处理源 speaker 标签本身错误、联合 speaker 标签和精确内部时间。
+
+### 空台词
+
+歌词或音效清理后为空的 speaker block 不再输出。旧 normalized `idx=1477` 来自 `(ヘイベイビー)\N♪ ヘイベイビー`：括号内容被误作 speaker，歌词行随后被清理，最终形成空文本。现在 normalize 的空文本保护会丢弃该 entry。
 
 ### 重复短碎片
 

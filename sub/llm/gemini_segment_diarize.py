@@ -10,11 +10,11 @@ gemini_segment_diarize.py — Gemini 多模态按视频片段批量改标字幕 
   用户希望模型看一段连续视频，根据画面、音频、上下文整体修正说话人。
 
 示例：
-  # 测试 1 个片段，不写 SRT
-  env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --start-idx 220 --end-idx 230 --max-segments 1
+  # 测试 1 个 scene，不写 SRT
+  env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --segments-json "sub/intermediate/Cosmic Princess Kaguya/scene_segments_llm/scene_segments.json" --max-segments 1 --output-dir "sub/intermediate/Cosmic Princess Kaguya/gemini_test_scene1"
 
   # 处理一段范围并写出 segment_labeled.srt
-  env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --start-idx 200 --end-idx 260 --write-srt
+  env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --segments-json "sub/intermediate/Cosmic Princess Kaguya/scene_segments_llm/scene_segments.json" --start-idx 200 --end-idx 260 --max-segments 0 --write-srt --output-dir "sub/intermediate/Cosmic Princess Kaguya/gemini_idx0200_0260"
 """
 
 from __future__ import annotations
@@ -94,28 +94,63 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--speaker-audio-dir", type=Path, default=None, help="角色语音参考目录，默认 sub/input/<project>/SPKS")
     parser.add_argument("--use-speaker-audio", action="store_true", help="附加角色语音参考并使用严格三角色 prompt（默认关闭，实验性）")
     parser.add_argument("--ffmpeg", type=Path, default=None, help="显式指定 ffmpeg 路径")
-    parser.add_argument("--start-idx", type=int, default=None, help="起始字幕 idx")
-    parser.add_argument("--end-idx", type=int, default=None, help="结束字幕 idx")
-    parser.add_argument("--segments-json", type=Path, default=None, help="使用 scene_segmenter.py 生成的场景分段 JSON")
-    parser.add_argument("--max-segments", type=int, default=1, help="最多处理 N 个片段，0=不限（默认 1）")
+    parser.add_argument("--start-idx", type=int, default=None, help="起始字幕 idx；使用后属于局部运行，必须指定干净的 --output-dir")
+    parser.add_argument("--end-idx", type=int, default=None, help="结束字幕 idx；使用后属于局部运行，必须指定干净的 --output-dir")
     parser.add_argument(
-        "--preset",
-        choices=("custom", "baseline", "safe", "fine", "long-test", "extreme-test"),
-        default="custom",
-        help="分段预设：baseline=45s/25条；safe=90s/40条；fine=25s/10条；long-test=180s/70条；extreme-test=300s/100条（默认 custom）",
+        "--segments-json",
+        type=Path,
+        default=None,
+        help="scene_segmenter.py 生成或人工回写的场景分段 JSON（正常处理必填；report-only 不需要）",
     )
-    parser.add_argument("--segment-seconds", type=float, default=45.0, help="单个视频片段目标最大秒数（默认 45）")
-    parser.add_argument("--max-entries", type=int, default=25, help="单个片段最多字幕条数（默认 25）")
-    parser.add_argument("--gap-split", type=float, default=6.0, help="相邻字幕间隔超过 N 秒则切段（默认 6）")
-    parser.add_argument("--pre-roll", type=float, default=1.5, help="片段前扩展秒数（默认 1.5）")
-    parser.add_argument("--post-roll", type=float, default=1.5, help="片段后扩展秒数（默认 1.5）")
-    parser.add_argument("--context-before", type=float, default=15.0, help="额外向前提供 N 秒上下文视频/字幕，但不要求标注这些上下文条目（默认 15）")
+    parser.add_argument(
+        "--max-segments",
+        type=int,
+        default=1,
+        help="最多处理 N 个 scene，0=不限（默认 1）；N>0 属于局部运行，必须指定干净的 --output-dir",
+    )
+    parser.add_argument(
+        "--pre-roll",
+        type=float,
+        default=1.5,
+        help="仅连续视频模式：在 context-before 之前再向前保留 N 秒（默认 1.5；compact 模式忽略）",
+    )
+    parser.add_argument(
+        "--post-roll",
+        type=float,
+        default=1.5,
+        help="仅连续视频模式：在 scene 最后一条目标字幕后保留 N 秒（默认 1.5；compact 模式忽略）",
+    )
+    parser.add_argument(
+        "--context-before",
+        type=float,
+        default=15.0,
+        help="在首条目标字幕前 N 秒内选择 context 字幕；连续模式也完整保留该时间段，compact 模式只保留所选字幕附近窗口（默认 15）",
+    )
     parser.add_argument("--height", type=int, default=360, help="输出视频高度（默认 360）")
     parser.add_argument("--fps", type=int, default=6, help="输出视频帧率（默认 6）")
-    parser.add_argument("--compact-video", action="store_true", help="压缩视频：仅保留字幕附近窗口，剪掉长空白，再拼接给 Gemini")
-    parser.add_argument("--compact-pre-roll", type=float, default=1.0, help="compact 模式每段字幕前保留秒数（默认 1.0）")
-    parser.add_argument("--compact-post-roll", type=float, default=1.0, help="compact 模式每段字幕后保留秒数（默认 1.0）")
-    parser.add_argument("--compact-merge-gap", type=float, default=1.0, help="compact 模式窗口间隔小于等于 N 秒则合并（默认 1.0）")
+    parser.add_argument(
+        "--compact-video",
+        action="store_true",
+        help="启用 compact 模式：围绕 context/target 字幕建窗，合并近邻窗口，删除其余空白；此时忽略 pre-roll/post-roll",
+    )
+    parser.add_argument(
+        "--compact-pre-roll",
+        type=float,
+        default=1.0,
+        help="仅 compact 模式：每条已选 context/target 字幕前保留 N 秒（默认 1.0）",
+    )
+    parser.add_argument(
+        "--compact-post-roll",
+        type=float,
+        default=1.0,
+        help="仅 compact 模式：每条已选 context/target 字幕后保留 N 秒（默认 1.0）",
+    )
+    parser.add_argument(
+        "--compact-merge-gap",
+        type=float,
+        default=1.0,
+        help="仅 compact 模式：扩展后窗口间隔小于等于 N 秒则连同间隔一起合并（默认 1.0）",
+    )
     parser.add_argument(
         "--include-current-speaker",
         action="store_true",
@@ -127,7 +162,11 @@ def _parse_args() -> argparse.Namespace:
         default="none",
         help="发送给 Gemini 的无 tag 显式 speaker 锚点：none=不发（默认）；canonical=只发 canonical；all=全部发送",
     )
-    parser.add_argument("--overwrite-clips", action="store_true", help="覆盖已生成视频片段")
+    parser.add_argument(
+        "--overwrite-clips",
+        action="store_true",
+        help="允许在输出目录已有 clips 时继续，并重新生成本次视频片段；否则检测到旧 clip 会报错",
+    )
     parser.add_argument("--prepare-only", action="store_true", help="只生成视频片段和清单，不调用 Gemini")
     parser.add_argument("--plan-only", action="store_true", help="只输出分段计划，不生成视频也不调用 Gemini")
     parser.add_argument("--report-only", action="store_true", help="只从现有 results.jsonl 重新生成 report.md，不调用 Gemini")
@@ -137,43 +176,27 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--max-request-entries", type=int, default=30, help="预算式 batching：单次请求目标最大字幕条数，0=不限（默认 30）")
     parser.add_argument("--max-request-scenes", type=int, default=2, help="预算式 batching：单次请求最大 scene 数，0=使用 --segments-per-request（默认 2）")
     parser.add_argument("--write-srt", action="store_true", help="生成 segment_labeled.srt")
-    parser.add_argument("--keep-tags", action="store_true", help="写 SRT 时保留原 tags；默认输出干净 [speaker] text")
+    parser.add_argument(
+        "--keep-tags",
+        action="store_true",
+        help="写 SRT 时仅保留输入字幕原有 tags；不会新增 Gemini 状态 tag，默认输出干净 [speaker] text",
+    )
     parser.add_argument(
         "--explicit-lock",
         choices=("none", "canonical", "all"),
         default="none",
         help="写回时锁定无 tag 显式 speaker：none=不锁（默认）；canonical=只锁 canonical；all=全部锁定",
     )
-    parser.add_argument("--output-dir", type=Path, default=None, help="输出目录")
-    return parser.parse_args()
-
-
-def _apply_preset(args: argparse.Namespace) -> None:
-    if args.preset == "baseline":
-        args.segment_seconds = 45.0
-        args.max_entries = 25
-        args.gap_split = 6.0
-        args.context_before = 15.0
-    elif args.preset == "safe":
-        args.segment_seconds = 90.0
-        args.max_entries = 40
-        args.gap_split = 6.0
-        args.context_before = 5.0
-    elif args.preset == "fine":
-        args.segment_seconds = 25.0
-        args.max_entries = 10
-        args.gap_split = 3.0
-        args.context_before = 5.0
-    elif args.preset == "long-test":
-        args.segment_seconds = 180.0
-        args.max_entries = 70
-        args.gap_split = 8.0
-        args.context_before = 0.0
-    elif args.preset == "extreme-test":
-        args.segment_seconds = 300.0
-        args.max_entries = 100
-        args.gap_split = 10.0
-        args.context_before = 0.0
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="输出目录；局部运行必须显式指定，且不能含已有 Gemini 运行产物（plan.md 除外）",
+    )
+    args = parser.parse_args()
+    if not args.report_only and args.segments_json is None:
+        parser.error("正常处理必须提供 --segments-json；仅 --report-only 可省略")
+    return args
 
 
 def _resolve_srt(project: str, explicit: Path | None) -> Path:
@@ -187,53 +210,6 @@ def _resolve_srt(project: str, explicit: Path | None) -> Path:
         if path.exists():
             return path
     raise FileNotFoundError(f"找不到 SRT: {intermediate}")
-
-
-def _select_entries(entries: list[NormalizedEntry], args: argparse.Namespace) -> list[NormalizedEntry]:
-    selected = [e for e in entries if e.speaker != "NONSPEECH" and "♪" not in e.text]
-    if args.start_idx is not None:
-        selected = [e for e in selected if e.idx >= args.start_idx]
-    if args.end_idx is not None:
-        selected = [e for e in selected if e.idx <= args.end_idx]
-    return selected
-
-
-def _build_segments(entries: list[NormalizedEntry], args: argparse.Namespace, context_source: list[NormalizedEntry] | None = None) -> list[Segment]:
-    context_source = context_source or entries
-    segments: list[Segment] = []
-    current: list[NormalizedEntry] = []
-
-    def flush() -> None:
-        nonlocal current
-        if not current:
-            return
-        context_start = max(0.0, current[0].start - args.context_before)
-        context_entries = [
-            e for e in context_source
-            if e.idx < current[0].idx and e.end >= context_start and e.start < current[0].start
-        ]
-        start = max(0.0, current[0].start - args.pre_roll - args.context_before)
-        end = current[-1].end + args.post_roll
-        segments.append(Segment(len(segments) + 1, current, context_entries, start, end))
-        current = []
-
-    for entry in entries:
-        if not current:
-            current = [entry]
-            continue
-        duration_if_added = entry.end - current[0].start
-        gap = entry.start - current[-1].end
-        if (
-            duration_if_added > args.segment_seconds
-            or len(current) >= args.max_entries
-            or gap > args.gap_split
-        ):
-            flush()
-        current.append(entry)
-    flush()
-    if args.max_segments > 0:
-        return segments[: args.max_segments]
-    return segments
 
 
 def _build_segments_from_json(
@@ -423,7 +399,6 @@ def _batch_prompt(
     "idx": <字幕idx>,
     "speaker": "<canonical角色名 | ? | NONSPEECH | OTHER>",
     "speaker_raw": "<如果是OTHER，写具体称呼；否则同speaker>",
-    "confidence": "high" | "mid" | "low",
     "reason": "<简短理由>"
   }}
 ]
@@ -438,11 +413,11 @@ def _batch_prompt(
 4. 目标和前文都提供了 compact 时间；用 compact 时间在当前拼接视频中定位，但绝不能输出 context idx。
 5. 画面中出现角色不代表该角色一定正在说话；画外音、旁白、电话/直播声音、路人插话都必须结合声音和上下文识别。
 6. 不要只凭台词内容、角色外貌、谁在画面中央、或前后 speaker 承接猜测。短促语气词、笑声、叹息、喘息必须重新按 compact 时间对齐声音起点、嘴型/身体发声动作和其他角色反应；不能自动继承前后 speaker。
-7. 如果画面、声线和上下文互相冲突，不要强行选择；降低 confidence，必要时输出 OTHER 或 ?。
+7. 如果画面、声线和上下文互相冲突，不要强行选择；必要时输出 OTHER 或 ?。
 8. 禁止输出 OVERLAP。即使多人同时发声，也必须根据当前 idx 的字幕文本、主导音量、嘴型同步和发声时机，选择文本对应最清晰或主要的一个 speaker。若主要声音是非 canonical 群体或无法区分的多人，输出 OTHER 并在 speaker_raw 写群体身份；只有完全无法判断主要声源时才输出 ?。
 9. 如果是音效、歌曲、非台词，speaker 输出 NONSPEECH。
 10. 如果能确认不是 canonical 角色但知道大概是谁，speaker 输出 OTHER，speaker_raw 写具体称呼。
-11. 如果无法判断，speaker 输出 ?，confidence 输出 low。
+11. 如果无法判断，speaker 输出 ?。
 12. 赛事/直播解说要区分 Koto 与忠犬オタ公：Koto 是专业正式、流畅爽快的 canonical 主解说；オタ公是夸张口语化、犬系煽动气氛的固定搭档。确认是オタ公时输出 OTHER，speaker_raw 写オタ公，不要归给 Koto。
 13. Mami/Roka 连续对话不能按轮次机械交替。Mami 更从容务实、常谈食物或 Mikado；Roka 更细腻时尚、对 Iroha 的状态更敏感。必须以嘴型和声线为主。
 14. FUSHI 的教程、系统说明、FUSHIの分身、FUSHIアラーム的有语义台词统一输出 FUSHI，不要因 Kaguya/Yachiyo 出现在画面中而被吸收。只有纯警报声或无语义电子音才输出 NONSPEECH；检查小型吉祥物、界面图标和独立系统声源。
@@ -614,7 +589,6 @@ def _strict_three_speaker_audio_prompt(
     "idx": <原始字幕idx整数>,
     "speaker": "Iroha" | "Yachiyo" | "Kaguya" | "OTHER" | "NONSPEECH" | "?",
     "speaker_raw": "<OTHER 时写具体身份；否则同 speaker>",
-    "confidence": "high" | "mid" | "low",
     "reason": "<简短理由>"
   }}
 ]
@@ -622,7 +596,7 @@ def _strict_three_speaker_audio_prompt(
 严格规则：
 1. 只有目标声音与某份角色语音参考明确匹配时，才能输出 Iroha、Yachiyo 或 Kaguya。
 2. 如果实际发声者不是这三人，必须输出 OTHER；不能因为人物在画面中、台词符合剧情、或前后字幕属于主角，就强行选择三人之一。
-3. 如果声音过短、被音乐遮挡、多人同时发声、或无法与三份参考明确匹配，选择当前字幕文本对应的主导单一声源；非三角色输出 OTHER，完全无法判断才输出 ?，并降低 confidence。
+3. 如果声音过短、被音乐遮挡、多人同时发声、或无法与三份参考明确匹配，选择当前字幕文本对应的主导单一声源；非三角色输出 OTHER，完全无法判断才输出 ?。
 4. 综合声音匹配、说话时口型/动作、画面中角色是否出现、以及上下文是否合理。声音匹配是选择三位主角的必要条件；画面和上下文只能辅助。
 5. 禁止输出 OVERLAP。多人同时说话时仍选择当前字幕文本对应最清晰或主要的一个 speaker；音效/歌曲/非台词输出 NONSPEECH。
 6. 必须只为目标条目输出一条记录，不能输出前文上下文 idx；idx 必须是单个原始整数，不能写范围。"""
@@ -933,8 +907,8 @@ def _write_markdown(records: list[dict[str, Any]], path: Path, explicit_lock: st
         f"- total entries: {sum(len(r.get('entries', [])) for r in records)}",
         f"- segments: {len(records)}",
         "",
-        "| segment | idx | SRT speaker | Gemini speaker | final speaker | conf | video | text | reason |",
-        "|---:|---:|---|---|---|---|---|---|---|",
+        "| segment | idx | SRT speaker | Gemini speaker | final speaker | video | text | reason |",
+        "|---:|---:|---|---|---|---|---|---|",
     ]
     for record in records:
         by_idx: dict[int, dict[str, Any]] = {}
@@ -966,7 +940,6 @@ def _write_markdown(records: list[dict[str, Any]], path: Path, explicit_lock: st
                     _cell(entry.get("speaker_in_srt"), 24),
                     _cell(result.get("speaker") or result.get("_parse_error") or "missing", 28),
                     _cell(final_speaker, 32),
-                    _cell(result.get("confidence"), 12),
                     _cell(video_label, 24),
                     _cell(entry.get("text"), 90),
                     _cell(result.get("reason") or result.get("raw") or "", 120),
@@ -1039,6 +1012,28 @@ def _write_plan(segments: list[Segment], path: Path, args: argparse.Namespace) -
                 f"{duration:.1f}s | {entry_count} |"
             )
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _existing_clips(clips_dir: Path) -> list[Path]:
+    if not clips_dir.is_dir():
+        return []
+    return sorted(
+        path for path in clips_dir.rglob("*")
+        if path.is_file() and path.suffix.lower() == ".mp4"
+    )
+
+
+def _is_partial_run(args: argparse.Namespace) -> bool:
+    return args.start_idx is not None or args.end_idx is not None or args.max_segments > 0
+
+
+def _non_plan_output_files(output_dir: Path) -> list[Path]:
+    if not output_dir.is_dir():
+        return []
+    return sorted(
+        path for path in output_dir.rglob("*")
+        if path.is_file() and path != output_dir / "plan.md"
+    )
 
 
 def _entries_to_records(entries: list[NormalizedEntry]) -> list[dict[str, Any]]:
@@ -1183,28 +1178,72 @@ def _write_labeled_srt(
         result = by_idx.get(e.idx)
         if not result:
             continue
-        final_speaker, source = _resolve_final_speaker(
+        final_speaker, _ = _resolve_final_speaker(
             source_entry.speaker,
             list(source_entry.tags),
             result,
             explicit_lock,
         )
         e.speaker = final_speaker
-        if keep_tags:
-            if "missing/error" in source or "requires review" in source:
-                if "MM_REVIEW" not in e.tags:
-                    e.tags.append("MM_REVIEW")
-            elif final_speaker == "?":
-                if "MM_UNCLEAR" not in e.tags:
-                    e.tags.append("MM_UNCLEAR")
-            elif "MM_VERIFIED" not in e.tags:
-                e.tags.append("MM_VERIFIED")
     write_srt(new_entries, path)
 
 
 def main() -> int:
     args = _parse_args()
-    _apply_preset(args)
+
+    output_dir = args.output_dir or (INTERMEDIATE_ROOT / args.project / "gemini_segment_diarize")
+    clips_dir = output_dir / "clips"
+    result_jsonl = output_dir / "results.jsonl"
+    report_md = output_dir / "report.md"
+    if args.report_only:
+        if not result_jsonl.exists():
+            print(f"[error] 找不到 results.jsonl: {result_jsonl}", file=sys.stderr)
+            return 1
+        records = [
+            json.loads(line)
+            for line in result_jsonl.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        _write_markdown(records, report_md, explicit_lock=args.explicit_lock)
+        print(f"已重新生成报告: {report_md}")
+        return 0
+
+    if not args.plan_only:
+        if _is_partial_run(args):
+            if args.output_dir is None:
+                print(
+                    "[error] 局部运行（使用 start/end-idx 或 max-segments>0）必须显式指定新的干净 --output-dir。",
+                    file=sys.stderr,
+                )
+                return 1
+            existing_files = _non_plan_output_files(output_dir)
+            if existing_files:
+                examples = "\n".join(f"  - {path}" for path in existing_files[:5])
+                remaining = len(existing_files) - 5
+                if remaining > 0:
+                    examples += f"\n  - ... 另有 {remaining} 个"
+                print(
+                    f"[error] 局部运行要求新的干净输出目录，但发现 {len(existing_files)} 个已有文件:\n"
+                    f"{examples}\n"
+                    "请改用新的 --output-dir。--overwrite-clips 不能覆盖或合并局部 results.jsonl/report.md。",
+                    file=sys.stderr,
+                )
+                return 1
+
+        existing_clips = _existing_clips(clips_dir)
+        if existing_clips and not args.overwrite_clips:
+            examples = "\n".join(f"  - {path}" for path in existing_clips[:3])
+            remaining = len(existing_clips) - 3
+            if remaining > 0:
+                examples += f"\n  - ... 另有 {remaining} 个"
+            print(
+                f"[error] 输出目录中已有 {len(existing_clips)} 个旧 clip，已停止以避免复用缺少时间映射或参数不一致的视频:\n"
+                f"{examples}\n"
+                "请改用新的干净 --output-dir，或确认要重新生成本次 clips 后传入 --overwrite-clips。",
+                file=sys.stderr,
+            )
+            return 1
+
     _load_dotenv()
     cfg = _load_config(args.config)
     model = args.model or cfg.get("model") or "gemini-2.5-flash"
@@ -1217,11 +1256,7 @@ def main() -> int:
         return 1
     srt_path = _resolve_srt(args.project, args.srt)
     entries = parse_srt(srt_path)
-    if args.segments_json:
-        segments = _build_segments_from_json(entries, args.segments_json, args)
-    else:
-        selected = _select_entries(entries, args)
-        segments = _build_segments(selected, args, context_source=entries)
+    segments = _build_segments_from_json(entries, args.segments_json, args)
     if not segments:
         print("[error] 没有可处理片段", file=sys.stderr)
         return 1
@@ -1251,10 +1286,6 @@ def main() -> int:
         print(f"[error] 缺少三角色语音参考: {speaker_audio_dir}", file=sys.stderr)
         return 1
     ffmpeg = _resolve_ffmpeg(args.ffmpeg)
-    output_dir = args.output_dir or (INTERMEDIATE_ROOT / args.project / "gemini_segment_diarize")
-    clips_dir = output_dir / "clips"
-    result_jsonl = output_dir / "results.jsonl"
-    report_md = output_dir / "report.md"
     plan_md = output_dir / "plan.md"
     output_srt = output_dir / "segment_labeled.srt"
 
@@ -1265,26 +1296,12 @@ def main() -> int:
     print(f"模型       : {model}")
     print(f"角色范围   : {', '.join(sorted(allowed_speakers))}")
     print(f"base_url   : {base_url or '(default Gemini API)'}")
-    print(f"preset     : {args.preset}")
     print(f"参考图     : {len(reference_images)} ({speaker_images_dir if reference_images else 'none'})")
     print(f"参考音频   : {len(reference_audio)} ({speaker_audio_dir if reference_audio else 'none'})")
     compact_text = "compact" if args.compact_video else "continuous"
-    print(f"video      : {args.height}p / {args.fps}fps, {compact_text}, segment<={args.segment_seconds}s, context_before={args.context_before}s")
+    print(f"video      : {args.height}p / {args.fps}fps, {compact_text}, context_before={args.context_before}s")
     print(f"输出目录   : {output_dir}")
     print()
-
-    if args.report_only:
-        if not result_jsonl.exists():
-            print(f"[error] 找不到 results.jsonl: {result_jsonl}", file=sys.stderr)
-            return 1
-        records = [
-            json.loads(line)
-            for line in result_jsonl.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
-        _write_markdown(records, report_md, explicit_lock=args.explicit_lock)
-        print(f"已重新生成报告: {report_md}")
-        return 0
 
     if args.plan_only:
         _write_plan(segments, plan_md, args)
@@ -1456,6 +1473,8 @@ def main() -> int:
                             + ", ".join(str(idx) for idx in remaining_overlap)
                         )
                 _restrict_speakers(results, allowed_speakers)
+                for result in results:
+                    result.pop("confidence", None)
                 record["results"] = results
                 record["usage"] = usage
                 speakers = ",".join(str(r.get("speaker", "?")) for r in results[:5] if isinstance(r, dict))

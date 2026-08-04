@@ -4,7 +4,6 @@ diarize_llm.py — Plan B：LLM 辅助说话人推断
 用途：
   读取 normalized.srt，对以下条目调用 LLM 推断说话人：
     - speaker == "?"
-    - "INHERITED" in tags（全量）
     - "MULTI" in tags（全量）
   非 canonical speaker（先生/配信音声/男性/女性 等）跳过，保留原样。
 
@@ -146,12 +145,12 @@ def is_target(entry: NormalizedEntry) -> bool:
 
     审查条件（满足任一）：
       - speaker == "?"
-      - 包含 INHERITED 或 MULTI tag（不管 speaker 是否为 canonical）
+      - 包含 MULTI tag（不管 speaker 是否为 canonical）
 
     跳过条件（优先）：
       - speaker 是 NONSPEECH
       - 文本含 ♪ 标记（唱歌部分，声线与说话不同，对 TTS 无价值）
-      - speaker 是非 canonical 且不含 INHERITED/MULTI — SDH 直接标注，最可靠
+      - speaker 是非 canonical 且不含 MULTI — SDH 直接标注，最可靠
       - canonical speaker 且不含上述 tag — SDH 直接标注的 single，最可靠
     """
     if entry.speaker == "NONSPEECH":
@@ -161,8 +160,8 @@ def is_target(entry: NormalizedEntry) -> bool:
         return False
     if entry.speaker == "?":
         return True
-    # INHERITED / MULTI 不管 speaker 是什么都要审查（承接可能标错为非 canonical）
-    if "INHERITED" in entry.tags or "MULTI" in entry.tags:
+    # MULTI 不管 speaker 是什么都要审查。
+    if "MULTI" in entry.tags:
         return True
     if entry.speaker not in CANONICAL_SPEAKERS:
         return False
@@ -570,8 +569,7 @@ def apply_corrections(
     返回 audit 记录列表（含 batch 内所有推断，包括未修改的）。
     修正校验规则：
       - 保持不变（corrected_spk == original_spk）→ 总是接受
-      - 改为 canonical / ? / 任何值 → 接受（不再拒绝非 canonical，因为
-        INHERITED/MULTI 的承接可能本应标为非主角却被误标为 canonical）
+      - 改为 canonical / ? / 任何值 → 接受（MULTI 可能本应标为非主角）
     如果提供了 target_idx_set，则只处理集合内的 idx，忽略 LLM 返回的上下文条目。
     """
     idx_to_pos: dict[int, int] = {e.idx: i for i, e in enumerate(entries)}

@@ -109,7 +109,6 @@ Gemini 只收到 compact 时间，不收到原始时间：
     "idx": <字幕idx>,
     "speaker": "<canonical角色名 | ? | NONSPEECH | OTHER>",
     "speaker_raw": "<OTHER 时写具体身份>",
-    "confidence": "high" | "mid" | "low",
     "reason": "<理由>"
   }
 ]
@@ -123,11 +122,11 @@ Gemini 只收到 compact 时间，不收到原始时间：
 4. 用 compact 时间在当前视频中定位
 5. 画面中出现角色不代表该角色在说话
 6. 不要只凭台词内容、外貌或画面中央人物猜测
-7. 冲突时降低 confidence，必要时 OTHER 或 ?
+7. 冲突时不要强行猜，必要时输出 OTHER 或 ?
 8. 禁止输出 OVERLAP；多人同时发声时选择当前字幕文本对应最清晰或主要的一个 speaker，非 canonical 群体输出 OTHER
 9. 音效/歌曲输出 NONSPEECH
 10. 非 canonical 但确定身份输出 OTHER + speaker_raw
-11. 无法判断输出 ? + low confidence
+11. 无法判断输出 ?
 12. 区分 Koto 和忠犬オタ公；オタ公输出 OTHER + speaker_raw
 13. Mami/Roka 逐句检查嘴型和声线，不按轮次机械交替
 14. FUSHI 分身/警报形态的有语义台词统一为 FUSHI
@@ -136,7 +135,7 @@ Gemini 只收到 compact 时间，不收到原始时间：
 ## 不会发送给 Gemini 的内容
 
 - 原始 SRT 时间（除非显式传 `--include-current-speaker`）
-- `{INHERITED}`、`{MULTI}`、`?` 当前标签（除非显式传 `--include-current-speaker`）
+- `{MULTI}`、`?` 当前标签（除非显式传 `--include-current-speaker`）
 - 角色参考图片（除非显式传 `--use-speaker-images`）
 - 角色参考音频（除非显式传 `--use-speaker-audio`）
 - scene 标题

@@ -2,6 +2,8 @@
 
 ## 层级关系
 
+DeepSeek scene 生成、Gemini batching、媒体构造和最终写回的完整交互式演示见 [pipeline_explorer.html](pipeline_explorer.html)。
+
 ```text
 entry
   = 一条字幕，一条 idx
@@ -139,6 +141,8 @@ batch 3: 新请求
 没有对话历史或状态继承。batch 之间的唯一连接是 script 显式构造的 context。
 
 ## compact video
+
+两种媒体构造模式及全部前后扩展参数的交互式示例见 [media_windows.html](media_windows.html)。该页面可以切换连续/compact 模式并实时调整参数，显示哪些范围被保留、删除、合并和重新映射。
 
 在 `--compact-video` 模式下，脚本不会把整段原片发给 Gemini。
 
