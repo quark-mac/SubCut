@@ -1,29 +1,46 @@
 """
 extract_simple.py — 字幕驱动的角色片段提取/合并。
 
-不做 VAD 精修、不做时长筛选、不做质量评分。直接按字幕时间切。
+不做 VAD 精修、不做质量评分。默认按字幕时间切；音频单条可按最小时长过滤。
 合并放在剪辑层（--clip-merge-gap），不影响字幕和角色台词输出。
 
+输入: 默认 sub/intermediate/<project>/normalized.srt（normalize.py 生成），
+      可用 --srt 指定任意 SRT（如 gold_set_dedup.srt / llm_corrected.srt）。
+      [NONSPEECH] 行（含 [NONSPEECH:内联描述] 变体）默认保留并统一归入
+      NONSPEECH 桶（是否写入输入由 normalize 层的 --keep-nonspeech 决定）；
+      [?] 行默认丢弃，--keep-unlabeled 可保留。
+输出: sub/output/<project>/
+      <角色>__merged.<ext>                拼合文件（--shape clips 时关闭）
+      <角色>/NNNN_<角色>_<时间>_<台词>.<ext>  单条片段（--shape merged 时关闭）
+      <角色>/filelist_video.txt           视频输出的 TTS 标注（--no-manifest 关闭）
+      <角色>/filelist_audio.txt           音频输出的 TTS 标注（--no-manifest 关闭）
+
+参数:
+    --output-type audio|video|both  必填。输出媒体类型（WAV 纯音频 / 含音轨 mp4 / 都出）
+    --shape clips|merged|both       输出形态。clips=单条片段，merged=拼合文件（默认 both）
+
 典型调用:
-    # 只切主角，单条片段 + 拼合视频（默认）
+    # 默认: 输出带音轨的视频，生成单条片段 + 拼合文件
     env\\python.exe sub\\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha,Kaguya
 
     # 只要拼合视频，不要单条
-    env\\python.exe sub\\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha --no-individual
+    env\\python.exe sub\\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha \\
+        --output-type video --shape merged
 
-    # 只要单条，不要拼合视频 + 剪辑层相邻合并（间隔 ≤0.5s）
-    env\\python.exe sub\\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha --no-combined --clip-merge-gap 0.5
+    # TTS 训练: 纯音频 WAV 单条 + 重采样 + 时长过滤（不要拼合大文件）
+    env\\python.exe sub\\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha \\
+        --output-type audio --shape clips --audio-sample-rate 24000
 
-    # 用 LLM 修正后的 SRT
+    # 视频 + 音频全量输出（四类产物）
+    env\\python.exe sub\\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha \\
+        --output-type both --shape both
+
+    # 用 Gold Set 或 LLM 修正后的 SRT
     env\\python.exe sub\\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha,Kaguya \\
-        --srt llm_corrected.srt --clip-merge-gap 0.5 --overwrite
-
+        --srt gold_set_dedup.srt
 
     # 全部项目
     env\\python.exe sub\\extract_simple.py --all
-
-注意：本脚本只消费 sub/intermediate/<project>/normalized.srt（由 normalize.py 生成）。
-若该文件不存在，请先运行 normalize.py。
 """
 
 from __future__ import annotations
@@ -209,10 +226,6 @@ class SpeakerBucket:
         return sum(1 for c in self.clips if c.source_kind == "multi")
 
     @property
-    def from_inherited(self) -> int:
-        return sum(1 for c in self.clips if c.source_kind == "inherited")
-
-    @property
     def total_duration(self) -> float:
         return sum(c.duration for c in self.clips)
 
@@ -330,8 +343,6 @@ def normalized_entry_to_clip(e: NormalizedEntry) -> Clip:
     """NormalizedEntry → Clip（source_kind 从 tags 推断）。"""
     if "MULTI" in e.tags:
         kind = "multi"
-    elif "INHERITED" in e.tags:
-        kind = "inherited"
     else:
         kind = "single"
     return Clip(
@@ -350,7 +361,6 @@ def build_buckets_from_normalized(
     *,
     target_speakers: set[str] | None,
     include_unknown: bool,
-    include_nonspeech: bool,
 ) -> tuple[dict[str, SpeakerBucket], dict]:
     """从 normalized SRT entries 构建 canonical → SpeakerBucket。
 
@@ -361,7 +371,6 @@ def build_buckets_from_normalized(
         "total": len(entries),
         "kept": 0,
         "skipped_unknown": 0,
-        "skipped_nonspeech": 0,
         "skipped_not_in_targets": 0,
     }
 
@@ -376,12 +385,10 @@ def build_buckets_from_normalized(
             else:
                 stats["skipped_unknown"] += 1
             continue
-        if e.speaker == SPEAKER_NONSPEECH:
-            if include_nonspeech:
-                push(SPEAKER_NONSPEECH, normalized_entry_to_clip(e))
-                stats["kept"] += 1
-            else:
-                stats["skipped_nonspeech"] += 1
+        if e.speaker == SPEAKER_NONSPEECH or e.speaker.startswith(SPEAKER_NONSPEECH + ":"):
+            # 统一 [NONSPEECH] 与 [NONSPEECH:内联描述] 变体到 NONSPEECH 桶
+            push(SPEAKER_NONSPEECH, normalized_entry_to_clip(e))
+            stats["kept"] += 1
             continue
         if target_speakers is not None and e.speaker not in target_speakers:
             stats["skipped_not_in_targets"] += 1
@@ -395,10 +402,8 @@ def build_buckets_from_normalized(
 
 def merge_overlapping_clips(
     bucket: SpeakerBucket,
-    *,
-    overlap_gap: float = 0.0,
 ) -> dict[str, int]:
-    """合并桶里时间重叠（或几乎相邻）的片段，避免输出里同一段音频被切两遍。
+    """合并桶里时间重叠的片段，避免输出里同一段音频被切两遍。
 
     场景:
         SDH 字幕里相邻条目时间常常重叠（比如某行字幕滞留到下一行字幕开始之后），
@@ -406,9 +411,9 @@ def merge_overlapping_clips(
 
     算法:
         - 桶内 clips 按 start 升序排序
-        - 从左到右贪心扫描，若 cur.start < acc.end + overlap_gap → 合并
+        - 从左到右贪心扫描，若 cur.start < acc.end → 合并
           合并方式: acc.end = max(acc.end, cur.end)，被合并的 clip 元数据并入 acc
-        - source_kind: 优先级 single > multi > inherited，保留更"权威"的来源
+        - source_kind: 优先级 single > multi，保留更"权威"的来源
         - text_excerpt: 用 ' / ' 拼接两条文本（截断后）
         - raw_speaker: 用 ' / ' 拼接
 
@@ -420,11 +425,11 @@ def merge_overlapping_clips(
     sorted_clips = sorted(bucket.clips, key=lambda c: (c.start, c.end))
     out: list[Clip] = [sorted_clips[0]]
 
-    PRIORITY = {"single": 3, "multi": 2, "inherited": 1}
+    PRIORITY = {"single": 2, "multi": 1}
 
     for cur in sorted_clips[1:]:
         acc = out[-1]
-        if cur.start < acc.end + overlap_gap:
+        if cur.start < acc.end:
             # 合并 cur 进 acc
             new_end = max(acc.end, cur.end)
             # 选更权威的 source_kind
@@ -488,7 +493,7 @@ def merge_adjacent_clips(
             new_raw = f"{acc.raw_speaker} / {cur.raw_speaker}"[:60]
             new_full = f"{acc.full_text} {cur.full_text}".strip()
             # source_kind 取更权威的
-            PRIORITY = {"single": 3, "multi": 2, "inherited": 1}
+            PRIORITY = {"single": 2, "multi": 1}
             new_source = cur.source_kind if PRIORITY.get(cur.source_kind, 0) > PRIORITY.get(acc.source_kind, 0) else acc.source_kind
             acc = Clip(
                 start=acc.start, end=new_end,
@@ -776,12 +781,10 @@ def process_project(
     *,
     speakers: list[str] | None,
     max_clips: int | None,
-    do_individual: bool,
-    do_combined: bool,
+    shape: str,
+    output_types: list[str],
     keep_unlabeled: bool,
-    keep_nonspeech: bool,
     merge_overlap: bool,
-    overlap_gap: float,
     clip_merge_gap: float = 0.3,
     clip_max_dur: float = 30.0,
     clip_min_dur: float = 2.0,
@@ -789,7 +792,6 @@ def process_project(
     overwrite: bool = False,
     output_root: Path = DEFAULT_OUTPUT_ROOT,
     ffmpeg: Path | None = None,
-    audio_only: bool = False,
     audio_sample_rate: int = 0,
     hw_accel: bool = False,
     video_quality: int = VIDEO_QUALITY_DEFAULT,
@@ -801,22 +803,24 @@ def process_project(
     print(f"  媒体: {pf.media.name}  ({pf.media_kind})")
     print(f"  原字幕: {pf.subtitle.name}")
     print(f"  别名: {pf.aliases.name if pf.aliases else '(none)'}")
-    if audio_only and pf.media_kind == "video":
-        print(f"  输出模式: audio-only (WAV)"
-              + (f" @ {audio_sample_rate}Hz" if audio_sample_rate else ""))
-    elif audio_sample_rate:
+    print(f"  输出类型: {' + '.join(output_types)}  形态: {shape}")
+    if audio_sample_rate:
         print(f"  输出采样率: {audio_sample_rate}Hz")
-    if hw_accel and not audio_only:
+    if "video" in output_types and pf.media_kind == "video":
         enc_name, _ = probe_video_encoder(
-            ffmpeg, hw_accel=True, video_quality=video_quality,
+            ffmpeg, hw_accel=hw_accel, video_quality=video_quality,
         )
-        print(f"  视频编码器: {enc_name} (hw_accel)  质量档位: {video_quality}/5")
-    elif not audio_only and pf.media_kind == "video":
-        enc_name, _ = probe_video_encoder(
-            ffmpeg, hw_accel=False, video_quality=video_quality,
-        )
-        print(f"  视频编码器: {enc_name}  质量档位: {video_quality}/5")
+        print(f"  视频编码器: {enc_name} ({'hw_accel' if hw_accel else 'CPU'})"
+              f"  质量档位: {video_quality}/5")
     print(f"{'='*60}")
+
+    if "video" in output_types and pf.media_kind != "video":
+        print(f"[!] 源媒体为 {pf.media_kind}，--output-type 含 video 不可用（无法输出视频）",
+              file=sys.stderr)
+        return {}
+
+    do_combined = shape in ("merged", "both")
+    do_individual = shape in ("clips", "both")
 
     target_set = set(speakers) if speakers else None
 
@@ -835,25 +839,35 @@ def process_project(
         norm_entries,
         target_speakers=target_set,
         include_unknown=keep_unlabeled,
-        include_nonspeech=keep_nonspeech,
     )
     print(f"\n字幕统计 (from normalized SRT):")
     print(f"  total entries:  {stats['total']}")
     print(f"  kept:           {stats['kept']}")
     print(f"  skipped ?:      {stats['skipped_unknown']}")
-    print(f"  skipped NONSPEECH: {stats['skipped_nonspeech']}")
     print(f"  skipped not_in_targets: {stats['skipped_not_in_targets']}")
 
     # 桶内重叠合并
     merge_stats: dict[str, dict[str, int]] = {}
     if merge_overlap:
         for canonical, bucket in buckets.items():
-            ms = merge_overlapping_clips(bucket, overlap_gap=overlap_gap)
+            ms = merge_overlapping_clips(bucket)
             merge_stats[canonical] = ms
 
     if not buckets:
         print("\n[!] 没有任何片段命中目标角色，退出")
-        return {"project": pf.project_name, "stats": stats, "speakers": {}}
+        return {
+            "project": pf.project_name,
+            "stats": stats,
+            "config": {
+                "speakers": speakers, "max_clips": max_clips, "shape": shape,
+                "output_types": output_types, "keep_unlabeled": keep_unlabeled,
+                "merge_overlap": merge_overlap, "audio_sample_rate": audio_sample_rate,
+                "hw_accel": hw_accel, "video_quality": video_quality,
+                "clip_merge_gap": clip_merge_gap, "clip_max_dur": clip_max_dur,
+                "clip_min_dur": clip_min_dur, "write_manifest": write_manifest,
+            },
+            "kinds": {kind: {"speakers": {}} for kind in output_types},
+        }
 
     print(f"\n命中角色 ({len(buckets)}):")
     for canonical, b in sorted(buckets.items()):
@@ -862,19 +876,22 @@ def process_project(
         ms = merge_stats.get(canonical)
         merge_note = f"  (overlap-merged {ms['merged']} → {ms['after']})" if ms and ms['merged'] else ""
         print(f"  {canonical:12s}  {n:>4d} clips "
-              f"({b.from_single} single + {b.from_multi} multi + {b.from_inherited} inherited)"
+              f"({b.from_single} single + {b.from_multi} multi)"
               f"{merge_note}  →  use {used}")
 
     # 输出根
     out_dir = output_root / pf.project_name
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_ext, _ = encode_args_for_kind(
-        pf.media_kind, ffmpeg, audio_only=audio_only,
-        audio_sample_rate=audio_sample_rate, hw_accel=hw_accel,
-        video_quality=video_quality,
-    )
+    ext_by_kind = {
+        kind: encode_args_for_kind(
+            pf.media_kind, ffmpeg, audio_only=(kind == "audio"),
+            audio_sample_rate=audio_sample_rate, hw_accel=hw_accel,
+            video_quality=video_quality,
+        )[0]
+        for kind in output_types
+    }
 
-    speakers_report: dict[str, dict] = {}
+    speakers_report: dict[str, dict[str, dict]] = {}
 
     for canonical in sorted(buckets.keys()):
         bucket = buckets[canonical]
@@ -886,11 +903,8 @@ def process_project(
         for c in used_clips:
             raw_variants_count[c.raw_speaker] = raw_variants_count.get(c.raw_speaker, 0) + 1
 
-        sp_dir = out_dir / canonical
-        merged_file = out_dir / f"{canonical}__merged{out_ext}"
-
-        # 剪辑层相邻合并：combined 和 individual 共用同一组 prepared_clips。
-        # 过短过滤只用于 individual audio，避免拼合预览丢内容。
+        # 剪辑层相邻合并：combined 和 individual 共用同一组 prepared_clips，
+        # 且对所有输出类型一致，只算一次。过短过滤只用于 individual audio。
         prepared_clips = used_clips
         merged_count = 0
         if clip_merge_gap > 0:
@@ -898,93 +912,104 @@ def process_project(
                 used_clips, merge_gap_sec=clip_merge_gap, max_dur_sec=clip_max_dur,
             )
 
-        # 1) 合并文件
-        if do_combined:
-            if merged_file.exists() and not overwrite:
-                print(f"\n[skip] {merged_file.name} 已存在 (用 --overwrite 覆盖)")
-            else:
-                t0 = time.time()
-                note = f" (clip-merged {merged_count} → {len(prepared_clips)})" if merged_count else ""
-                print(f"\n[merge] {canonical}: {len(used_clips)} clips{note} → {merged_file.name} ...")
-                merge_clips(
-                    ffmpeg, pf.media, pf.media_kind,
-                    prepared_clips, merged_file, out_dir,
-                    audio_only=audio_only,
-                    audio_sample_rate=audio_sample_rate,
-                    hw_accel=hw_accel,
-                    video_quality=video_quality,
-                )
-                print(f"  done in {fmt_duration(time.time() - t0)}, "
-                      f"output {merged_file.stat().st_size / 1e6:.1f} MB")
+        per_kind: dict[str, dict] = {}
+        for kind in output_types:
+            audio_only = (kind == "audio")
+            out_ext = ext_by_kind[kind]
+            sp_dir = out_dir / canonical
+            merged_file = out_dir / f"{canonical}__merged{out_ext}"
 
-        # 2) 单条
-        clips_to_cut = None
-        manifest_file = None
-        if do_individual:
-            clips_to_cut = prepared_clips
-            # 丢弃过短片段（仅 audio_only 时生效）。不依赖 clip_merge_gap。
-            if clip_min_dur > 0 and audio_only:
-                before = len(clips_to_cut)
-                clips_to_cut = [c for c in clips_to_cut if c.duration >= clip_min_dur]
-                dropped = before - len(clips_to_cut)
-                if dropped:
-                    print(f"  (丢弃 {dropped} 条 < {clip_min_dur}s 短片段)")
-            sp_dir.mkdir(parents=True, exist_ok=True)
-            manifest_path = sp_dir / "filelist.txt"
-            if not write_manifest and overwrite and manifest_path.exists():
-                manifest_path.unlink()
-            note = f" (合并 {merged_count} 条 → {len(clips_to_cut)} 条)" if merged_count else ""
-            print(f"\n[individual] {canonical}: 切 {len(clips_to_cut)} 条片段{note} ...")
-            t0 = time.time()
-            manifest_lines: list[str] = []
-            for i, c in enumerate(clips_to_cut, 1):
-                fname = (
-                    f"{i:04d}_{canonical}_"
-                    f"{fmt_time_for_filename(c.start)}_"
-                    f"{clean_text_for_filename(c.text_excerpt, 20)}{out_ext}"
+            # 1) 合并文件
+            if do_combined:
+                if merged_file.exists() and not overwrite:
+                    print(f"\n[skip] {merged_file.name} 已存在 (用 --overwrite 覆盖)")
+                else:
+                    t0 = time.time()
+                    note = f" (clip-merged {merged_count} → {len(prepared_clips)})" if merged_count else ""
+                    print(f"\n[merge {kind}] {canonical}: {len(used_clips)} clips{note} → {merged_file.name} ...")
+                    merge_clips(
+                        ffmpeg, pf.media, pf.media_kind,
+                        prepared_clips, merged_file, out_dir,
+                        audio_only=audio_only,
+                        audio_sample_rate=audio_sample_rate,
+                        hw_accel=hw_accel,
+                        video_quality=video_quality,
+                    )
+                    print(f"  done in {fmt_duration(time.time() - t0)}, "
+                          f"output {merged_file.stat().st_size / 1e6:.1f} MB")
+
+            # 2) 单条
+            clips_to_cut = None
+            manifest_file = None
+            if do_individual:
+                clips_to_cut = prepared_clips
+                # 丢弃过短片段（仅 audio 类型时生效）。不依赖 clip_merge_gap。
+                if clip_min_dur > 0 and audio_only:
+                    before = len(clips_to_cut)
+                    clips_to_cut = [c for c in clips_to_cut if c.duration >= clip_min_dur]
+                    dropped = before - len(clips_to_cut)
+                    if dropped:
+                        print(f"  (丢弃 {dropped} 条 < {clip_min_dur}s 短片段)")
+                sp_dir.mkdir(parents=True, exist_ok=True)
+                manifest_name = (
+                    "filelist_audio.txt" if audio_only else "filelist_video.txt"
                 )
-                fpath = sp_dir / fname
-                if fpath.exists() and not overwrite:
+                manifest_path = sp_dir / manifest_name
+                if not write_manifest and overwrite and manifest_path.exists():
+                    manifest_path.unlink()
+                note = f" (合并 {merged_count} 条 → {len(clips_to_cut)} 条)" if merged_count else ""
+                print(f"\n[individual {kind}] {canonical}: 切 {len(clips_to_cut)} 条片段{note} ...")
+                t0 = time.time()
+                manifest_lines: list[str] = []
+                for i, c in enumerate(clips_to_cut, 1):
+                    fname = (
+                        f"{i:04d}_{canonical}_"
+                        f"{fmt_time_for_filename(c.start)}_"
+                        f"{clean_text_for_filename(c.text_excerpt, 20)}{out_ext}"
+                    )
+                    fpath = sp_dir / fname
+                    if fpath.exists() and not overwrite:
+                        if write_manifest and c.full_text:
+                            manifest_lines.append(f"{fname}|{canonical}|{c.full_text}")
+                        continue
+                    cut_single_clip(
+                        ffmpeg, pf.media, pf.media_kind, c, fpath,
+                        audio_only=audio_only,
+                        audio_sample_rate=audio_sample_rate,
+                        hw_accel=hw_accel,
+                        video_quality=video_quality,
+                    )
                     if write_manifest and c.full_text:
                         manifest_lines.append(f"{fname}|{canonical}|{c.full_text}")
-                    continue
-                cut_single_clip(
-                    ffmpeg, pf.media, pf.media_kind, c, fpath,
-                    audio_only=audio_only,
-                    audio_sample_rate=audio_sample_rate,
-                    hw_accel=hw_accel,
-                    video_quality=video_quality,
-                )
-                if write_manifest and c.full_text:
-                    manifest_lines.append(f"{fname}|{canonical}|{c.full_text}")
-                if i % 10 == 0:
-                    print(f"  {i}/{len(clips_to_cut)} ...")
-            print(f"  done in {fmt_duration(time.time() - t0)}")
+                    if i % 10 == 0:
+                        print(f"  {i}/{len(clips_to_cut)} ...")
+                print(f"  done in {fmt_duration(time.time() - t0)}")
 
-            # 写 TTS 标注文件
-            if write_manifest:
-                manifest_path.write_text(
-                    ("\n".join(manifest_lines) + "\n") if manifest_lines else "",
-                    encoding="utf-8",
-                )
-                manifest_file = manifest_path.name
-                print(f"  [manifest] {manifest_path} ({len(manifest_lines)} 条)")
+                # 写 TTS 标注文件
+                if write_manifest:
+                    manifest_path.write_text(
+                        ("\n".join(manifest_lines) + "\n") if manifest_lines else "",
+                        encoding="utf-8",
+                    )
+                    manifest_file = manifest_path.name
+                    print(f"  [manifest] {manifest_path} ({len(manifest_lines)} 条)")
 
-        speakers_report[canonical] = {
-            "clips_total": len(all_clips),
-            "clips_from_single": bucket.from_single,
-            "clips_from_multi": bucket.from_multi,
-            "clips_from_inherited": bucket.from_inherited,
-            "clips_used_after_max": len(used_clips),
-            "clips_after_merge": len(prepared_clips) if clip_merge_gap > 0 else None,
-            "clips_after_min_dur": len(clips_to_cut) if (do_individual and audio_only and clip_min_dur > 0 and clips_to_cut is not None) else None,
-            "overlap_merged_count": (merge_stats.get(canonical, {}) or {}).get("merged", 0),
-            "total_duration_sec_used": round(used_total_dur, 3),
-            "combined_file": merged_file.name if do_combined else None,
-            "individual_dir": canonical if do_individual else None,
-            "manifest_file": manifest_file,
-            "raw_speaker_variants": raw_variants_count,
-        }
+            per_kind[kind] = {
+                "clips_total": len(all_clips),
+                "clips_from_single": bucket.from_single,
+                "clips_from_multi": bucket.from_multi,
+                "clips_used_after_max": len(used_clips),
+                "clips_after_merge": len(prepared_clips) if clip_merge_gap > 0 else None,
+                "clips_after_min_dur": len(clips_to_cut) if (do_individual and audio_only and clip_min_dur > 0 and clips_to_cut is not None) else None,
+                "overlap_merged_count": (merge_stats.get(canonical, {}) or {}).get("merged", 0),
+                "total_duration_sec_used": round(used_total_dur, 3),
+                "combined_file": merged_file.name if do_combined else None,
+                "individual_dir": canonical if do_individual else None,
+                "manifest_file": manifest_file,
+                "raw_speaker_variants": raw_variants_count,
+            }
+
+        speakers_report[canonical] = per_kind
 
     return {
         "project": pf.project_name,
@@ -995,13 +1020,10 @@ def process_project(
         "config": {
             "speakers": speakers,
             "max_clips": max_clips,
-            "individual": do_individual,
-            "combined": do_combined,
+            "shape": shape,
+            "output_types": output_types,
             "keep_unlabeled": keep_unlabeled,
-            "keep_nonspeech": keep_nonspeech,
             "merge_overlap": merge_overlap,
-            "overlap_gap": overlap_gap,
-            "audio_only": audio_only,
             "audio_sample_rate": audio_sample_rate,
             "hw_accel": hw_accel,
             "video_quality": video_quality,
@@ -1011,7 +1033,10 @@ def process_project(
             "write_manifest": write_manifest,
         },
         "stats": stats,
-        "speakers": speakers_report,
+        "kinds": {
+            kind: {"speakers": {c: sp[kind] for c, sp in speakers_report.items()}}
+            for kind in output_types
+        },
     }
 
 
@@ -1043,40 +1068,37 @@ def main():
     ap.add_argument("--max-clips", type=int, default=None,
                     help="每个角色最多取多少条（按字幕原顺序）")
 
-    # 输出形态
-    ap.add_argument("--no-combined", action="store_true",
-                    help="不生成 <角色>__merged 拼合视频文件")
-    ap.add_argument("--no-individual", action="store_true",
-                    help="不生成单条片段（默认是开的）")
+    # 输出类型（必填）与形态
+    ap.add_argument("--output-type", required=True,
+                    choices=("audio", "video", "both"),
+                    help="输出媒体类型：audio=WAV 纯音频 / video=含音轨 mp4 / both=两类都出")
+    ap.add_argument("--shape", choices=("clips", "merged", "both"), default="both",
+                    help="输出形态：clips=单条片段 / merged=拼合文件 / both=两类都出（默认 %(default)s）")
     ap.add_argument("--no-manifest", action="store_true",
-                    help="不生成 filelist.txt TTS 标注文件（默认生成）")
+                    help="不生成 TTS 标注文件（默认生成，视频输出为 filelist_video.txt，"
+                         "音频输出为 filelist_audio.txt）")
 
     # 输出格式
-    ap.add_argument("--audio-only", action="store_true",
-                    help="强制输出 WAV 音频，忽略视频流（视频输入也只取音轨）。"
-                         "TTS 训练推荐使用此选项。")
     ap.add_argument("--audio-sample-rate", type=int, default=0,
                     metavar="HZ",
-                    help="输出采样率（Hz）。0=保持源采样率（默认）。"
+                    help="音频输出采样率（Hz）。0=保持源采样率（默认）。"
                          "TTS 常用值：24000（GPT-SoVITS）/ 44100（Style-Bert-VITS2）")
     ap.add_argument("--no-hw-accel", action="store_true",
                     help="禁用 GPU 硬件编码器，强制使用 CPU 软编码（libx264/mpeg4）。"
                          "默认开启硬件加速（nvenc/qsv/amf/h264_mf），找不到时自动降级。"
-                         "与 --audio-only 同时使用时无效。")
-    ap.add_argument("--video-quality", type=int, default=VIDEO_QUALITY_DEFAULT,
+                         "仅 --output-type video 相关。")
+    ap.add_argument("--video-quality", type=int, default=None,
                     choices=[1, 2, 3, 4, 5],
                     metavar="1-5",
                     help=(
                         "视频编码质量档位（1=最快/低质 ~ 5=最慢/高质，默认 %(default)s）。"
-                        "与 --audio-only 同时使用时无效。"
+                        "仅 --output-type video 相关。"
                         "  档位→CRF: 1=28  2=23  3=18  4=12  5=0"
                     ))
 
     # 字幕筛选开关（作用于 normalized SRT）
     ap.add_argument("--keep-unlabeled", action="store_true",
-                    help="把 [?] 未知行归到 ? 桶并切片（默认丢弃）")
-    ap.add_argument("--keep-nonspeech", action="store_true",
-                    help="保留 [NONSPEECH] 行 → NONSPEECH 桶（默认丢弃）")
+                    help="把 [?] 未知行归到 ? 桶并切片（默认丢弃；normalized.srt 含 [?] 行时生效）")
     ap.add_argument("--no-merge-overlap", action="store_true",
                     help="关闭桶内重叠片段合并（默认开启，避免 SDH 字幕滞留导致同段音频切两次）")
     ap.add_argument("--srt", dest="norm_srt", default=None,
@@ -1086,9 +1108,7 @@ def main():
     ap.add_argument("--clip-max-dur", type=float, default=30.0,
                     help="合并后最大片段长度（秒），超过则在上一条边界拆分（默认 30）")
     ap.add_argument("--clip-min-dur", type=float, default=2.0,
-                    help="合并后最小片段长度（秒），短于此值的直接丢弃（仅 --audio-only 生效，默认 2.0）")
-    ap.add_argument("--overlap-gap", dest="overlap_gap", type=float, default=0.0,
-                    help="桶内重叠合并的额外容差（秒）。默认 0=只合真重叠；>0 时近乎相邻的也合")
+                    help="合并后最小片段长度（秒），短于此值的直接丢弃（仅 --output-type audio 的 clips 生效，默认 2.0）")
 
     ap.add_argument("--overwrite", action="store_true",
                     help="覆盖已存在的输出文件（默认跳过）")
@@ -1100,13 +1120,17 @@ def main():
     if args.project and args.all:
         ap.error("--all 与项目名不能同时给")
 
-    do_combined = not args.no_combined
-    do_individual = not args.no_individual
+    output_types = ["audio", "video"] if args.output_type == "both" else [args.output_type]
     merge_overlap = not args.no_merge_overlap
     hw_accel = not args.no_hw_accel
-    video_quality = args.video_quality
-    if not do_combined and not do_individual:
-        ap.error("--no-combined 与 --no-individual 不能同时给（什么都不输出）")
+    video_quality = args.video_quality if args.video_quality is not None else VIDEO_QUALITY_DEFAULT
+    if output_types == ["audio"]:
+        if args.no_hw_accel:
+            print("[!] 警告: --output-type audio 不需要视频编码器，--no-hw-accel 无效",
+                  file=sys.stderr)
+        if args.video_quality is not None:
+            print("[!] 警告: --output-type audio 不需要视频编码，--video-quality 无效",
+                  file=sys.stderr)
 
     try:
         ffmpeg = find_ffmpeg(args.ffmpeg)
@@ -1114,8 +1138,8 @@ def main():
         print(f"[!] {e}", file=sys.stderr)
         return 1
     print(f"ffmpeg: {ffmpeg}")
-    # audio_only 时不需要视频编码器，跳过探测
-    if not args.audio_only:
+    # audio 类型不需要视频编码器，跳过探测
+    if "video" in output_types:
         try:
             venc_name, _ = probe_video_encoder(
                 ffmpeg, hw_accel=hw_accel, video_quality=video_quality,
@@ -1158,12 +1182,10 @@ def main():
                 pf,
                 speakers=speakers,
                 max_clips=args.max_clips,
-                do_individual=do_individual,
-                do_combined=do_combined,
+                shape=args.shape,
+                output_types=output_types,
                 keep_unlabeled=args.keep_unlabeled,
-                keep_nonspeech=args.keep_nonspeech,
                 merge_overlap=merge_overlap,
-                overlap_gap=args.overlap_gap,
                 clip_merge_gap=args.clip_merge_gap,
                 clip_max_dur=args.clip_max_dur,
                 clip_min_dur=args.clip_min_dur,
@@ -1171,7 +1193,6 @@ def main():
                 overwrite=args.overwrite,
                 output_root=output_root,
                 ffmpeg=ffmpeg,
-                audio_only=args.audio_only,
                 audio_sample_rate=args.audio_sample_rate,
                 hw_accel=hw_accel,
                 video_quality=video_quality,

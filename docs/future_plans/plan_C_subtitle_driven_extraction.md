@@ -13,8 +13,8 @@
 | P1.6 GPU 加速视频链路 | ✅ 完成 | NVDEC 解码 + nvenc constqp 中间文件 + 阶段2 stream copy |
 | P1.7 视频质量档位 CLI 参数 | ✅ 完成 | `--video-quality 1-5`，统一映射到各编码器质量参数 |
 | P2 LLM 补全 `[?]` 行 | ✅ 完成 | `sub/llm/diarize_llm.py`，`sub/llm/config.json`，`sub/input/<project>/role_descriptions.json` |
-| P2.1 纯音频 TTS 相邻合并 | ✅ 完成 | `--tts-merge-gap` / `--tts-max-dur` CLI 参数 |
-| P2.2 `--norm-srt` 自定义 SRT 输入 | ✅ 完成 | `extract_simple.py` 支持 `--norm-srt` 指定任意 SRT |
+| P2.1 纯音频 TTS 相邻合并 | ✅ 完成 | `--clip-merge-gap` / `--clip-max-dur` CLI 参数 |
+| P2.2 自定义 SRT 输入 | ✅ 完成 | `extract_simple.py` 支持 `--srt` 指定任意 SRT |
 | VAD 边界精修 | 待做 | silero-vad |
 | DNSMOS 质量评分 | 待做 | 可选 |
 
@@ -29,18 +29,18 @@ env\python.exe sub\llm\diarize_llm.py "Cosmic Princess Kaguya"
 
 # Step 2: 切片（用 LLM 修正后的 SRT，纯音频 + TTS 片段合并）
 env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" \
-    --speakers Iroha,Kaguya --no-merged --audio-only \
-    --norm-srt "sub\intermediate\Cosmic Princess Kaguya\llm_corrected.srt" \
-    --tts-merge-gap 2.0
+    --speakers Iroha,Kaguya --output-type audio --shape clips \
+    --srt "sub\intermediate\Cosmic Princess Kaguya\llm_corrected.srt" \
+    --clip-merge-gap 0.5
 
-# Step 2（直接切，不用 LLM）
-env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha,Kaguya --no-individual
+# Step 2（直接切，不用 LLM，只要拼合视频）
+env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha,Kaguya --output-type video --shape merged
 
 # Step 2（调整质量）：档位 3 = qp/crf 18，比默认档位 2（qp/crf 23）更清晰
-env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha,Kaguya --no-individual --video-quality 3
+env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha,Kaguya --output-type video --shape merged --video-quality 3
 
 # Step 2（TTS 训练，只要音频）：
-env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha,Kaguya --no-individual --audio-only --audio-sample-rate 24000
+env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha,Kaguya --output-type audio --shape clips --audio-sample-rate 24000
 ```
 
 ---

@@ -1,7 +1,7 @@
 # Skill：归一化字幕中间层（normalize_subtitle）
 
 > 目的：把项目的 ASS 字幕转换为统一的 `normalized.srt` / `normalized.jsonl` 中间产物，
-> 供下游 `extract_simple.py` 切片、用户手动审核、以及 `sub/llm/diarize_llm.py` LLM 补全（plan B）使用。
+> 供下游 Gemini 标注、`extract_simple.py` 切片和用户手动审核使用。
 >
 > 详细规约见 `sub/normalize_subtitle_design.md`。
 
@@ -33,11 +33,10 @@ env\python.exe sub\normalize.py "<project_name>"
 
 | 场景 | 参数 |
 |---|---|
-| 缩短承接窗口（对话节奏快） | `--inherit-gap-sec 3.0` |
 | 保留未知行（用于 LLM 补全） | （默认已保留，`[?]` 行会输出） |
 | 丢弃未知行（只要已知角色） | `--no-keep-unknown` |
 | 保留音效行 | `--keep-nonspeech` |
-| 关闭桶内重叠合并（调试用） | `--no-merge-overlap` |
+| 启用桶内重叠合并 | `--merge-overlap` |
 
 输出到 `sub/intermediate/<project>/`：
 
@@ -57,8 +56,7 @@ Read: sub/intermediate/<project>/normalize_report.json
 
 - `alias_hit_singles`：alias 命中数，应与 `inspect_report.txt` 里的 single 数接近
 - `alias_miss_singles`：未命中数，若偏高说明 aliases 有遗漏变体
-- `unlabeled_inherited`：承接成功数，应占 unlabeled 总数的大部分
-- `unlabeled_unknown`：未承接数（`[?]`），若偏高可考虑调 `--inherit-gap-sec`
+- `unlabeled_unknown`：无显式 speaker、保留为 `[?]` 的条目数
 - `merged_overlap_pairs_per_speaker`：各角色桶内合并次数，正常范围 0-60
 
 ### Step 3 — 抽查关键条目
@@ -80,7 +78,8 @@ for e in jl[:20]:
 验证要点：
 
 - 已知 multi 行是否展开为两条独立 entry（同时间段，不同 speaker，各带 `{MULTI}`）
-- 已知 inherit 链是否连续（相邻 `{INHERITED}` 条目 speaker 一致）
+- speaker marker 独占一行时，后续文本是否归到正确 speaker
+- normalized 中不应存在空文本 entry
 - 文本里**不应有** `\u200e`（LRM）等控制字符
 - `[?]` 条目数量是否合理
 
@@ -104,7 +103,7 @@ for e in jl[:20]:
 ```
 
 - `[speaker]`：canonical 名 / `?` / `NONSPEECH`
-- `{TAG}`：`MULTI`（multi 展开）/ `INHERITED`（承接）/ `MERGED`（桶内合并）
+- `{TAG}`：`MULTI`（multi 展开）/ `MERGED`（桶内合并）
 - 多行文本：真换行（ASS `\N` 已展开）
 
 ### normalized.jsonl 格式
@@ -120,34 +119,34 @@ for e in jl[:20]:
 normalize 完成后，`extract_simple.py` 会**自动检测**并使用 `normalized.srt`：
 
 ```powershell
-# 自动用 normalized.srt
-env\python.exe sub\extract_simple.py "<project>" --speakers Iroha,Kaguya --no-individual
+# 自动用 normalized.srt（只要拼合视频）
+env\python.exe sub\extract_simple.py "<project>" --speakers Iroha,Kaguya --output-type video --shape merged
 
-# 用 LLM 修正后的 SRT
-env\python.exe sub\extract_simple.py "<project>" --speakers Iroha,Kaguya --audio-only \
-    --norm-srt "sub\intermediate\<project>\llm_corrected.srt"
+# 用 LLM 修正后的 SRT（纯音频单条）
+env\python.exe sub\extract_simple.py "<project>" --speakers Iroha,Kaguya --output-type audio --shape clips \
+    --srt "sub\intermediate\<project>\llm_corrected.srt"
 
 # TTS 训练：纯音频 + 相邻合并（推荐）
-env\python.exe sub\extract_simple.py "<project>" --speakers Iroha,Kaguya --audio-only \
-    --norm-srt "sub\intermediate\<project>\llm_corrected.srt" \
-    --tts-merge-gap 2.0 --no-merged
+env\python.exe sub\extract_simple.py "<project>" --speakers Iroha,Kaguya --output-type audio --shape clips \
+    --srt "sub\intermediate\<project>\llm_corrected.srt" \
+    --clip-merge-gap 0.5
 
 # 调整视频质量
-env\python.exe sub\extract_simple.py "<project>" --speakers Iroha,Kaguya --no-individual --video-quality 3
+env\python.exe sub\extract_simple.py "<project>" --speakers Iroha,Kaguya --output-type video --shape merged --video-quality 3
 ```
 
 ## 手动 / LLM 修正归属
 
 `normalized.srt` 是普通文本，可以直接编辑：
 
-- 把 `[?]` 改成 `[Iroha]`（修正未承接行）
+- 把 `[?]` 改成 `[Iroha]`（修正无显式 speaker 的行）
 - 把 `[女の子]` 改成 `[Kaguya]`（修正 alias 未命中行）
 - 修改时间戳（精修边界）
 
 编辑后**不需要**重跑 normalize，直接跑 `extract_simple.py` 即可。
 若要同步 JSONL，重跑 normalize 会覆盖手动修改——手动修改后建议只用 SRT 路径。
 
-**推荐**：用 `sub\llm\diarize_llm.py` 做 LLM 辅助修正（Plan B），自动推断 `[?]` + `INHERITED` + `MULTI` 条目。详见 `docs/skills/build_role_descriptions.md`。
+生产流程由 `gemini_segment_diarize.py` 对全部字幕逐条输出 speaker；`[?]` 只是 normalize 阶段没有显式 speaker 的占位符。
 
 ## 常见问题
 
@@ -157,9 +156,7 @@ env\python.exe sub\extract_simple.py "<project>" --speakers Iroha,Kaguya --no-in
 
 **Q: `[?]` 条目太多怎么办？**
 
-1. 先检查 `--inherit-gap-sec` 是否太小（默认 5.0s，可适当调大）
-2. 检查 multi 行是否过多阻断了 inherit 链（`multi_entries` 统计）
-3. plan B：用 `sub/llm/diarize_llm.py` 对 `[?]` + `INHERITED` + `MULTI` 行做 LLM 上下文推断（需先写 `role_descriptions.json`，见 `build_role_descriptions` skill）
+这是预期行为：无显式 speaker 的对白统一保留为 `[?]`，由 Gemini 结合视频和音频标注。
 
 **Q: 重跑 normalize 会覆盖手动修改吗？**
 

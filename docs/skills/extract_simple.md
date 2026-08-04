@@ -17,48 +17,50 @@
                         │   命中角色 → 逐个处理    │
                         └──────────┬───────────┘
                                    │
-                        ┌──────────▼───────────┐
-                        │    --audio-only?      │
-                        └───┬──────────────┬────┘
-                       是   │              │  否
-                   ┌───────▼───┐    ┌──────▼──────────┐
-                   │ 输出 .wav  │    │ 输出 .mp4        │
-                   │ PCM 16bit  │    │ h264_nvenc + AAC │
-                   │ 可选重采样  │    │ 可选 GPU/CPU 编码 │
-                   └─────┬─────┘    └────┬─────────────┘
-                         │               │
-                         └───────┬───────┘
-                                 │
-              ┌──────────────────┼──────────────────┐
-              │                  │                  │
-     ┌────────▼────────┐ ┌───────▼────────┐        │
-     │  --no-combined   │ │ --no-individual │       │
-     │  跳过拼接文件     │ │  跳过单条片段    │       │
-     └────────┬────────┘ └───────┬────────┘        │
-              │                  │                  │
-         未跳过              未跳过                 │
-              │                  │                  │
-     ┌────────▼────────┐ ┌───────▼───────────────┐ │
-     │ Iroha__merged    │ │ Iroha/                 │ │
-     │ .mp4 或 .wav     │ │ 0001_Iroha_00_01_23_  │ │
-     │                  │ │ ハア....wav           │ │
-     │ (concat 所有片段) │ │                       │ │
-     └─────────────────┘ │ 切前处理（按顺序）：    │ │
-                         │                        │ │
-                         │ ① --clip-merge-gap     │ │
-                         │   相邻同角色间隔≤N秒    │ │
-                         │   → 合并为长片段        │ │
-                         │                        │ │
-                         │ ② --clip-max-dur       │ │
-                         │   合并后超N秒           │ │
-                         │   → 在上条边界拆分      │ │
-                         │                        │ │
-                         │ ③ --clip-min-dur       │ │
-                         │   片段 < N秒            │ │
-                         │   → 丢弃 (仅audio_only)│ │
-                         └────────────────────────┘ │
+              ┌────────────────────┼────────────────────┐
+              │ --output-type      │                     │
+              │ audio|video|both   │ (必填)              │
+              └────┬───────────┬───┘                     │
+              audio│           │video                    │
+        ┌──────────▼────┐  ┌───▼──────────────┐          │
+        │ 输出 .wav      │  │ 输出 .mp4         │          │
+        │ PCM 16bit     │  │ h264 + AAC        │          │
+        │ 可选重采样     │  │ 可选 GPU/CPU 编码  │          │
+        └────────┬──────┘  └───┬──────────────┘          │
+                 │             │                          │
+                 └───────┬─────┘                          │
+                         │ (both=两类都走此分支)            │
+                         ▼                                │
+              ┌──────────────────┼──────────────────┐    │
+              │                  │                  │    │
+     ┌────────▼────────┐ ┌───────▼────────┐        │    │
+     │ --shape merged  │ │ --shape clips  │        │    │
+     │ 跳过单条片段     │ │ 跳过拼合文件    │        │    │
+     └────────┬────────┘ └───────┬────────┘        │    │
+              │                  │                  │    │
+         未跳过              未跳过                 │    │
+              │                  │                  │    │
+     ┌────────▼────────┐ ┌───────▼───────────────┐ │    │
+     │ Iroha__merged    │ │ Iroha/                 │ │    │
+     │ .mp4 或 .wav     │ │ 0001_Iroha_00_01_23_  │ │    │
+     │                  │ │ ハア....wav           │ │    │
+     │ (concat 所有片段) │ │                       │ │    │
+     └─────────────────┘ │ 切前处理（按顺序）：    │ │    │
+                         │                        │ │    │
+                         │ ① --clip-merge-gap     │ │    │
+                         │   相邻同角色间隔≤N秒    │ │    │
+                         │   → 合并为长片段        │ │    │
+                         │                        │ │    │
+                         │ ② --clip-max-dur       │ │    │
+                         │   合并后超N秒           │ │    │
+                         │   → 在上条边界拆分      │ │    │
+                         │                        │ │    │
+                         │ ③ --clip-min-dur       │ │    │
+                         │   片段 < N秒            │ │    │
+                         │   → 丢弃 (仅audio类型) │ │    │
+                         └────────────────────────┘ │    │
 
-   注: --no-combined 和 --no-individual 不能同时给（无输出）
+   注: --shape 必选其一值；--output-type 必填。both 会按两类型各跑一遍上述流程。
 ```
 
 ---
@@ -70,10 +72,9 @@
 | 参数 | 默认值 | 说明 |
 |---|---|---|
 | `--speakers Iroha,Kaguya` | 全部 canonical 角色 | 仅切指定角色。逗号分隔，如 `Iroha,Kaguya,Yachiyo`。不传则切所有 canonical 角色（含 Asahi、Rai 等小角色） |
-| `--audio-only` | 关闭 | 输出 `.wav` 纯音频（PCM 16bit），丢弃视频流。**TTS 训练必开**。不开则输出 `.mp4`（音轨 AAC 192k + h264 视频） |
-| `--no-combined` | 关闭（默认生成） | 不生成 `<角色>__merged.*` 拼合文件。拼合文件是把某角色全部片段 concat 成单文件，方便快速预览 |
-| `--no-individual` | 关闭（默认生成） | 不生成 `角色/0001_*.*` 单条片段。单条片段用于 TTS 训练、质量抽查。与 `--no-combined` 不能同时给 |
-| `--no-manifest` | 关闭（默认生成） | 不生成 `filelist.txt` TTS 标注文件。标注格式为 `文件名\|说话人\|完整文本`，GPT-SoVITS / Bert-VITS2 可直接喂入 |
+| `--output-type audio\|video\|both` | **必填** | 输出媒体类型。`audio`=WAV 纯音频（PCM 16bit，**TTS 训练用**）；`video`=MP4（音轨 AAC 192k + h264 视频）；`both`=两类都出（各自独立产物和 filelist） |
+| `--shape clips\|merged\|both` | `both` | 输出形态。`clips`=仅单条片段；`merged`=仅 `<角色>__merged.*` 拼合文件（角色全部片段 concat，方便快速预览）；`both`=两类都出 |
+| `--no-manifest` | 关闭（默认生成） | 不生成 TTS 标注文件（默认生成）。视频输出为 `filelist_video.txt`，音频输出为 `filelist_audio.txt`，按输出格式自动命名，互不覆盖。标注格式为 `文件名\|说话人\|完整文本`，GPT-SoVITS / Bert-VITS2 可直接喂入 |
 
 ### 片段合并与过滤（剪辑层）
 
@@ -83,7 +84,7 @@
 |---|---|---|
 | `--clip-merge-gap` | `0.3` | 同角色相邻片段间隔 ≤N 秒 → 合并为一段。`0`=不合并（每条字幕独立切）。`0.3-0.5`=合并句子间自然停顿。`1.0+`=激进合并，可能跨场景 |
 | `--clip-max-dur` | `30` | 合并后单条片段最长为 N 秒。超限时在**原始条目标界处**断开，确保每段仍是完整台词 |
-| `--clip-min-dur` | `2.0` | 短于 N 秒的片段直接丢弃。**仅在 `--audio-only` 时生效**（视频模式下不丢，保证拼合预览完整） |
+| `--clip-min-dur` | `2.0` | 短于 N 秒的片段直接丢弃。**仅 `--output-type audio` 的 clips 生效**（视频模式下不丢，保证拼合预览完整） |
 
 ### 桶内重叠去重
 
@@ -92,7 +93,6 @@ SDH 字幕的特点：上一行字幕经常 "滞留" 到下一行开始之后才
 | 参数 | 默认值 | 说明 |
 |---|---|---|
 | `--no-merge-overlap` | 关闭（**默认开启合并**） | 禁用桶内重叠合并。一般不要开，除非你确认字幕没有重叠滞留 |
-| `--overlap-gap` | `0` | 重叠合并的额外容差（秒）。`0`=只合真正时间重叠的片段。`0.5`=间隔 ≤0.5s 的也合。与 `--no-merge-overlap` 同时给时静默无效 |
 
 ### 路径覆盖
 
@@ -109,13 +109,14 @@ SDH 字幕的特点：上一行字幕经常 "滞留" 到下一行开始之后才
 | 参数 | 默认值 | 说明 |
 |---|---|---|
 | `--audio-sample-rate` | `0`（保持源采样率） | 输出音频采样率（Hz）。TTS 常用：`24000`（GPT-SoVITS）、`44100`（Bert-VITS2） |
-| `--no-hw-accel` | 关闭（默认 GPU 编码） | 禁用 GPU 硬件编码（nvenc/qsv/amf），强制 CPU 的 libx264。`--audio-only` 时无效（纯音频无需视频编码器） |
-| `--video-quality` | `2` | 视频编码质量 1~5（1=最快/低画质，5=最慢/高画质）。`--audio-only` 时无效 |
+| `--no-hw-accel` | 关闭（默认 GPU 编码） | 禁用 GPU 硬件编码（nvenc/qsv/amf），强制 CPU 的 libx264。仅 `--output-type` 含 video 时相关（纯音频无需视频编码器） |
+| `--video-quality` | `2` | 视频编码质量 1~5（1=最快/低画质，5=最慢/高画质）。仅 `--output-type` 含 video 时相关 |
 | `--overwrite` | 关闭（跳过已有文件） | 强制覆盖已存在的输出文件。不加此参数时，已存在文件直接跳过不重切 |
 | `--max-clips` | 不限制 | 每角色最多取 N 条（按 SRT 中出场顺序）。用于快速测试 |
 | `--keep-unlabeled` | 关闭 | 保留 `[?]` 未知说话人条目，归入 `?/` 目录。调试/手动检查用 |
-| `--keep-nonspeech` | 关闭 | 保留 `[NONSPEECH]` 条目，归入 `NONSPEECH/` 目录。一般不需要语音/音效片段 |
 | `--all` | — | 批量处理 `sub/input/` 下全部项目。与项目名二选一 |
+
+> **NONSPEECH 处理**：输入 SRT 里的 `[NONSPEECH]` 行（含 `[NONSPEECH:内联描述]` 变体，统一归入 NONSPEECH 桶）**默认保留**，归入 `NONSPEECH/` 目录正常切片（与其他角色同规则，受 `--speakers` 过滤）。是否把 NONSPEECH 行写进输入，由 **normalize 层**的 `--keep-nonspeech` 决定（默认不保留，故 `normalized.srt` 通常不含该行；`--srt` 指定含该行的文件时生效）。
 
 ---
 
@@ -131,15 +132,15 @@ env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha,K
 
 ---
 
-### 场景 B：TTS 训练（音频 + 合并 + 时长过滤）
+### 场景 B：TTS 训练（音频单条 + 时长过滤）
 
 ```bash
 env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" \
     --srt llm_corrected.srt \
     --speakers Iroha,Kaguya,Yachiyo \
-    --audio-only --audio-sample-rate 24000 \
+    --output-type audio --shape clips --audio-sample-rate 24000 \
     --clip-merge-gap 0.3 --clip-min-dur 3.0 --clip-max-dur 30 \
-    --no-combined --overwrite
+    --overwrite
 ```
 
 **产**：`Iroha/0001_*.wav` ... 每个片段 3-30 秒，24000Hz。
@@ -159,7 +160,7 @@ env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" \
 ```bash
 env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" \
     --speakers Iroha,Kaguya,Yachiyo \
-    --no-individual --overwrite
+    --output-type video --shape merged --overwrite
 ```
 
 **产**：`Iroha__merged.mp4` / `Kaguya__merged.mp4` / `Yachiyo__merged.mp4`
@@ -171,7 +172,7 @@ env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" \
 ```bash
 env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" \
     --speakers Iroha \
-    --no-combined --clip-merge-gap 0.5 --overwrite
+    --output-type video --shape clips --clip-merge-gap 0.5 --overwrite
 ```
 
 **产**：`Iroha/0001_*.mp4` ... 间隔 ≤0.5s 的相邻台词被合并为一段再切。
@@ -184,7 +185,7 @@ env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" \
 env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" \
     --srt llm_corrected.srt \
     --speakers Iroha,Kaguya,Yachiyo,Mikado,Mami,Roka,Koto,Noi,Asahi,Rai \
-    --no-individual --overwrite
+    --output-type video --shape merged --overwrite
 ```
 
 示例输出（本次实测）：
@@ -208,13 +209,13 @@ env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" \
 
 `extract_simple.py` 有**两个独立**的合并阶段，解决不同问题：
 
-### 机制一：桶内重叠合并（`--overlap-gap` / `--no-merge-overlap`）
+### 机制一：桶内重叠合并（`--no-merge-overlap`）
 
-**位置**：构建 speaker bucket 之后、切分/拼合之前（`process_project()` 第 842 行）
+**位置**：构建 speaker bucket 之后、切分/拼合之前（`process_project()` 第 845 行）
 
 ```
 所有 Iroha 条目按 start 排序 → 贪心扫描
-  若 cur.start < acc.end + merge_gap_sec → 合并
+  若 cur.start < acc.end → 合并
 ```
 
 **解决的问题**：SDH 字幕中相邻条目时间常有重叠（上一行字幕滞留到下一行开始之后）。如果两条重叠的字幕都归同一角色，concat 出来会重复同一段音频，听感像卡顿。
@@ -233,10 +234,7 @@ env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" \
 | 命令 | 效果 |
 |---|---|
 | （默认） | 只合真重叠（cur.start < acc.end） |
-| `--overlap-gap 0.5` | 间隔 ≤0.5s 的也合（几乎相邻的也视为重叠） |
 | `--no-merge-overlap` | 完全禁用此机制（慎用，会导致重复音频） |
-
-> **注意**：`--no-merge-overlap` 和 `--overlap-gap` 同时给时，gap 被静默忽略（合并循环已跳过）。
 
 ---
 
@@ -269,12 +267,12 @@ env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" \
 | | 桶内重叠合并 | 剪辑层相邻合并 |
 |---|---|---|
 | 触发条件 | 默认启用，`--no-merge-overlap` 禁用 | `--clip-merge-gap > 0` |
-| 合并条件 | `cur.start < acc.end + gap` | `cur.start - acc.end ≤ gap` |
+| 合并条件 | `cur.start < acc.end` | `cur.start - acc.end ≤ gap` |
 | 作用对象 | 桶内重叠/紧邻条目 | 桶内相邻非重叠条目 |
 | 生效阶段 | 构建 bucket 后 | 角色输出前（combined / individual 共用） |
-| 配合参数 | `--overlap-gap` | `--clip-max-dur`, `--clip-min-dur` |
+| 配合参数 | 无（仅开关 `--no-merge-overlap`） | `--clip-max-dur`, `--clip-min-dur` |
 | max-dur 拆分 | 无 | 有（超限在上条边界断） |
-| min-dur 丢弃 | 无 | 有（仅 `--audio-only`） |
+| min-dur 丢弃 | 无 | 有（仅 `--output-type audio` 的 clips） |
 
 ---
 
@@ -293,7 +291,7 @@ merge_adjacent        剪辑层相邻合并（--clip-merge-gap > 0）
 clip_max_dur          超长拆分（在原始条目边界断）
     │
     ▼
-clip_min_dur          过短丢弃（仅 --audio-only）
+clip_min_dur          过短丢弃（仅 --output-type audio 的 clips）
     │
     ▼
 切单条 / 拼合文件      输出到 output/<project>/
@@ -316,15 +314,15 @@ clip_min_dur          过短丢弃（仅 --audio-only）
 
 | 场景 | 行为 |
 |---|---|
-| `--no-combined --no-individual` | **拒绝**，报错退出 |
+| `--output-type` 缺失 | **拒绝**，argparse 报错退出（必填） |
 | 已存在文件 + 无 `--overwrite` | 跳过（保留已有） |
-| `--audio-only` + 视频源 | 只取音轨（`-map 0:a:0`），编码为 WAV PCM 16bit |
+| `--output-type audio` + 视频源 | 只取音轨（`-map 0:a:0`），编码为 WAV PCM 16bit |
+| `--output-type` 含 video + 音频源 | **拒绝**该项目（无法输出视频），继续后续项目 |
 | `--keep-unlabeled` | `[?]` 条目归入 `?/` 目录 |
-| `--keep-nonspeech` | `[NONSPEECH]` 条目归入 `NONSPEECH/` 目录 |
-| `--no-merge-overlap` + `--overlap-gap` | gap 静默无效（合并循环跳过） |
+| 输入含 `[NONSPEECH]` 行 | 归入 `NONSPEECH/` 目录切片（默认保留，受 `--speakers` 过滤） |
 | `--all` 某项目失败 | 当前项目 `raise`，**后续项目全部跳过** |
 | 空 speaker 组（无命中角色） | 跳过，不报错 |
-| `--clip-min-dur` + 视频模式 | 不丢弃（仅在 `--audio-only` 生效） |
+| `--clip-min-dur` + 视频类型 | 不丢弃（仅在 audio 类型生效） |
 
 ---
 
@@ -332,21 +330,24 @@ clip_min_dur          过短丢弃（仅 --audio-only）
 
 ```
 sub/output/<project>/
-├── Iroha__merged.mp4          # 拼合视频（除非 --no-combined）
-├── Iroha/                     # 单条片段（除非 --no-individual）
+├── Iroha__merged.mp4          # 拼合视频（--shape clips 时不生成）
+├── Iroha__merged.wav          # 拼合音频（--output-type 含 audio 时生成）
+├── Iroha/                     # 单条片段（--shape merged 时不生成）
 │   ├── 0001_Iroha_00_01_15_オッケー.mp4
-│   ├── 0002_Iroha_00_01_17_イェーイ.mp4
-│   ├── filelist.txt           # TTS 标注（除非 --no-manifest）
-│   └── ...
+│   ├── 0002_Iroha_00_01_17_イェーイ.wav
+│   ├── filelist_video.txt    # TTS 标注（视频输出，除非 --no-manifest）
+│   └── filelist_audio.txt    # TTS 标注（音频输出，除非 --no-manifest）
 ├── Kaguya__merged.mp4
 ├── Kaguya/
 │   ├── ...
-│   └── filelist.txt
+│   └── filelist_video.txt    # 音频输出时则为 filelist_audio.txt
 ├── ...
-└── extract_report.json        # 统计报告
+└── extract_report.json        # 统计报告（config 记录 output-types/shape，speakers 按 kind 分节）
 ```
 
-## TTS 标注格式 (`filelist.txt`)
+> filelist 命名按输出格式区分：视频（mp4）→ `filelist_video.txt`，音频（WAV）→ `filelist_audio.txt`。同一角色目录里同时跑视频和音频时两者共存、互不覆盖。
+
+## TTS 标注格式 (`filelist_video.txt` / `filelist_audio.txt`)
 
 每个角色目录下自动生成，格式为 GPT-SoVITS / Bert-VITS2 兼容：
 
@@ -375,4 +376,4 @@ sub/output/<project>/
 4. `h264_mf`（Windows Media Foundation）
 5. 退化到 `libx264`（CPU）
 
-`--audio-only` 模式不涉及视频编码，`--no-hw-accel` 无效。
+`--output-type audio` 模式不涉及视频编码，`--no-hw-accel` 无效（传了会打警告）。

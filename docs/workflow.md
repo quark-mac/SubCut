@@ -33,6 +33,8 @@ env\python.exe
 env\python.exe sub\normalize.py "Cosmic Princess Kaguya"
 ```
 
+显式 speaker 标签会保留并做 alias 归一化；无 speaker 标签的对白统一输出为 `[?]`，不再根据前后字幕继承，由 Gemini 逐条判断实际 speaker。
+
 输出：
 
 ```text
@@ -88,8 +90,12 @@ env\python.exe sub\llm\scene_srt_to_json.py "Cosmic Princess Kaguya" "sub/interm
 
 ### 3. 准备检查（不调用 Gemini）
 
+Gemini 正常处理必须显式传入 `--segments-json`。脚本不再按时长、字幕数或间隔自行生成 scene，也不再提供分段 preset。`--report-only` 只读取已有结果，不需要 scene JSON。
+
+使用 `--start-idx`、`--end-idx` 或 `--max-segments > 0` 属于局部运行，必须显式提供新的干净 `--output-dir`。目录可以不存在、为空，或只有 `plan.md`；不能已有 `results.jsonl`、`report.md`、`segment_labeled.srt`、Prompt 文件或 clips。`--overwrite-clips` 不能绕过局部运行保护，因为它无法合并已有的局部/全片结果。
+
 ```powershell
-env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --segments-json "sub/intermediate/Cosmic Princess Kaguya/scene_segments_llm/scene_segments.json" --compact-video --segments-per-request 1 --max-request-scenes 1 --max-request-entries 0 --max-request-duration 0 --max-segments 8 --prepare-only --overwrite-clips --output-dir "sub/intermediate/Cosmic Princess Kaguya/prepare_test"
+env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --segments-json "sub/intermediate/Cosmic Princess Kaguya/scene_segments_llm/scene_segments.json" --compact-video --segments-per-request 1 --max-request-scenes 1 --max-request-entries 0 --max-request-duration 0 --max-segments 8 --prepare-only --output-dir "sub/intermediate/Cosmic Princess Kaguya/prepare_test_v2"
 ```
 
 检查 `results.jsonl` 和生成的 clips，确认：
@@ -100,8 +106,10 @@ env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --segm
 
 ### 4. 小范围真实测试
 
+局部运行始终使用新的干净 `--output-dir`。全片运行如果发现 `output_dir/clips` 中已有 MP4，也会在生成媒体或调用 API 前停止；只有确认要重新生成完整运行的 clips 时才传 `--overwrite-clips`。`--plan-only` 和 `--report-only` 不读取 clips，不受这些检查影响。
+
 ```powershell
-env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --segments-json "sub/intermediate/Cosmic Princess Kaguya/scene_segments_llm/scene_segments.json" --compact-video --segments-per-request 1 --max-request-scenes 1 --max-request-entries 0 --max-request-duration 0 --max-segments 8 --write-srt --overwrite-clips --output-dir "sub/intermediate/Cosmic Princess Kaguya/gemini_test"
+env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --segments-json "sub/intermediate/Cosmic Princess Kaguya/scene_segments_llm/scene_segments.json" --compact-video --segments-per-request 1 --max-request-scenes 1 --max-request-entries 0 --max-request-duration 0 --max-segments 8 --write-srt --output-dir "sub/intermediate/Cosmic Princess Kaguya/gemini_test_v2"
 ```
 
 ### 5. 全片
@@ -125,7 +133,7 @@ Gold accuracy: 91.30%
 ### 6. 导出角色片段
 
 ```powershell
-env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" --speaker Iroha --audio-only
+env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha --output-type audio --shape clips
 ```
 
 ## 人工校对
@@ -153,7 +161,7 @@ Iroha/Kaguya/Yachiyo/FUSHI: 92.03%
 旧 `human.srt` 只能作为粗略参考：
 
 - 缺少源字幕 `idx=1879`
-- 大量 `{INHERITED}` 标签跨 speaker 继承
+- 存在旧版跨 speaker 继承错误
 - 使用 `女の子`、`赤ちゃん`、`2人`、`?` 等描述性标签
 - 部分音乐、音效和台词混在同一个 speaker 字段
 
@@ -165,7 +173,7 @@ Iroha/Kaguya/Yachiyo/FUSHI: 92.03%
 output_dir/report.md
 ```
 
-报告并列显示每条字幕的 SRT speaker、Gemini speaker、最终 speaker、confidence、reason。重点检查：
+报告并列显示每条字幕的 SRT speaker、Gemini speaker、最终 speaker 和 reason。重点检查：
 
 - speaker 与 SRT 不一致的行
 - OTHER / NONSPEECH / ?
@@ -205,15 +213,17 @@ env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --outp
 | `--llm-refine-max-seconds 75` | 75 | 超过该时长的 scene 进入语义重审 |
 | `--llm-refine-max-entries 0` | 0 | 默认不按字幕数细分；实验性参数 |
 | `--dump-llm-prompts` | off | 保存场景边界 prompt 和原始响应 |
+| `--segments-json PATH` | 正常处理必填 | DeepSeek 生成或人工回写的 scene JSON；`--report-only` 可省略 |
 | `--context-before 15` | 15 | 前文秒数，不作为目标 |
 | `--compact-video` | on | 剪掉空白，保留有声窗口 |
 | `--segments-per-request 2` | 2 | CLI 默认；复现当前最佳基线时显式传 1 |
 | `--max-request-duration 90` | 90 | CLI 默认；single-scene 基线显式传 0 |
 | `--max-request-entries 30` | 30 | CLI 默认；single-scene 基线显式传 0 |
 | `--max-request-scenes 2` | 2 | CLI 默认；single-scene 基线显式传 1 |
-| `--max-segments N` | 按需 | 限制 scene 数；`0`=全片 |
+| `--max-segments N` | 按需 | 限制 scene 数；`0`=全片，`N>0` 属于局部运行并要求干净输出目录 |
 | `--write-srt` | on | 输出 segment_labeled.srt |
-| `--overwrite-clips` | on | 重新生成已有 clips |
+| `--keep-tags` | off | 仅保留输入字幕原有 tags；不新增 `MM_REVIEW`、`MM_UNCLEAR` 或 `MM_VERIFIED` |
+| `--overwrite-clips` | 按需 | 允许完整运行重新生成已有 clips；不能绕过局部运行的干净目录要求 |
 | `--prepare-only` | off | 只生成视频不调 API |
 | `--dump-prompts` | off | 保存每个 batch 的文字 prompt |
 | `--report-only` | off | 从已有 JSONL 重生成报告 |
