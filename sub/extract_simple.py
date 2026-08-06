@@ -6,8 +6,8 @@ extract_simple.py — 字幕驱动的角色片段提取/合并。
 
 输入: 默认 sub/intermediate/<project>/normalized.srt（normalize.py 生成），
       可用 --srt 指定任意 SRT（如 gold_set_dedup.srt / llm_corrected.srt）。
-      [NONSPEECH] 行（含 [NONSPEECH:内联描述] 变体）默认保留并统一归入
-      NONSPEECH 桶（是否写入输入由 normalize 层的 --keep-nonspeech 决定）；
+      [NONSPEECH] 行（含 [NONSPEECH:内联描述] 变体）与普通角色同规则：受
+      --speakers 过滤（是否写入输入由 normalize 层的 --keep-nonspeech 决定）；
       [?] 行默认丢弃，--keep-unlabeled 可保留。
 输出: sub/output/<project>/
       <角色>__merged.<ext>                拼合文件（--shape clips 时关闭）
@@ -18,6 +18,9 @@ extract_simple.py — 字幕驱动的角色片段提取/合并。
 参数:
     --output-type audio|video|both  必填。输出媒体类型（WAV 纯音频 / 含音轨 mp4 / 都出）
     --shape clips|merged|both       输出形态。clips=单条片段，merged=拼合文件（默认 both）
+    --drop-cross-speaker-overlap N  交叉说话人重叠丢弃（默认关闭）：条目与其他说话人
+                                    台词重叠超过 N 秒则丢弃（0=有任何重叠即丢；同 speaker
+                                    重叠不受影响；[?]/[NONSPEECH] 不参与判断）
 
 典型调用:
     # 默认: 输出带音轨的视频，生成单条片段 + 拼合文件
@@ -386,18 +389,57 @@ def build_buckets_from_normalized(
                 stats["skipped_unknown"] += 1
             continue
         if e.speaker == SPEAKER_NONSPEECH or e.speaker.startswith(SPEAKER_NONSPEECH + ":"):
-            # 统一 [NONSPEECH] 与 [NONSPEECH:内联描述] 变体到 NONSPEECH 桶
-            push(SPEAKER_NONSPEECH, normalized_entry_to_clip(e))
-            stats["kept"] += 1
-            continue
-        if target_speakers is not None and e.speaker not in target_speakers:
+            # 统一 [NONSPEECH] 与 [NONSPEECH:内联描述] 变体；与普通角色一样受 --speakers 过滤
+            speaker = SPEAKER_NONSPEECH
+        else:
+            speaker = e.speaker
+        if target_speakers is not None and speaker not in target_speakers:
             stats["skipped_not_in_targets"] += 1
             continue
-        push(e.speaker, normalized_entry_to_clip(e))
+        push(speaker, normalized_entry_to_clip(e))
         stats["kept"] += 1
 
     return buckets, stats
 
+
+def drop_cross_speaker_overlap_entries(
+    entries: list[NormalizedEntry],
+    threshold_sec: float,
+) -> tuple[list[NormalizedEntry], int]:
+    """丢弃与其他说话人台词时间重叠超过 threshold_sec 的条目，返回 (保留条目, 丢弃数)。
+
+    规则:
+        - 只比较两个 speaker 都真实且不同（非 ? / NONSPEECH）的条目对
+        - 重叠量 = min(end_a, end_b) - max(start_a, start_b)；> threshold_sec 即丢
+          threshold=0 → 有任何重叠就丢
+        - 同 speaker 的重叠不受影响（交给桶内重叠合并处理）
+        - 同一多说话人 cue 展开的条目（共享 source_entries）不视为重叠
+    """
+    real = sorted(
+        (e for e in entries if e.speaker not in (SPEAKER_UNKNOWN, SPEAKER_NONSPEECH)),
+        key=lambda e: (e.start, e.end),
+    )
+    dropped: set[int] = set()
+
+    for i, a in enumerate(real):
+        if a.idx in dropped:
+            continue
+        for b in real[i + 1:]:
+            if b.start >= a.end:
+                break
+            if b.idx in dropped or a.speaker == b.speaker:
+                continue
+            if set(a.source_entries) & set(b.source_entries):
+                continue
+            overlap = min(a.end, b.end) - max(a.start, b.start)
+            if overlap > threshold_sec:
+                dropped.add(a.idx)
+                dropped.add(b.idx)
+                break
+
+    if not dropped:
+        return entries, 0
+    return [e for e in entries if e.idx not in dropped], len(dropped)
 
 
 def merge_overlapping_clips(
@@ -788,6 +830,7 @@ def process_project(
     clip_merge_gap: float = 0.3,
     clip_max_dur: float = 30.0,
     clip_min_dur: float = 2.0,
+    drop_cross_speaker_overlap: float | None = None,
     norm_srt: Path | None = None,
     overwrite: bool = False,
     output_root: Path = DEFAULT_OUTPUT_ROOT,
@@ -835,11 +878,20 @@ def process_project(
         return {}
     print(f"  切片输入: {norm_srt_path.name}")
     norm_entries = parse_srt(norm_srt_path)
+    dropped_cross = 0
+    if drop_cross_speaker_overlap is not None:
+        norm_entries, dropped_cross = drop_cross_speaker_overlap_entries(
+            norm_entries, drop_cross_speaker_overlap,
+        )
+        if dropped_cross:
+            print(f"  交叉说话人重叠丢弃 {dropped_cross} 条"
+                  f" (阈值 {drop_cross_speaker_overlap:g}s)")
     buckets, stats = build_buckets_from_normalized(
         norm_entries,
         target_speakers=target_set,
         include_unknown=keep_unlabeled,
     )
+    stats["dropped_cross_speaker_overlap"] = dropped_cross
     print(f"\n字幕统计 (from normalized SRT):")
     print(f"  total entries:  {stats['total']}")
     print(f"  kept:           {stats['kept']}")
@@ -864,7 +916,9 @@ def process_project(
                 "merge_overlap": merge_overlap, "audio_sample_rate": audio_sample_rate,
                 "hw_accel": hw_accel, "video_quality": video_quality,
                 "clip_merge_gap": clip_merge_gap, "clip_max_dur": clip_max_dur,
-                "clip_min_dur": clip_min_dur, "write_manifest": write_manifest,
+                "clip_min_dur": clip_min_dur,
+                "drop_cross_speaker_overlap": drop_cross_speaker_overlap,
+                "write_manifest": write_manifest,
             },
             "kinds": {kind: {"speakers": {}} for kind in output_types},
         }
@@ -1030,6 +1084,7 @@ def process_project(
             "clip_merge_gap": clip_merge_gap,
             "clip_max_dur": clip_max_dur,
             "clip_min_dur": clip_min_dur,
+            "drop_cross_speaker_overlap": drop_cross_speaker_overlap,
             "write_manifest": write_manifest,
         },
         "stats": stats,
@@ -1109,6 +1164,11 @@ def main():
                     help="合并后最大片段长度（秒），超过则在上一条边界拆分（默认 30）")
     ap.add_argument("--clip-min-dur", type=float, default=2.0,
                     help="合并后最小片段长度（秒），短于此值的直接丢弃（仅 --output-type audio 的 clips 生效，默认 2.0）")
+    ap.add_argument("--drop-cross-speaker-overlap", dest="drop_cross_speaker_overlap",
+                    type=float, default=None, metavar="SECONDS",
+                    help="丢弃与其他说话人台词时间重叠超过 N 秒的条目（0=有任何重叠就丢；"
+                         "默认不开启）。同 speaker 重叠不受影响；[?]/[NONSPEECH] 不参与判断；"
+                         "同一多说话人 cue 展开的条目不算重叠")
 
     ap.add_argument("--overwrite", action="store_true",
                     help="覆盖已存在的输出文件（默认跳过）")
@@ -1119,6 +1179,8 @@ def main():
         ap.error("必须指定项目名或 --all")
     if args.project and args.all:
         ap.error("--all 与项目名不能同时给")
+    if args.drop_cross_speaker_overlap is not None and args.drop_cross_speaker_overlap < 0:
+        ap.error("--drop-cross-speaker-overlap 不能为负数（0=有任何重叠就丢）")
 
     output_types = ["audio", "video"] if args.output_type == "both" else [args.output_type]
     merge_overlap = not args.no_merge_overlap
@@ -1189,6 +1251,7 @@ def main():
                 clip_merge_gap=args.clip_merge_gap,
                 clip_max_dur=args.clip_max_dur,
                 clip_min_dur=args.clip_min_dur,
+                drop_cross_speaker_overlap=args.drop_cross_speaker_overlap,
                 norm_srt=Path(args.norm_srt) if args.norm_srt else None,
                 overwrite=args.overwrite,
                 output_root=output_root,

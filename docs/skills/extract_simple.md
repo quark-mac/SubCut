@@ -85,6 +85,7 @@
 | `--clip-merge-gap` | `0.3` | 同角色相邻片段间隔 ≤N 秒 → 合并为一段。`0`=不合并（每条字幕独立切）。`0.3-0.5`=合并句子间自然停顿。`1.0+`=激进合并，可能跨场景 |
 | `--clip-max-dur` | `30` | 合并后单条片段最长为 N 秒。超限时在**原始条目标界处**断开，确保每段仍是完整台词 |
 | `--clip-min-dur` | `2.0` | 短于 N 秒的片段直接丢弃。**仅 `--output-type audio` 的 clips 生效**（视频模式下不丢，保证拼合预览完整） |
+| `--drop-cross-speaker-overlap` | 关闭 | 丢弃与其他说话人台词**时间重叠超过 N 秒**的条目（`0`=有任何重叠就丢）。用于清理同时发声导致音频不纯的片段（如 TTS 数据）。同 speaker 重叠不受影响（仍走桶内重叠合并）；`[?]`/`[NONSPEECH]` 不参与判断；同一多说话人 cue 展开的条目不算重叠 |
 
 ### 桶内重叠去重
 
@@ -116,7 +117,7 @@ SDH 字幕的特点：上一行字幕经常 "滞留" 到下一行开始之后才
 | `--keep-unlabeled` | 关闭 | 保留 `[?]` 未知说话人条目，归入 `?/` 目录。调试/手动检查用 |
 | `--all` | — | 批量处理 `sub/input/` 下全部项目。与项目名二选一 |
 
-> **NONSPEECH 处理**：输入 SRT 里的 `[NONSPEECH]` 行（含 `[NONSPEECH:内联描述]` 变体，统一归入 NONSPEECH 桶）**默认保留**，归入 `NONSPEECH/` 目录正常切片（与其他角色同规则，受 `--speakers` 过滤）。是否把 NONSPEECH 行写进输入，由 **normalize 层**的 `--keep-nonspeech` 决定（默认不保留，故 `normalized.srt` 通常不含该行；`--srt` 指定含该行的文件时生效）。
+> **NONSPEECH 处理**：输入 SRT 里的 `[NONSPEECH]` 行（含 `[NONSPEECH:内联描述]` 变体，统一归入 NONSPEECH 桶）与普通角色同规则——**受 `--speakers` 过滤**：选到才输出，不选则跳过（计入 skipped not_in_targets）。是否把 NONSPEECH 行写进输入，由 **normalize 层**的 `--keep-nonspeech` 决定（默认不保留，故 `normalized.srt` 通常不含该行；`--srt` 指定含该行的文件时生效）。
 
 ---
 
@@ -319,10 +320,11 @@ clip_min_dur          过短丢弃（仅 --output-type audio 的 clips）
 | `--output-type audio` + 视频源 | 只取音轨（`-map 0:a:0`），编码为 WAV PCM 16bit |
 | `--output-type` 含 video + 音频源 | **拒绝**该项目（无法输出视频），继续后续项目 |
 | `--keep-unlabeled` | `[?]` 条目归入 `?/` 目录 |
-| 输入含 `[NONSPEECH]` 行 | 归入 `NONSPEECH/` 目录切片（默认保留，受 `--speakers` 过滤） |
+| 输入含 `[NONSPEECH]` 行 | 与普通角色同规则：`--speakers` 选到（或未指定 `--speakers`）才切片，否则计入 skipped not_in_targets |
 | `--all` 某项目失败 | 当前项目 `raise`，**后续项目全部跳过** |
 | 空 speaker 组（无命中角色） | 跳过，不报错 |
 | `--clip-min-dur` + 视频类型 | 不丢弃（仅在 audio 类型生效） |
+| `--drop-cross-speaker-overlap` + 同 speaker 重叠 | 不受影响（桶内重叠合并照常处理） |
 
 ---
 
