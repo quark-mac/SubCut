@@ -4,7 +4,7 @@ extract_simple.py — 字幕驱动的角色片段提取/合并。
 不做 VAD 精修、不做质量评分。默认按字幕时间切；音频单条可按最小时长过滤。
 合并放在剪辑层（--clip-merge-gap），不影响字幕和角色台词输出。
 
-输入: 默认 sub/intermediate/<project>/normalized.srt（normalize.py 生成），
+输入: 默认 sub/intermediate/<project>/normalized.srt（normalize_sdh.py 生成），
       可用 --srt 指定任意 SRT（如 gold_set_dedup.srt / llm_corrected.srt）。
       [NONSPEECH] 行（含 [NONSPEECH:内联描述] 变体）与普通角色同规则：受
       --speakers 过滤（是否写入输入由 normalize 层的 --keep-nonspeech 决定）；
@@ -874,7 +874,7 @@ def process_project(
         norm_srt_path = DEFAULT_INTERMEDIATE_ROOT / pf.project_name / "normalized.srt"
     if not norm_srt_path.exists():
         print(f"[!] 找不到归一化字幕: {norm_srt_path}")
-        print(f"    请先运行: python sub/normalize.py \"{pf.project_name}\"")
+        print(f"    请先运行: python sub/normalize/normalize_sdh.py \"{pf.project_name}\"")
         return {}
     print(f"  切片输入: {norm_srt_path.name}")
     norm_entries = parse_srt(norm_srt_path)

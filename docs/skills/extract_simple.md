@@ -2,7 +2,7 @@
 
 ## 概述
 
-读取归一化 SRT（由 `normalize.py` 或 `diarize_llm.py` 生成），按角色分组，逐条从源媒体切片。
+读取归一化 SRT（由 `normalize_sdh.py` 或 `diarize_llm.py` 生成），按角色分组，逐条从源媒体切片。
 **不做 VAD、不做评分**，只按字幕时间戳精确切。
 
 合并操作在剪辑层通过 `--clip-merge-gap` 完成，不影响字幕和下游 LLM 修正。
