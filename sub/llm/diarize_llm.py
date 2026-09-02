@@ -123,16 +123,32 @@ def load_config(path: Path = DEFAULT_CONFIG_PATH) -> LLMConfig:
     return LLMConfig.from_dict(raw)
 
 
-def load_role_descriptions(path: Path) -> dict[str, Any]:
-    """读取角色介绍 JSON，过滤掉以 _ 开头的注释键。"""
+ROLE_EXTRA_COMPONENTS = frozenset({"story", "demographics", "visual_cues", "forms"})
+DEFAULT_SELECTED_ROLE_EXTRAS = frozenset({"demographics"})
+
+
+def load_role_descriptions(
+    path: Path,
+    detail: str = "baseline",
+    extras: frozenset[str] = frozenset(),
+) -> dict[str, Any]:
+    """读取角色介绍 JSON；full 模式额外保留完整故事脉络。"""
     if not path.exists():
         print(f"[warn] 找不到角色介绍文件 {path}，LLM 将无角色背景信息", file=sys.stderr)
         return {}
     raw = json.loads(path.read_text(encoding="utf-8"))
+    if detail not in {"baseline", "selected", "full"}:
+        raise ValueError(f"unsupported role detail: {detail}")
+    unknown_extras = extras - ROLE_EXTRA_COMPONENTS
+    if unknown_extras:
+        raise ValueError(f"unsupported role extras: {sorted(unknown_extras)}")
+    include_story = detail == "full" or "story" in extras
     return {
         k: v
         for k, v in raw.items()
-        if not k.startswith("_") or k == "_speaker_identification_rules"
+        if not k.startswith("_")
+        or k == "_speaker_identification_rules"
+        or (include_story and k == "_story_context")
     }
 
 
@@ -248,14 +264,47 @@ def build_batches(
 # Prompt 渲染
 # ============================================================
 
-def _format_role_descriptions(role_desc: dict[str, Any]) -> str:
+def _format_role_descriptions(
+    role_desc: dict[str, Any],
+    detail: str = "baseline",
+    extras: frozenset[str] = frozenset(),
+) -> str:
     """把角色介绍 dict 渲染成 prompt 里的文本段落。"""
     if not role_desc:
         return "（无角色介绍）"
+    if detail not in {"baseline", "selected", "full"}:
+        raise ValueError(f"unsupported role detail: {detail}")
+    unknown_extras = extras - ROLE_EXTRA_COMPONENTS
+    if unknown_extras:
+        raise ValueError(f"unsupported role extras: {sorted(unknown_extras)}")
+    if detail == "full":
+        enabled_extras = ROLE_EXTRA_COMPONENTS
+    elif detail == "selected":
+        enabled_extras = DEFAULT_SELECTED_ROLE_EXTRAS | extras
+    else:
+        enabled_extras = extras
     lines: list[str] = []
     rules = role_desc.get("_speaker_identification_rules")
     if isinstance(rules, list) and rules:
         lines.append("【全局识别规则】" + "；".join(str(rule) for rule in rules if rule))
+    story_context = role_desc.get("_story_context")
+    if isinstance(story_context, dict) and story_context:
+        story_parts = [f"{key}: {value}" for key, value in story_context.items() if value]
+        if story_parts:
+            lines.append(
+                "【故事脉络 / context only（不可单独决定 speaker）】"
+                + "；".join(story_parts)
+            )
+
+    def _format_value(value: Any) -> str:
+        if isinstance(value, dict):
+            return "；".join(f"{key}: {_format_value(item)}" for key, item in value.items())
+        if isinstance(value, list):
+            return "；".join(_format_value(item) for item in value)
+        if value is None:
+            return "unknown"
+        return str(value)
+
     for name, info in role_desc.items():
         if str(name).startswith("_"):
             continue
@@ -264,6 +313,10 @@ def _format_role_descriptions(role_desc: dict[str, Any]) -> str:
         parts = [f"【{name}】"]
         if info.get("name_ja"):
             parts.append(f"日文名: {info['name_ja']}")
+        if "demographics" in enabled_extras and "age" in info:
+            parts.append(f"context only/年龄: {_format_value(info['age'])}")
+        if "demographics" in enabled_extras and info.get("gender"):
+            parts.append(f"context only/性别: {info['gender']}")
         if info.get("role"):
             parts.append(f"context only（不可单独决定 speaker）: {info['role']}")
         if info.get("first_person"):
@@ -280,11 +333,28 @@ def _format_role_descriptions(role_desc: dict[str, Any]) -> str:
             if appearance.get("summary"):
                 visual_parts.append(str(appearance["summary"]))
             if appearance.get("avoid_mistakes"):
-                visual_parts.append("易错提醒: " + "; ".join(map(str, appearance["avoid_mistakes"])))
+                visual_parts.append(
+                    "易错提醒: " + "; ".join(map(str, appearance["avoid_mistakes"]))
+                )
             if visual_parts:
                 parts.append("visual evidence（弱证据）: " + " | ".join(visual_parts))
+            if "visual_cues" in enabled_extras and appearance.get("visual_cues"):
+                parts.append(
+                    "additional visual evidence（弱证据）/视觉线索: "
+                    + _format_value(appearance["visual_cues"])
+                )
+            if "forms" in enabled_extras and appearance.get("forms"):
+                parts.append(
+                    "additional visual evidence（弱证据）/形态: "
+                    + _format_value(appearance["forms"])
+                )
         if info.get("notes") and "请在此填入" not in str(info["notes"]):
             parts.append(f"context only（不可单独决定 speaker）: {info['notes']}")
+
+        known_fields = {
+            "name_ja", "age", "gender", "role", "first_person", "speech_style",
+            "catchphrases", "address_others", "appearance", "notes",
+        }
         lines.append("  " + " | ".join(parts))
     return "\n".join(lines)
 

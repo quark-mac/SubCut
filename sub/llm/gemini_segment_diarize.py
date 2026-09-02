@@ -39,7 +39,13 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from sub._srt_io import NormalizedEntry, parse_srt, seconds_to_srt_time, write_srt
-from sub.llm.diarize_llm import CANONICAL_SPEAKERS, INTERMEDIATE_ROOT, _format_role_descriptions, load_role_descriptions
+from sub.llm.diarize_llm import (
+    CANONICAL_SPEAKERS,
+    INTERMEDIATE_ROOT,
+    ROLE_EXTRA_COMPONENTS,
+    _format_role_descriptions,
+    load_role_descriptions,
+)
 from sub.llm.gemini_video_verify import (
     DEFAULT_CONFIG_PATH,
     _call_gemini,
@@ -88,6 +94,17 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--media", type=Path, default=None, help="显式指定源视频")
     parser.add_argument("--srt", type=Path, default=None, help="输入 SRT，默认 normalized.srt，缺失时回退 llm_corrected.srt")
     parser.add_argument("--role-desc", type=Path, default=None, help="角色介绍 JSON 路径")
+    parser.add_argument(
+        "--role-detail",
+        choices=("baseline", "selected", "full"),
+        default="baseline",
+        help="角色资料详细度：baseline=生产默认精选字段；selected=精选字段+实验性年龄/性别；full=全部事实和故事",
+    )
+    parser.add_argument(
+        "--role-extra",
+        default="",
+        help="在 selected 基线上追加角色资料组件，逗号分隔：story,demographics,visual_cues,forms",
+    )
     parser.add_argument("--speakers", default=None, help="限制 canonical speaker，逗号分隔，例如 Iroha,Yachiyo,Kaguya")
     parser.add_argument("--speaker-images-dir", type=Path, default=None, help="角色参考图目录，默认 sub/input/<project>/SPKS")
     parser.add_argument("--use-speaker-images", action="store_true", help="附加角色参考图（实验性，默认关闭）")
@@ -556,6 +573,7 @@ def _strict_three_speaker_audio_prompt(
     segments: list[Segment],
     compact_map: dict[int, tuple[float, float]],
     reference_audio: list[ReferenceAudio],
+    role_text: str,
 ) -> str:
     context_blocks: list[str] = []
     for segment in segments:
@@ -572,6 +590,10 @@ def _strict_three_speaker_audio_prompt(
 === 语音参考 ===
 {labels}
 每份参考音频对应其标签角色的声音。用它们比较目标视频中的音色、音高、语速、发声习惯和情绪下的声线。
+
+=== 完整角色资料 ===
+{role_text}
+角色资料用于补充声线、口癖、称呼、形态和故事上下文；选择三位主角时，目标声音与参考音频明确匹配仍是必要条件。
 
 === 前文上下文（只供理解，不要输出这些 idx） ===
 {context_text}
@@ -1250,7 +1272,14 @@ def main() -> int:
     base_url = args.base_url or cfg.get("base_url") or None
     api_key_env = args.api_key_env or cfg.get("api_key_env") or "GEMINI_API_KEY"
 
-    project = resolve_project(args.project, input_root=args.input, media=args.media)
+    # Gemini consumes its normalized input through --srt/_resolve_srt, so the
+    # source project only needs media and may keep subtitles inside an MKV.
+    project = resolve_project(
+        args.project,
+        input_root=args.input,
+        media=args.media,
+        require_subtitle=False,
+    )
     if project.media_kind != "video":
         print(f"[error] 源媒体不是视频: {project.media}", file=sys.stderr)
         return 1
@@ -1262,7 +1291,19 @@ def main() -> int:
         return 1
 
     role_desc_path = args.role_desc or (_REPO_ROOT / "sub" / "input" / args.project / "role_descriptions.json")
-    role_desc = load_role_descriptions(role_desc_path)
+    role_extras = frozenset(part.strip() for part in args.role_extra.split(",") if part.strip())
+    unknown_role_extras = role_extras - ROLE_EXTRA_COMPONENTS
+    if unknown_role_extras:
+        print(
+            f"[error] 未知 --role-extra: {', '.join(sorted(unknown_role_extras))}",
+            file=sys.stderr,
+        )
+        return 1
+    role_desc = load_role_descriptions(
+        role_desc_path,
+        detail=args.role_detail,
+        extras=role_extras,
+    )
     allowed_speakers = {
         name.strip() for name in args.speakers.split(",") if name.strip()
     } if args.speakers else set(CANONICAL_SPEAKERS)
@@ -1277,7 +1318,7 @@ def main() -> int:
     role_text = _format_role_descriptions({
         key: value for key, value in role_desc.items()
         if key.startswith("_") or key in allowed_speakers
-    })
+    }, detail=args.role_detail, extras=role_extras)
     speaker_images_dir = args.speaker_images_dir or (_REPO_ROOT / "sub" / "input" / args.project / "SPKS")
     reference_images = _load_reference_images(speaker_images_dir) if args.use_speaker_images else []
     speaker_audio_dir = args.speaker_audio_dir or (_REPO_ROOT / "sub" / "input" / args.project / "SPKS")
@@ -1295,6 +1336,8 @@ def main() -> int:
     print(f"片段数     : {len(segments)}")
     print(f"模型       : {model}")
     print(f"角色范围   : {', '.join(sorted(allowed_speakers))}")
+    print(f"角色资料   : {args.role_detail}")
+    print(f"附加资料   : {','.join(sorted(role_extras)) or '(none)'}")
     print(f"base_url   : {base_url or '(default Gemini API)'}")
     print(f"参考图     : {len(reference_images)} ({speaker_images_dir if reference_images else 'none'})")
     print(f"参考音频   : {len(reference_audio)} ({speaker_audio_dir if reference_audio else 'none'})")
@@ -1406,7 +1449,12 @@ def main() -> int:
             try:
                 group_reference_images = _select_reference_images_for_group(reference_images, group)
                 if reference_audio:
-                    prompt = _strict_three_speaker_audio_prompt(group, compact_map, reference_audio)
+                    prompt = _strict_three_speaker_audio_prompt(
+                        group,
+                        compact_map,
+                        reference_audio,
+                        role_text,
+                    )
                 elif group_reference_images:
                     prompt = _image_experiment_batch_prompt(
                         group,

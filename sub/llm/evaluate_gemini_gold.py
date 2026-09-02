@@ -480,6 +480,10 @@ def _metric_text(metric: dict[str, Any]) -> str:
     return f"{metric['correct']}/{metric['total']} ({_percent(metric['accuracy'])})"
 
 
+def _decimal(value: float | None) -> str:
+    return f"{value:.6f}" if value is not None else "n/a"
+
+
 def _markdown(
     raw: dict[str, Any],
     final: dict[str, Any] | None,
@@ -546,8 +550,8 @@ def _markdown(
         lines.append(f"| {confidence} | {values['count']} | {values['correct']} | {_percent(values['accuracy'])} | {_percent(values['nominal'])} |")
     lines.extend([
         "",
-        f"- ECE with high/mid/low mapped to 0.9/0.6/0.3: {raw['confidence_calibration']['ece_assuming_high_0.9_mid_0.6_low_0.3']:.6f}",
-        f"- Brier score with the same mapping: {raw['confidence_calibration']['brier_assuming_high_0.9_mid_0.6_low_0.3']:.6f}",
+        f"- ECE with high/mid/low mapped to 0.9/0.6/0.3: {_decimal(raw['confidence_calibration']['ece_assuming_high_0.9_mid_0.6_low_0.3'])}",
+        f"- Brier score with the same mapping: {_decimal(raw['confidence_calibration']['brier_assuming_high_0.9_mid_0.6_low_0.3'])}",
         "",
         "## Alignment",
         "",

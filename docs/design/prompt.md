@@ -49,11 +49,14 @@ data:video/mp4;base64,...
 
 ```text
 【Kaguya】
+  context only/年龄与性别: 完整角色设定
   context only（不可单独决定 speaker）: 角色身份、故事背景
+  speaker evidence/第一人称: 第一人称代词
   speaker evidence/说话风格: 声线、语速、语气描述
   speaker evidence/口癖: 标志性句型
   speaker evidence/称呼: 对其他角色的称呼
-  visual evidence（弱证据）: 外貌简要描述 + 易错提醒
+  visual evidence（弱证据）: 外貌概要、全部视觉线索和各形态
+  cross-check/易错提醒: 与其他角色、形态或声源的区别
   context only（不可单独决定 speaker）: 剧情设定、未来关系
 ```
 
@@ -62,6 +65,14 @@ data:video/mp4;base64,...
 - **speaker evidence**：声线、语气、口癖、称呼习惯。这是判断 speaker 的主要依据。
 - **visual evidence**：外貌、服装、虚拟形态。只作为弱辅助，不能覆盖声线。
 - **context only**：角色身份、剧情背景、未来关系。标记为"不可单独决定 speaker"，防止模型因为"Yachiyo 是未来 Kaguya"而混淆当前标签。
+
+角色资料通过 `--role-detail baseline/selected/full` 控制：
+
+- `baseline`（默认）：旧精选字段。
+- `selected`：旧精选字段加实验性的 `age/gender`。五窗口扩展回归结果不稳定，未提升为默认。
+- `full`：加入 `_story_context`、完整视觉线索和形态信息。局部 A/B 下降，不作为默认。
+
+`--role-extra story,demographics,visual_cues,forms` 可在实验中独立追加组件。所有模式都不发送 `_comment` 和 `_instructions` 这类文件维护元数据。
 
 ## 全局识别规则
 
@@ -154,6 +165,6 @@ Gemini 只收到 compact 时间，不收到原始时间：
 
 使用 `--use-speaker-audio` 时（需同时传 `--speakers`）：
 
-- 不发送文字角色资料
-- 作为替代发送三人 WAV 参考音频
+- 同时发送由 `--role-detail` 选择的文字角色资料和三人 WAV 参考音频
 - 使用独立的严格语音匹配 prompt
+- 文字剧情和外貌仍是辅助；选择三主角时，与参考音频明确匹配是必要条件
