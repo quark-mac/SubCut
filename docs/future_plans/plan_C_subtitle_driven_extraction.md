@@ -4,9 +4,9 @@
 
 | 阶段 | 状态 | 产物 |
 |---|---|---|
-| P1.0 设计文档 | ✅ 完成 | `sub/normalize_subtitle_design.md` |
+| P1.0 设计文档 | ✅ 完成 | `docs/design/normalize_subtitle.md` |
 | P1.1 SRT/JSONL I/O 层 | ✅ 完成 | `sub/_srt_io.py` |
-| P1.2 normalize 算法 + CLI | ✅ 完成 | `sub/normalize.py` |
+| P1.2 normalize 算法 + CLI | ✅ 完成 | `sub/normalize/normalize_sdh.py` |
 | P1.3 验证（Cosmic Princess Kaguya） | ✅ 完成 | `sub/intermediate/Cosmic Princess Kaguya/` |
 | P1.4 extract_simple 消费 normalized SRT | ✅ 完成 | `sub/extract_simple.py` |
 | P1.5 回归对比 | ✅ 完成 | canonical 角色时长 0 差异，clips 数差异仅来自合并时机不同 |
@@ -22,7 +22,7 @@
 
 ```powershell
 # Step 1: 归一化字幕
-env\python.exe sub\normalize.py "Cosmic Princess Kaguya"
+env\python.exe sub\normalize\normalize_sdh.py "Cosmic Princess Kaguya"
 
 # Step 1.5（可选）: LLM 辅助修正 [?] 行（plan B）
 env\python.exe sub\llm\diarize_llm.py "Cosmic Princess Kaguya"

@@ -23,7 +23,7 @@
 
 ## 前置条件
 
-- `sub/inspect_speakers.py` 存在并可运行
+- `sub/normalize/inspect_speakers.py` 存在并可运行
 - `env/python.exe`（项目自带 conda 风格 venv）可用
 - 终端能输出 UTF-8（脚本内已 `sys.stdout.reconfigure`，但 PowerShell 显示仍可能乱码 — 不必担心，**以报告文件 `sub/inspect_report.txt` 为准**，控制台只是预览）
 
@@ -48,7 +48,7 @@
 ### Step 2 — 跑 inspect 脚本生成全片统计
 
 ```bash
-env\python.exe sub\inspect_speakers.py --top 100 --samples 1
+env\python.exe sub\normalize\inspect_speakers.py --top 100 --samples 1
 ```
 
 参数说明：
@@ -127,7 +127,7 @@ Read: sub/inspect_report.txt
 | 字段 | 规则 |
 |---|---|
 | canonical key | **罗马字**（ASCII），如 `Iroha` / `Kaguya` —— 路径 ASCII 友好，TTS 框架不易因路径里的 CJK 跑挂 |
-| 变体值 | 保留字幕**规范化后**形式（即 `inspect_speakers.py` 里 `normalize_speaker()` 输出的形式：去 furigana 括号嵌套，保留 `NA:` 这类前缀整体） |
+| 变体值 | 保留字幕**规范化后**形式（即 `sub/_subtitle_utils.py` 的 `normalize_speaker()` 输出形式：去 furigana 括号嵌套，保留 `NA:` 这类前缀整体） |
 | 注释 key | 以 `_` 开头（`_comment`, `_notes`）— 下游脚本约定忽略 |
 
 #### 文件模板

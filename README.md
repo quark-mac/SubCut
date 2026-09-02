@@ -14,7 +14,7 @@ This working tree no longer uses the original Whisper/NeMo diarization pipeline.
 
 ```text
 source subtitle
-  -> sub/normalize.py
+  -> sub/normalize/normalize_sdh.py
   -> normalized.srt
   -> sub/llm/scene_segmenter.py
   -> scene_segments.json
@@ -26,7 +26,9 @@ source subtitle
 
 Core scripts:
 
-- `sub/normalize.py`
+- `sub/normalize/normalize_sdh.py`
+- `sub/normalize/normalize_mkv.py`
+- `sub/normalize/inspect_speakers.py`
 - `sub/llm/scene_segmenter.py`
 - `sub/llm/scene_srt_to_json.py`
 - `sub/llm/gemini_segment_diarize.py`
@@ -39,7 +41,9 @@ Compile production scripts:
 
 ```powershell
 env\python.exe -m py_compile `
-  sub\normalize.py `
+  sub\normalize\normalize_sdh.py `
+  sub\normalize\normalize_mkv.py `
+  sub\normalize\inspect_speakers.py `
   sub\llm\scene_segmenter.py `
   sub\llm\scene_srt_to_json.py `
   sub\llm\gemini_segment_diarize.py `

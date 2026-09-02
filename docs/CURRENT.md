@@ -6,7 +6,7 @@
 
 ```text
 source ASS / SDH
-  -> sub/normalize.py
+  -> sub/normalize/normalize_sdh.py
   -> normalized.srt
   -> sub/llm/scene_segmenter.py
   -> scene_segments_llm/scene_segments.json
@@ -72,10 +72,14 @@ explicit anchor: none
 explicit output lock: none
 final OTHER: speaker_raw identity
 keep-tags: preserve input tags only; no MM_* status tags
+role detail: baseline (old selected fields)
+role detail selected/full and role-extra components: experiment-only
 code-default grouping: up to 2 scenes / 30 entries / 90 seconds
 ```
 
 The best measured full run used explicit `1 scene/request` flags and reached 91.30%. That result has not yet been promoted to the CLI default because it also used the current prompt/output changes and was not a pure grouping-only A/B.
+
+Repeated role-component A/B initially showed gains from `age/gender`, but two additional preselected windows produced one tie and one -10 point regression. Across five windows the macro mean gain was only +2.4 points with high window variance, so it was not promoted to the production default. All extra role components remain experiment-only; see `docs/reference/role_component_ab.md`.
 
 Scene generation:
 
@@ -99,6 +103,10 @@ The 30-entry/90-second forced scene-refine experiment reduced Gold accuracy from
 - Normalization does not inherit unlabeled speaker identities; unlabeled dialogue remains `[?]` for Gemini.
 
 See `docs/reference/current_issues.md` for details.
+
+## Optional Voice Backend
+
+`voice/` contains an optional integration for `diarize==0.1.2`, currently installed in the main `env` after removing unused legacy Torch consumers. It uses CPU Torch/Torchaudio 2.8.0 and produces anonymous acoustic evidence only; it is not part of the production label path yet.
 
 ## Frozen Decisions
 

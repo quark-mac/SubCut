@@ -37,13 +37,15 @@ Generated output under `sub/output/` can be regenerated, but ask before deleting
 
 ## Production Modules
 
-- `sub/normalize.py` - source subtitle to `normalized.srt` / JSONL.
+- `sub/normalize/normalize_sdh.py` - source SDH subtitle to `normalized.srt` / JSONL.
+- `sub/normalize/normalize_mkv.py` - inspect, extract, and policy-filter MKV text subtitle tracks into candidate normalized files.
 - `sub/llm/scene_segmenter.py` - DeepSeek semantic scene generation and refine.
 - `sub/llm/scene_srt_to_json.py` - edited scene SRT to strict scene JSON.
 - `sub/llm/gemini_segment_diarize.py` - scene-level multimodal speaker labeling.
 - `sub/llm/evaluate_gemini_gold.py` - structure-aware Gold evaluation.
 - `sub/extract_simple.py` - role-specific media export.
 - `sub/_srt_io.py`, `sub/project_io.py` - shared subtitle and project I/O.
+- `voice/` - optional isolated acoustic diarization backend; not part of the production label path yet.
 
 ## Supporting And Experimental Modules
 
@@ -52,8 +54,13 @@ Generated output under `sub/output/` can be regenerated, but ask before deleting
 - `sub/llm/target_verify_ab.py` - target verification A/B experiment.
 - `sub/llm/gemini_multimodal_diarize.py` - older multimodal workflow, not the production entry point.
 - `scripts/ocr_batch.py` - auxiliary OCR utility.
+- `voice/diarize_example.py` - PyPI `diarize` smoke/example wrapper.
 
 Experimental modules must not change production defaults or write into production result directories unless explicitly requested.
+
+The optional voice backend currently uses the main environment's CPU Torch 2.8.x stack because legacy GPU/NeMo consumers were removed. If a future component needs another Torch range, isolate that component rather than changing this environment casually. Voice anonymous clusters are auxiliary evidence, not canonical speaker labels.
+
+The optional voice backend must use an isolated environment because its pinned Torch range conflicts with the main environment. Its anonymous clusters are auxiliary evidence, not canonical speaker labels.
 
 ## Current Behavioral Contracts
 

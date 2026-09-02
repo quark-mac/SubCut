@@ -11,7 +11,7 @@
 
 ```text
 源字幕 + 源视频
-  -> normalize.py  → normalized.srt / normalized.jsonl
+  -> normalize/normalize_sdh.py  → normalized.srt / normalized.jsonl
   -> scene_segmenter.py  → scene_segments_llm.srt / .json
   -> [可选] 字幕软件调整 scene 边界
   -> [可选] scene_srt_to_json.py  → 人工时间线重新生成 JSON
@@ -30,7 +30,7 @@ env\python.exe
 ### 1. 规范化字幕
 
 ```powershell
-env\python.exe sub\normalize.py "Cosmic Princess Kaguya"
+env\python.exe sub\normalize\normalize_sdh.py "Cosmic Princess Kaguya"
 ```
 
 显式 speaker 标签会保留并做 alias 归一化；无 speaker 标签的对白统一输出为 `[?]`，不再根据前后字幕继承，由 Gemini 逐条判断实际 speaker。

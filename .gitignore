@@ -24,3 +24,4 @@ sub/intermediate/
 sub/input/*/SPKS/
 sub/input/*/job_*/
 scripts/*_文字版.md
+!voice/requirements.txt
