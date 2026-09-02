@@ -1,0 +1,2 @@
+# FoxNoseTech/diarize 0.1.2 requires torch/torchaudio < 2.9.
+diarize==0.1.2
