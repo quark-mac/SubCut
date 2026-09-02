@@ -2,7 +2,7 @@
 _subtitle_utils.py — 字幕解析与说话人规范化（共享模块）。
 
 服务两类调用方:
-- sub/inspect_speakers.py: 统计字幕里出现的所有说话人 token
+- sub/normalize/inspect_speakers.py: 统计字幕里出现的所有说话人 token
 - sub/extract_simple.py:   按角色切片（待写）
 
 核心数据结构是 SubtitleEntry，对每条 Dialogue 标记 kind:

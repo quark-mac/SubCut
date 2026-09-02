@@ -2,11 +2,11 @@
 _srt_io.py — 归一化中间字幕的 I/O 层（SRT + JSONL）。
 
 服务调用方:
-- sub/normalize.py:       生成 normalized.srt + normalized.jsonl
+- sub/normalize/normalize_sdh.py: 生成 normalized.srt + normalized.jsonl
 - sub/extract_simple.py:  消费 normalized.srt（P1.4 后）
 - 用户:                   手编辑 SRT 修正 speaker / 文本 / 时间
 
-格式契约（详见 sub/normalize_subtitle_design.md）:
+格式契约（详见 docs/design/normalize_subtitle.md）:
 
   SRT 第三行起的内容主体格式:
     [<speaker>] {<TAG1>} {<TAG2>} <text-line-1>

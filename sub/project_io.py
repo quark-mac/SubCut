@@ -1,14 +1,15 @@
 """
 project_io.py — sub/input 下的"项目"文件夹发现与媒体/字幕配对。
 
-每个项目一个子目录，自包含媒体 + 字幕 (+ 可选 speaker_aliases.json)：
+每个项目一个子目录，通常自包含媒体 + 字幕 (+ 可选 speaker_aliases.json)：
 
     sub/input/<project_name>/
         <something>.mp4 / .mkv / .wav / .flac / ...   ← 媒体（视频或音频）
         <something>.ass / .srt / .vtt                  ← 字幕
         speaker_aliases.json                           ← 可选
 
-本模块只做"找到正确的文件"，不解析字幕、不调 ffmpeg。
+本模块只做"找到正确的文件"，不解析字幕、不调 ffmpeg。调用方可以显式允许
+MKV-only 项目，此时 subtitle 为 None。
 
 直接运行可自检 sub/input 下所有项目:
     python sub/project_io.py
@@ -75,7 +76,7 @@ class ProjectFiles:
     project_name: str          # 子目录名（保留原始大小写/空格）
     project_dir: Path          # 绝对/相对项目目录
     media: Path                # 已解析的媒体文件路径
-    subtitle: Path             # 字幕文件路径
+    subtitle: Path | None      # 字幕文件路径；允许 MKV-only 时可能为 None
     aliases: Path | None       # speaker_aliases.json，没有就是 None
     media_kind: str            # "video" 或 "audio"
 
@@ -85,7 +86,7 @@ class ProjectFiles:
             f"  dir      : {self.project_dir}\n"
             f"  media    : {self.media.name}  ({self.media_kind}, "
             f"{_fmt_size(self.media)})\n"
-            f"  subtitle : {self.subtitle.name}\n"
+            f"  subtitle : {self.subtitle.name if self.subtitle else '(none)'}\n"
             f"  aliases  : {self.aliases.name if self.aliases else '(none)'}"
         )
 
@@ -190,6 +191,7 @@ def resolve_project(
     media: str | Path | None = None,
     subtitle: str | Path | None = None,
     aliases: str | Path | None = None,
+    require_subtitle: bool = True,
 ) -> ProjectFiles:
     """定位一个项目的媒体/字幕/别名文件。
 
@@ -200,6 +202,9 @@ def resolve_project(
     media/subtitle/aliases:
         - 显式覆盖；可以是文件名（在项目目录里查找）或路径
         - 留空则自动扫描项目目录
+    require_subtitle:
+        - True（默认）要求独立字幕文件
+        - False 允许 MKV-only 项目；目录中若有唯一字幕仍会返回
 
     异常:
         - ProjectNotFoundError: 目录不存在 / 没找到必需文件
@@ -243,8 +248,13 @@ def resolve_project(
             f"(支持扩展名: {sorted(MEDIA_EXTS)})"
         )
 
-    subtitle_path = _pick_one(subtitle_files, "字幕", subtitle, project_dir)
-    if subtitle_path is None:
+    if require_subtitle or subtitle is not None:
+        subtitle_path = _pick_one(subtitle_files, "字幕", subtitle, project_dir)
+    else:
+        # Media-only callers do not consume the source subtitle. Preserve a
+        # unique candidate for diagnostics, but ignore irrelevant ambiguity.
+        subtitle_path = subtitle_files[0] if len(subtitle_files) == 1 else None
+    if subtitle_path is None and require_subtitle:
         raise ProjectNotFoundError(
             f"项目 {project_name} 里没找到字幕文件 "
             f"(支持扩展名: {sorted(SUBTITLE_EXTS)})"

@@ -3,7 +3,7 @@
 > 目的：把项目的 ASS 字幕转换为统一的 `normalized.srt` / `normalized.jsonl` 中间产物，
 > 供下游 Gemini 标注、`extract_simple.py` 切片和用户手动审核使用。
 >
-> 详细规约见 `sub/normalize_subtitle_design.md`。
+> 详细规约见 `docs/design/normalize_subtitle.md`。
 
 ## 何时触发这个 skill
 
@@ -23,10 +23,10 @@
 
 ## 工作流（3 步）
 
-### Step 1 — 跑 normalize.py
+### Step 1 — 跑 normalize_sdh.py
 
 ```powershell
-env\python.exe sub\normalize.py "<project_name>"
+env\python.exe sub\normalize\normalize_sdh.py "<project_name>"
 ```
 
 默认参数即可覆盖大多数场景。常用覆盖：
@@ -152,7 +152,7 @@ env\python.exe sub\extract_simple.py "<project>" --speakers Iroha,Kaguya --outpu
 
 **Q: `alias_miss_singles` 偏高怎么办？**
 
-跑 `inspect_speakers.py` 查看未命中的 token，补充到 `speaker_aliases.json`，再重跑 normalize。
+跑 `sub/normalize/inspect_speakers.py` 查看未命中的 token，补充到 `speaker_aliases.json`，再重跑 normalize。
 
 **Q: `[?]` 条目太多怎么办？**
 
@@ -168,4 +168,4 @@ env\python.exe sub\extract_simple.py "<project>" --speakers Iroha,Kaguya --outpu
 
 ## 一句话总结
 
-跑 `normalize.py` → 读 report 确认统计 → 抽查几条关键 entry → 有问题补 aliases 或调参数重跑 → 下游 `extract_simple.py` 自动消费。
+跑 `normalize_sdh.py` → 读 report 确认统计 → 抽查几条关键 entry → 有问题补 aliases 或调参数重跑 → 下游 `extract_simple.py` 自动消费。

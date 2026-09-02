@@ -1,17 +1,17 @@
 """
-normalize.py — 把 ASS 字幕归一化为统一的 NormalizedEntry 中间表示，
+normalize_sdh.py — 把 SDH ASS 字幕归一化为统一的 NormalizedEntry 中间表示，
 并落到 sub/intermediate/<project>/{normalized.srt, normalized.jsonl,
 normalize_report.json}。
 
 下游（extract_simple.py / 未来 LLM 补全 / 用户手编辑）只读这套中间产物，
 不再回看 ASS。
 
-详细规约见 sub/normalize_subtitle_design.md。
+详细规约见 docs/design/normalize_subtitle.md。
 
 CLI:
-    python sub/normalize.py "Cosmic Princess Kaguya"
-    python sub/normalize.py "<proj>" --keep-nonspeech
-    python sub/normalize.py "<proj>" --no-keep-unknown
+    python sub/normalize/normalize_sdh.py "Cosmic Princess Kaguya"
+    python sub/normalize/normalize_sdh.py "<proj>" --keep-nonspeech
+    python sub/normalize/normalize_sdh.py "<proj>" --no-keep-unknown
 """
 
 from __future__ import annotations
@@ -28,13 +28,13 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-# 让 `python sub/normalize.py ...` 直接跑时也能 import 同目录模块
-_HERE = Path(__file__).resolve().parent
-if str(_HERE) not in sys.path:
-    sys.path.insert(0, str(_HERE))
+# 直接按文件执行时，Python 只把脚本目录加入 sys.path。
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
-from project_io import resolve_project, ProjectFiles, ProjectIOError  # noqa: E402
-from _subtitle_utils import (  # noqa: E402
+from sub.project_io import resolve_project, ProjectFiles, ProjectIOError  # noqa: E402
+from sub._subtitle_utils import (  # noqa: E402
     SubtitleEntry,
     parse_subtitle,
     load_aliases,
@@ -42,7 +42,7 @@ from _subtitle_utils import (  # noqa: E402
     to_canonical,
     strip_lyric_lines,
 )
-from _srt_io import (  # noqa: E402
+from sub._srt_io import (  # noqa: E402
     NormalizedEntry,
     SPEAKER_UNKNOWN,
     SPEAKER_NONSPEECH,

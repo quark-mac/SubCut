@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "source": {
+    "stream_index": 2,
+    "expected_codec": "ass",
+    "expected_title": "chs_jp"
+  },
+  "event_types": {
+    "Dialogue": "process",
+    "Comment": "drop_comment"
+  },
+  "styles": {
+    "Text - JP": "keep_dialogue",
+    "Text - JP - UP": "keep_dialogue",
+    "Text - CN": "drop_translation",
+    "Text - CN - UP": "drop_translation",
+    "Screen": "drop_screen",
+    "ED - JP": "drop_lyrics",
+    "ED - CN": "drop_translation",
+    "Ruby": "drop_annotation",
+    "Note": "drop_annotation",
+    "Staff": "drop_staff",
+    "Title": "drop_title"
+  },
+  "unknown_style": "error",
+  "expected": {
+    "kept_events": 377,
+    "review_events": 0
+  }
+}

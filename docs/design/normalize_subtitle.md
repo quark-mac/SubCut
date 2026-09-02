@@ -184,10 +184,10 @@ multi speaker block 规则：
 
 ---
 
-## 6. CLI（normalize.py）
+## 6. CLI（normalize_sdh.py）
 
 ```
-python sub/normalize.py "Cosmic Princess Kaguya"
+python sub/normalize/normalize_sdh.py "Cosmic Princess Kaguya"
     --keep-nonspeech             # 默认不保留
     --no-keep-unknown            # 默认保留未知；--no-keep-unknown 丢弃
     --merge-overlap              # 默认关闭
@@ -203,7 +203,7 @@ python sub/normalize.py "Cosmic Princess Kaguya"
 ### extract_simple.py 输入（当前状态）
 
 - `normalized.srt` 存在 → 自动读取，唯一输入源
-- 不存在 → 报错提示先跑 `normalize.py`
+- 不存在 → 报错提示先跑 `sub/normalize/normalize_sdh.py`
 - `--from-ass` / `--from-normalized` 旧 CLI 参数已删除（过渡期结束）
 
 ### build_buckets 简化（已实施）

@@ -5,10 +5,10 @@ inspect_speakers.py — 扫描字幕，统计说话人标注情况。
 里的工作流，用于人工/AI 决定如何写 speaker_aliases.json。
 
 用法:
-    python sub/inspect_speakers.py                              # 处理 sub/input 下所有项目
-    python sub/inspect_speakers.py "Cosmic Princess Kaguya"     # 单个项目
-    python sub/inspect_speakers.py --top 100 --samples 1
-    python sub/inspect_speakers.py --subtitle path/to/file.ass  # 显式指定字幕
+    python sub/normalize/inspect_speakers.py                              # 处理所有项目
+    python sub/normalize/inspect_speakers.py "Cosmic Princess Kaguya"     # 单个项目
+    python sub/normalize/inspect_speakers.py --top 100 --samples 1
+    python sub/normalize/inspect_speakers.py --subtitle path/to/file.ass  # 显式指定字幕
 """
 
 from __future__ import annotations
@@ -18,12 +18,17 @@ import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from _subtitle_utils import (
+# 直接按文件执行时，Python 只把脚本目录加入 sys.path。
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from sub._subtitle_utils import (  # noqa: E402
     parse_subtitle,
     iter_speakers,
     load_aliases,
 )
-from project_io import (
+from sub.project_io import (  # noqa: E402
     DEFAULT_INPUT_ROOT,
     list_projects,
     resolve_project,
