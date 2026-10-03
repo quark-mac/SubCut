@@ -21,6 +21,7 @@ Read these before changing production behavior:
 - `docs/design/scene_segmentation.md` - DeepSeek scene behavior.
 - `docs/design/prompt.md` - Gemini prompt contract.
 - `docs/reference/evaluation.md` - Gold alignment and metrics.
+- `docs/design/voice/implementation_handoff.md` - required scope and acceptance gates for two-stage voice clustering work.
 
 Do not change production defaults from a single local result. Run the representative regression set first, then Gold evaluation. Record experimental flags explicitly instead of silently changing defaults.
 
@@ -60,10 +61,11 @@ Experimental modules must not change production defaults or write into productio
 
 The optional voice backend currently uses the main environment's CPU Torch 2.8.x stack because legacy GPU/NeMo consumers were removed. If a future component needs another Torch range, isolate that component rather than changing this environment casually. Voice anonymous clusters are auxiliary evidence, not canonical speaker labels.
 
-The optional voice backend must use an isolated environment because its pinned Torch range conflicts with the main environment. Its anonymous clusters are auxiliary evidence, not canonical speaker labels.
+For two-stage voice work, edit only the `voice/` subsystem and its documentation, use public lower-level modules from pinned `diarize==0.1.2`, preserve the original audio timebase, and keep subtitle alignment and Gemini integration outside the first implementation task. Read all documents under `docs/design/voice/` before editing.
 
 ## Current Behavioral Contracts
 
+- The sole Gold Set is `sub/intermediate/Cosmic Princess Kaguya/final_gold_set.srt`. The 2026-10-03 normalized revision has 2101 entries; existing scene timelines must be regenerated before using it with Gemini. See `docs/CURRENT.md`.
 - Production Gemini input defaults to `normalized.srt`; `llm_corrected.srt` is fallback only.
 - DeepSeek owns semantic scene boundaries. Python does not mechanically split production scenes by entry count.
 - Gemini outputs one speaker per subtitle entry. New output must not use `OVERLAP`.
@@ -73,6 +75,8 @@ The optional voice backend must use an isolated environment because its pinned T
 - Scene titles are editing metadata, not speaker evidence.
 
 ## Development Discipline
+
+When using the installed Matt Pocock engineering/productivity skills, read `docs/agents/matt-skills.md` for project adaptations, WIP review coverage, and initialization requirements.
 
 - One writable task at a time in the main worktree.
 - Other concurrent conversations should be read-only reviews or data analysis.

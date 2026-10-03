@@ -1,0 +1,600 @@
+{
+  "schema_version": 1,
+  "gold": "D:\\whisper-diarization\\voice\\fixtures\\kaguya_001319_001421\\vocals_fixed2_16k_01\\gold_clip_derived.srt",
+  "inputs": {
+    "two_stage": "D:\\whisper-diarization\\voice\\fixtures\\kaguya_001319_001421\\vocals_fixed2_16k_01\\two_stage\\diarize_two_stage.json",
+    "one_stage": "D:\\whisper-diarization\\voice\\fixtures\\kaguya_001319_001421\\vocals_fixed2_16k_01\\one_stage.json"
+  },
+  "methods": {
+    "one-stage": {
+      "long_stage": {
+        "segments": 3,
+        "evaluated": 3,
+        "correct": 3,
+        "cluster_purity": 1.0
+      },
+      "short_stage": {
+        "segments": 22,
+        "evaluated": 22,
+        "correct": 18,
+        "assignment_accuracy": 0.8181818181818182,
+        "unknown": 0,
+        "unknown_rate": 0.0
+      },
+      "excluded": {
+        "no_gold_overlap": 0,
+        "ambiguous_speaker": 0
+      },
+      "clusters": [
+        {
+          "cluster": "SPEAKER_00",
+          "gold_speaker": "Iroha",
+          "samples": 2,
+          "purity": 1.0
+        },
+        {
+          "cluster": "SPEAKER_01",
+          "gold_speaker": "Kaguya",
+          "samples": 1,
+          "purity": 1.0
+        }
+      ],
+      "cluster_mapping": {
+        "SPEAKER_00": "Iroha",
+        "SPEAKER_01": "Kaguya"
+      },
+      "samples": [
+        {
+          "idx": 0,
+          "start": 1.0,
+          "end": 2.5,
+          "duration": 1.5,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "SPEAKER_01",
+          "excluded": null
+        },
+        {
+          "idx": 1,
+          "start": 3.0,
+          "end": 5.4,
+          "duration": 2.4000000000000004,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 2,
+          "start": 5.5,
+          "end": 8.7,
+          "duration": 3.1999999999999993,
+          "stage": "long",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 3,
+          "start": 8.9,
+          "end": 12.8,
+          "duration": 3.9000000000000004,
+          "stage": "long",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 4,
+          "start": 12.8,
+          "end": 13.5,
+          "duration": 0.6999999999999993,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 5,
+          "start": 14.4,
+          "end": 14.9,
+          "duration": 0.5,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 6,
+          "start": 15.0,
+          "end": 15.2,
+          "duration": 0.1999999999999993,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 7,
+          "start": 16.4,
+          "end": 16.8,
+          "duration": 0.40000000000000213,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "SPEAKER_01",
+          "excluded": null
+        },
+        {
+          "idx": 8,
+          "start": 19.0,
+          "end": 19.3,
+          "duration": 0.3000000000000007,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "SPEAKER_01",
+          "excluded": null
+        },
+        {
+          "idx": 9,
+          "start": 19.5,
+          "end": 20.5,
+          "duration": 1.0,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "SPEAKER_01",
+          "excluded": null
+        },
+        {
+          "idx": 10,
+          "start": 20.7,
+          "end": 21.3,
+          "duration": 0.6000000000000014,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 11,
+          "start": 21.5,
+          "end": 22.2,
+          "duration": 0.6999999999999993,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 12,
+          "start": 22.4,
+          "end": 24.4,
+          "duration": 2.0,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "SPEAKER_01",
+          "excluded": null
+        },
+        {
+          "idx": 13,
+          "start": 24.4,
+          "end": 25.9,
+          "duration": 1.5,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "SPEAKER_01",
+          "excluded": null
+        },
+        {
+          "idx": 14,
+          "start": 26.1,
+          "end": 27.5,
+          "duration": 1.3999999999999986,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_01",
+          "excluded": null
+        },
+        {
+          "idx": 15,
+          "start": 29.3,
+          "end": 33.2,
+          "duration": 3.900000000000002,
+          "stage": "long",
+          "expected": "Kaguya",
+          "predicted": "SPEAKER_01",
+          "excluded": null
+        },
+        {
+          "idx": 16,
+          "start": 33.5,
+          "end": 35.0,
+          "duration": 1.5,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "SPEAKER_01",
+          "excluded": null
+        },
+        {
+          "idx": 17,
+          "start": 37.0,
+          "end": 37.9,
+          "duration": 0.8999999999999986,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 18,
+          "start": 38.2,
+          "end": 39.5,
+          "duration": 1.2999999999999972,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 19,
+          "start": 39.9,
+          "end": 40.9,
+          "duration": 1.0,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "SPEAKER_01",
+          "excluded": null
+        },
+        {
+          "idx": 20,
+          "start": 48.2,
+          "end": 49.5,
+          "duration": 1.2999999999999972,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_01",
+          "excluded": null
+        },
+        {
+          "idx": 21,
+          "start": 49.9,
+          "end": 51.7,
+          "duration": 1.8000000000000043,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 22,
+          "start": 52.8,
+          "end": 55.1,
+          "duration": 2.3000000000000043,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 23,
+          "start": 57.7,
+          "end": 59.7,
+          "duration": 2.0,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 24,
+          "start": 60.8,
+          "end": 61.2,
+          "duration": 0.4000000000000057,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        }
+      ]
+    },
+    "two-stage": {
+      "long_stage": {
+        "segments": 3,
+        "evaluated": 3,
+        "correct": 3,
+        "cluster_purity": 1.0
+      },
+      "short_stage": {
+        "segments": 22,
+        "evaluated": 22,
+        "correct": 8,
+        "assignment_accuracy": 0.36363636363636365,
+        "unknown": 14,
+        "unknown_rate": 0.6363636363636364
+      },
+      "excluded": {
+        "no_gold_overlap": 0,
+        "ambiguous_speaker": 0
+      },
+      "clusters": [
+        {
+          "cluster": "SPEAKER_00",
+          "gold_speaker": "Iroha",
+          "samples": 2,
+          "purity": 1.0
+        },
+        {
+          "cluster": "SPEAKER_01",
+          "gold_speaker": "Kaguya",
+          "samples": 1,
+          "purity": 1.0
+        }
+      ],
+      "cluster_mapping": {
+        "SPEAKER_00": "Iroha",
+        "SPEAKER_01": "Kaguya"
+      },
+      "samples": [
+        {
+          "idx": 0,
+          "start": 1.0,
+          "end": 2.5,
+          "duration": 1.5,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "UNKNOWN",
+          "excluded": null
+        },
+        {
+          "idx": 1,
+          "start": 3.0,
+          "end": 5.4,
+          "duration": 2.4000000000000004,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "UNKNOWN",
+          "excluded": null
+        },
+        {
+          "idx": 2,
+          "start": 5.5,
+          "end": 8.7,
+          "duration": 3.1999999999999993,
+          "stage": "long",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 3,
+          "start": 8.9,
+          "end": 12.8,
+          "duration": 3.9000000000000004,
+          "stage": "long",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 4,
+          "start": 12.8,
+          "end": 13.5,
+          "duration": 0.6999999999999993,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 5,
+          "start": 14.4,
+          "end": 14.9,
+          "duration": 0.5,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "UNKNOWN",
+          "excluded": null
+        },
+        {
+          "idx": 6,
+          "start": 15.0,
+          "end": 15.2,
+          "duration": 0.1999999999999993,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "UNKNOWN",
+          "excluded": null
+        },
+        {
+          "idx": 7,
+          "start": 16.4,
+          "end": 16.8,
+          "duration": 0.40000000000000213,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "UNKNOWN",
+          "excluded": null
+        },
+        {
+          "idx": 8,
+          "start": 19.0,
+          "end": 19.3,
+          "duration": 0.3000000000000007,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "UNKNOWN",
+          "excluded": null
+        },
+        {
+          "idx": 9,
+          "start": 19.5,
+          "end": 20.5,
+          "duration": 1.0,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "UNKNOWN",
+          "excluded": null
+        },
+        {
+          "idx": 10,
+          "start": 20.7,
+          "end": 21.3,
+          "duration": 0.6000000000000014,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "UNKNOWN",
+          "excluded": null
+        },
+        {
+          "idx": 11,
+          "start": 21.5,
+          "end": 22.2,
+          "duration": 0.6999999999999993,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 12,
+          "start": 22.4,
+          "end": 24.4,
+          "duration": 2.0,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "UNKNOWN",
+          "excluded": null
+        },
+        {
+          "idx": 13,
+          "start": 24.4,
+          "end": 25.9,
+          "duration": 1.5,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "SPEAKER_01",
+          "excluded": null
+        },
+        {
+          "idx": 14,
+          "start": 26.1,
+          "end": 27.5,
+          "duration": 1.3999999999999986,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "UNKNOWN",
+          "excluded": null
+        },
+        {
+          "idx": 15,
+          "start": 29.3,
+          "end": 33.2,
+          "duration": 3.900000000000002,
+          "stage": "long",
+          "expected": "Kaguya",
+          "predicted": "SPEAKER_01",
+          "excluded": null
+        },
+        {
+          "idx": 16,
+          "start": 33.5,
+          "end": 35.0,
+          "duration": 1.5,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "SPEAKER_01",
+          "excluded": null
+        },
+        {
+          "idx": 17,
+          "start": 37.0,
+          "end": 37.9,
+          "duration": 0.8999999999999986,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 18,
+          "start": 38.2,
+          "end": 39.5,
+          "duration": 1.2999999999999972,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 19,
+          "start": 39.9,
+          "end": 40.9,
+          "duration": 1.0,
+          "stage": "short",
+          "expected": "Kaguya",
+          "predicted": "UNKNOWN",
+          "excluded": null
+        },
+        {
+          "idx": 20,
+          "start": 48.2,
+          "end": 49.5,
+          "duration": 1.2999999999999972,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "UNKNOWN",
+          "excluded": null
+        },
+        {
+          "idx": 21,
+          "start": 49.9,
+          "end": 51.7,
+          "duration": 1.8000000000000043,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "UNKNOWN",
+          "excluded": null
+        },
+        {
+          "idx": 22,
+          "start": 52.8,
+          "end": 55.1,
+          "duration": 2.3000000000000043,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 23,
+          "start": 57.7,
+          "end": 59.7,
+          "duration": 2.0,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "SPEAKER_00",
+          "excluded": null
+        },
+        {
+          "idx": 24,
+          "start": 60.8,
+          "end": 61.2,
+          "duration": 0.4000000000000057,
+          "stage": "short",
+          "expected": "Iroha",
+          "predicted": "UNKNOWN",
+          "excluded": null
+        }
+      ]
+    }
+  },
+  "acceptance": {
+    "gates": {
+      "long_purity": true,
+      "short_accuracy": false,
+      "short_unknown": false,
+      "improvement": false
+    },
+    "passed": false
+  },
+  "short_accuracy_gain": -0.4545454545454546
+}

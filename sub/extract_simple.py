@@ -844,7 +844,7 @@ def process_project(
     print(f"\n{'='*60}")
     print(f"项目: {pf.project_name}")
     print(f"  媒体: {pf.media.name}  ({pf.media_kind})")
-    print(f"  原字幕: {pf.subtitle.name}")
+    print(f"  原字幕: {pf.subtitle.name if pf.subtitle else '(内封或未提供)'}")
     print(f"  别名: {pf.aliases.name if pf.aliases else '(none)'}")
     print(f"  输出类型: {' + '.join(output_types)}  形态: {shape}")
     if audio_sample_rate:
@@ -874,7 +874,7 @@ def process_project(
         norm_srt_path = DEFAULT_INTERMEDIATE_ROOT / pf.project_name / "normalized.srt"
     if not norm_srt_path.exists():
         print(f"[!] 找不到归一化字幕: {norm_srt_path}")
-        print(f"    请先运行: python sub/normalize/normalize_sdh.py \"{pf.project_name}\"")
+        print("    请用 --srt 指定带 [speaker] 标签的 SRT，或先运行 normalize_sdh.py / normalize_mkv.py 生成归一化字幕。")
         return {}
     print(f"  切片输入: {norm_srt_path.name}")
     norm_entries = parse_srt(norm_srt_path)
@@ -1069,7 +1069,8 @@ def process_project(
         "project": pf.project_name,
         "media": pf.media.name,
         "media_kind": pf.media_kind,
-        "subtitle": pf.subtitle.name,
+        "subtitle": pf.subtitle.name if pf.subtitle else None,
+        "input_srt": str(norm_srt_path.resolve()),
         "aliases": pf.aliases.name if pf.aliases else None,
         "config": {
             "speakers": speakers,
@@ -1234,6 +1235,7 @@ def main():
             pf = resolve_project(
                 name, input_root=input_root,
                 media=args.media,
+                require_subtitle=False,
             )
         except ProjectIOError as e:
             print(f"[!] 跳过 {name}: {e}", file=sys.stderr)

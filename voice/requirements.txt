@@ -1,2 +1,3 @@
-# FoxNoseTech/diarize 0.1.2 requires torch/torchaudio < 2.9.
-diarize==0.1.2
+# Temporary fork until FoxNoseTech/diarize resolves issue #9.
+# Commit e4639e5 adds the required non-16 kHz embedding resample regression fix.
+git+https://github.com/quark-mac/diarize.git@e4639e5#egg=diarize

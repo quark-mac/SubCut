@@ -1,0 +1,79 @@
+{
+  "source_gold": "D:\\whisper-diarization\\sub\\intermediate\\Cosmic Princess Kaguya\\final_gold_set.srt",
+  "source_gold_sha256": "b3946210ad59ec548cebc093563399402e9dcec4d01987e27fc4d93f672e5b06",
+  "source_audio": "D:\\whisper-diarization\\voice\\fixtures\\kaguya_001319_001421\\scene_audio_track1_vocals.wav",
+  "source_audio_sha256": "17f372d44bbb6bfffccb6fdf236f409e8183f904df9e1e1eaaf5a81b25b16868",
+  "duration": 62.0,
+  "sample_rate": 44100,
+  "channels": 2,
+  "movie_offset_seconds": 799,
+  "gold_cue_ids": [
+    217,
+    218,
+    219,
+    220,
+    221,
+    222,
+    223,
+    224,
+    225,
+    226,
+    227,
+    228,
+    229,
+    230,
+    231,
+    232,
+    233,
+    234
+  ],
+  "timebase_assumption": "User vocal separation preserves timing; duration verified, internal delay not independently measured",
+  "baseline_commit": "c43643fc8920fa04ae26dc9573db48ca8d1aeec7",
+  "working_tree": "uncommitted voice implementation",
+  "runs": [
+    {
+      "command": [
+        "D:\\whisper-diarization\\env\\python.exe",
+        "voice/two_stage_diarize.py",
+        "D:\\whisper-diarization\\voice\\fixtures\\kaguya_001319_001421\\scene_audio_track1_vocals.wav",
+        "--output-dir",
+        "D:\\whisper-diarization\\voice\\fixtures\\kaguya_001319_001421\\vocals_fixed2_01\\two_stage",
+        "--vad-debug",
+        "--speakers",
+        "2"
+      ],
+      "seconds": 11.880198400001973,
+      "returncode": 0
+    },
+    {
+      "command": [
+        "D:\\whisper-diarization\\env\\python.exe",
+        "voice/diarize_example.py",
+        "D:\\whisper-diarization\\voice\\fixtures\\kaguya_001319_001421\\scene_audio_track1_vocals.wav",
+        "--output",
+        "D:\\whisper-diarization\\voice\\fixtures\\kaguya_001319_001421\\vocals_fixed2_01\\one_stage.json",
+        "--speakers",
+        "2"
+      ],
+      "seconds": 11.350358199997572,
+      "returncode": 0
+    },
+    {
+      "command": [
+        "D:\\whisper-diarization\\env\\python.exe",
+        "voice/evaluate_two_stage.py",
+        "--two-stage",
+        "D:\\whisper-diarization\\voice\\fixtures\\kaguya_001319_001421\\vocals_fixed2_01\\two_stage\\diarize_two_stage.json",
+        "--one-stage",
+        "D:\\whisper-diarization\\voice\\fixtures\\kaguya_001319_001421\\vocals_fixed2_01\\one_stage.json",
+        "--gold",
+        "D:\\whisper-diarization\\voice\\fixtures\\kaguya_001319_001421\\vocals_fixed2_01\\gold_clip_derived.srt",
+        "--output-dir",
+        "D:\\whisper-diarization\\voice\\fixtures\\kaguya_001319_001421\\vocals_fixed2_01\\evaluation"
+      ],
+      "seconds": 0.10408300001290627,
+      "returncode": 0
+    }
+  ],
+  "gold_unchanged": true
+}

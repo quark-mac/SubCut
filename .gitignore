@@ -25,3 +25,8 @@ sub/input/*/SPKS/
 sub/input/*/job_*/
 scripts/*_文字版.md
 !voice/requirements.txt
+
+# Independent local checkout and generated acoustic runs.
+/MOSS-Transcribe-Diarize/
+/voice/runs/
+/voice/smoke_*/

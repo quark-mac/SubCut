@@ -20,6 +20,9 @@
 - **[design/media_windows.html](design/media_windows.html)** — 可交互切换连续/compact 模式，直观看前后扩展、窗口合并和 compact 时间重映射。
 - **[design/normalize_subtitle.md](design/normalize_subtitle.md)** — 字幕规范化流程。
 - **[design/mkv_subtitle_editing.md](design/mkv_subtitle_editing.md)** — MKV 内封字幕的轨道审查、编辑 policy、脚本实现规范和 Gemini 输入合同。
+- **[design/voice/two_stage_diarization.md](design/voice/two_stage_diarization.md)** — 长语音建立 cluster、短语音归类的两阶段声学规范。
+- **[design/voice/evaluation.md](design/voice/evaluation.md)** — Long purity、Short accuracy 和 UNKNOWN rate 的简化评估。
+- **[design/voice/implementation_handoff.md](design/voice/implementation_handoff.md)** — 下一实现会话的范围、顺序、验收和停止条件。
 
 ## 经验和参考
 

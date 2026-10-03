@@ -1,0 +1,70 @@
+{
+  "audio": "D:\\whisper-diarization\\voice\\fixtures\\kaguya_001319_001421\\scene_audio_track1_vocals.wav",
+  "duration": 62.0,
+  "num_speakers": 1,
+  "speakers": [
+    "SPEAKER_00"
+  ],
+  "segments": [
+    {
+      "start": 1.0,
+      "end": 13.5,
+      "duration": 12.5,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 14.4,
+      "end": 15.2,
+      "duration": 0.7999999999999989,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 16.4,
+      "end": 16.8,
+      "duration": 0.40000000000000213,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 19.0,
+      "end": 27.5,
+      "duration": 8.5,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 29.3,
+      "end": 35.0,
+      "duration": 5.699999999999999,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 37.0,
+      "end": 40.9,
+      "duration": 3.8999999999999986,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 48.2,
+      "end": 51.7,
+      "duration": 3.5,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 52.8,
+      "end": 55.1,
+      "duration": 2.3000000000000043,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 57.7,
+      "end": 59.7,
+      "duration": 2.0,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 60.8,
+      "end": 61.2,
+      "duration": 0.4000000000000057,
+      "speaker": "SPEAKER_00"
+    }
+  ]
+}

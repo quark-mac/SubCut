@@ -9,6 +9,8 @@
 
 ## 完整流程
 
+2026-10-03 基线更新：normalized 已重生为 2101 条；唯一 Gold 为 `final_gold_set.srt`（2085 条）。现存 scene JSON 与 Gemini 输出属于旧输入，先重建 scene 才能继续标注。下文 2106 条、164 scene 和 91.30% 统计均为历史运行记录，当前状态以 `CURRENT.md` 为准。
+
 ```text
 源字幕 + 源视频
   -> normalize/normalize_sdh.py  → normalized.srt / normalized.jsonl
@@ -140,7 +142,7 @@ env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha -
 
 ### Gold Set 状态
 
-`gold_set.srt` 已完成人工校对，并包含 speaker、时间轴、合并/拆分修正。它有 2104 条，而 normalized 有 2106 条，因此评估不能在结构分歧后继续按 idx 直接比较，必须按时间和文本对齐。
+`final_gold_set.srt` 是唯一金标准，包含 speaker、时间轴、合并/拆分修正。它有 2085 条，当前 normalized 有 2101 条，因此评估必须按时间和文本对齐。
 
 旧双 scene 基线：
 
@@ -165,7 +167,7 @@ Iroha/Kaguya/Yachiyo/FUSHI: 92.03%
 - 使用 `女の子`、`赤ちゃん`、`2人`、`?` 等描述性标签
 - 部分音乐、音效和台词混在同一个 speaker 字段
 
-后续 batching、prompt 和模型 A/B 以 `gold_set.srt` 为正式语义基准。详细规范和回归结果见 [reference/evaluation.md](reference/evaluation.md)。
+后续 batching、prompt 和模型 A/B 以 `final_gold_set.srt` 为正式语义基准。详细规范和回归结果见 [reference/evaluation.md](reference/evaluation.md)。
 
 ### 用 report.md
 

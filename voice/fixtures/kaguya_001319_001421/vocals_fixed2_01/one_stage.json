@@ -1,0 +1,119 @@
+{
+  "audio": "D:\\whisper-diarization\\voice\\fixtures\\kaguya_001319_001421\\scene_audio_track1_vocals.wav",
+  "duration": 62.0,
+  "num_speakers": 2,
+  "speakers": [
+    "SPEAKER_00",
+    "SPEAKER_01"
+  ],
+  "segments": [
+    {
+      "start": 1.0,
+      "end": 2.5,
+      "duration": 1.5,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 3.0,
+      "end": 4.95,
+      "duration": 1.9500000000000002,
+      "speaker": "SPEAKER_01"
+    },
+    {
+      "start": 4.95,
+      "end": 5.4,
+      "duration": 0.4500000000000002,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 5.5,
+      "end": 8.099999999999998,
+      "duration": 2.599999999999998,
+      "speaker": "SPEAKER_01"
+    },
+    {
+      "start": 8.099999999999998,
+      "end": 8.7,
+      "duration": 0.6000000000000014,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 8.9,
+      "end": 13.5,
+      "duration": 4.6,
+      "speaker": "SPEAKER_01"
+    },
+    {
+      "start": 14.4,
+      "end": 15.2,
+      "duration": 0.7999999999999989,
+      "speaker": "SPEAKER_01"
+    },
+    {
+      "start": 16.4,
+      "end": 16.8,
+      "duration": 0.40000000000000213,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 19.0,
+      "end": 27.5,
+      "duration": 8.5,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 29.3,
+      "end": 35.0,
+      "duration": 5.699999999999999,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 37.0,
+      "end": 37.9,
+      "duration": 0.8999999999999986,
+      "speaker": "SPEAKER_01"
+    },
+    {
+      "start": 38.2,
+      "end": 40.9,
+      "duration": 2.6999999999999957,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 48.2,
+      "end": 49.6,
+      "duration": 1.3999999999999986,
+      "speaker": "SPEAKER_01"
+    },
+    {
+      "start": 49.9,
+      "end": 51.7,
+      "duration": 1.8000000000000043,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 52.8,
+      "end": 54.7,
+      "duration": 1.9000000000000057,
+      "speaker": "SPEAKER_01"
+    },
+    {
+      "start": 54.7,
+      "end": 55.1,
+      "duration": 0.3999999999999986,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 57.7,
+      "end": 59.7,
+      "duration": 2.0,
+      "speaker": "SPEAKER_00"
+    },
+    {
+      "start": 60.8,
+      "end": 61.2,
+      "duration": 0.4000000000000057,
+      "speaker": "SPEAKER_00"
+    }
+  ]
+}

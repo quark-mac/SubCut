@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-`gold_set.srt` 已完成人工校对。它不仅修正 speaker，也人工修正了部分时间轴、合并/拆分了碎片字幕，因此：
+2026-10-03 起，唯一金标准为 `final_gold_set.srt`，保留其现有人工 speaker、时间轴、合并/拆分修订。旧 `gold_set.srt` 和 `gold_set_dedup.srt` 已按用户要求删除。
 
 ```text
-normalized.srt: 2106 entries
-gold_set.srt: 2104 entries
+normalized.srt: 2101 entries
+final_gold_set.srt: 2085 entries
 ```
 
 Gold Set 不是与 normalized idx 一一对应的纯标签文件。自动评估必须优先用：
@@ -47,7 +47,7 @@ Gold Set 中存在有意的人工修正：
 
 ## Gold Set 标签规范
 
-以完整 2106 条源字幕的 `idx/start/end/text` 为准，只人工确认 speaker，不改字幕编号和时间。
+以 `final_gold_set.srt` 的人工修订内容为准，保留结构差异；评估时按时间与文本关联到待测字幕，不要求源字幕与 Gold 编号一致。
 
 建议标签：
 
@@ -87,6 +87,8 @@ Gold Set 不应只收集 Gemini 与旧标签不一致的条目，还要随机抽
 - 当前最差的多人和结尾 ensemble batch
 
 ## 旧双 Scene 基线
+
+以下历史结果使用已退役的 2104 条 Gold；不是当前 2085 条 Gold 的成绩。91.30% 运行的重新验证暂按用户要求搁置。
 
 使用旧全片 `gemini_latest_scene_full/results.jsonl`，按时间和文本对齐 Gold：
 

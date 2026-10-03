@@ -92,7 +92,7 @@ def _clean_text(s: str) -> str:
 
 def _prep_text(s: str) -> str:
     """展开 ASS 换行 + 清理控制字符，并去除 ♪ 歌词行。"""
-    return _clean_text(strip_lyric_lines(_expand_ass_newlines(s)))
+    return _clean_text(strip_lyric_lines(_expand_ass_newlines(s))).strip()
 
 
 # ============================================================

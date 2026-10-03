@@ -1,6 +1,6 @@
 # Current Stable State
 
-> Baseline candidate prepared 2026-07-20. This file is the short contract for new development conversations.
+> Input baseline confirmed 2026-10-03 against HEAD `c43643f` plus uncommitted work. This file is the short contract for new development conversations.
 
 ## Production Pipeline
 
@@ -25,20 +25,26 @@ Production subtitle input:
 sub/intermediate/Cosmic Princess Kaguya/normalized.srt
 
 Gold Set:
-sub/intermediate/Cosmic Princess Kaguya/gold_set.srt
+sub/intermediate/Cosmic Princess Kaguya/final_gold_set.srt
 
-Production scene JSON:
+Historical scene JSON (stale after normalized regeneration; rebuild before use):
 sub/intermediate/Cosmic Princess Kaguya/scene_segments_llm/scene_segments.json
 
-Current single-scene evaluation:
+Historical single-scene evaluation (deferred):
 sub/intermediate/Cosmic Princess Kaguya/gemini_single_scene_full/
 ```
 
-Gold Set contains 2104 cues and includes manual timeline fixes, merges, and splits. `normalized.srt` contains 2106 entries. Evaluation must align by timestamp and normalized text; do not compare by shifted idx alone.
+The sole Gold Set, `final_gold_set.srt`, contains 2085 cues and includes manual timeline fixes, merges, and splits. Its contents were preserved. The obsolete `gold_set.srt` and `gold_set_dedup.srt` were deleted by user request.
 
-## Current Measured Baseline
+Regenerated `normalized.srt` / JSONL contain 2101 entries, including 1270 unknown speakers and zero INHERITED tags. SRT/JSONL round-trip, nonempty text, positive durations, source references and continuous idx were checked. Input/code hashes and the structural changes are recorded locally in `sub/intermediate/Cosmic Princess Kaguya/baseline_confirmation.json`.
 
-Current full single-scene Gemini run:
+Evaluation must align by timestamp and normalized text; do not compare by shifted idx alone. Existing scenes and Gemini runs refer to the old 2106-entry input and are not the baseline for this revision.
+
+The user's current goal is clear attribution of who said what, with clear speech boundaries. Detailed acceptance thresholds remain undecided.
+
+## Historical Measured Baseline — Deferred
+
+Historical full single-scene Gemini run, using the retired 2104-cue Gold:
 
 ```text
 requests: 164
@@ -56,7 +62,7 @@ FUSHI semantic variants: 75.00%
 
 The corrected final SRT has the same 91.30% Gold accuracy as raw results. The earlier writer bug that discarded `OTHER` decisions is fixed.
 
-These numbers are model/project-specific evidence, not a general benchmark.
+These numbers are historical evidence only. Reproduction against current prompt defaults is deferred by user request; no new accuracy claim accompanies the input refresh.
 
 ## Current Production Defaults
 
@@ -108,6 +114,8 @@ See `docs/reference/current_issues.md` for details.
 
 `voice/` contains an optional integration for `diarize==0.1.2`, currently installed in the main `env` after removing unused legacy Torch consumers. It uses CPU Torch/Torchaudio 2.8.0 and produces anonymous acoustic evidence only; it is not part of the production label path yet.
 
+The next voice task is specified, not implemented: long VAD segments (default at least 3 seconds) establish frozen anonymous cluster centroids, then shorter VAD segments are assigned to those clusters or `UNKNOWN`. The output and three-metric evaluation contracts are under `docs/design/voice/`. Full-film inference and Gemini integration wait until those acceptance gates pass.
+
 ## Frozen Decisions
 
 Do not change these without a dedicated Gold A/B task:
@@ -116,13 +124,13 @@ Do not change these without a dedicated Gold A/B task:
 - Do not enable prompt anchors or output locks by default.
 - Do not mechanically split DeepSeek scenes by entry count.
 - Do not use `llm_corrected.srt` as the normal Gemini input.
-- Do not claim accuracy from `human.srt`; use `gold_set.srt` and structural alignment.
+- Use `final_gold_set.srt` and structural alignment for future evaluation; `human.srt` is historical reference only.
 
 ## Next Recommended Work
 
-Regenerate and structurally review the normalized baseline after the no-inheritance and mixed-speaker changes. Then regenerate the semantic scene timeline because normalized idx values have shifted. Do not modify Gemini behavior in the same task.
+Regenerate the semantic scene timeline against the new 2101-entry normalized revision, then inspect the Gemini request plan. Scene generation requires a separately authorized API run; it was not performed during baseline confirmation.
 
-Before that task, establish a Git baseline commit for the current repository migration.
+Working-tree changes remain uncommitted. Confirm the intended WIP scope before creating a baseline commit.
 
 ## New Conversation Checklist
 

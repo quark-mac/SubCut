@@ -1,0 +1,25 @@
+{
+  "status": "awaiting_user_vocal_separation_do_not_test",
+  "source_video": "sub/input/Cosmic Princess Kaguya/Chou Kaguya-hime.mp4",
+  "gold_srt_read_only": "sub/intermediate/Cosmic Princess Kaguya/final_gold_set.srt",
+  "gold_git_blob_hash_before_export": "be52027577ea43509f86fef38e842f575d7313c1",
+  "source_start_seconds": 799.0,
+  "source_end_seconds": 861.0,
+  "duration_seconds": 62.0,
+  "time_mapping": "movie_seconds = clip_seconds + 799.0",
+  "gold_cue_ids": [217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234],
+  "speakers": ["Iroha", "Kaguya"],
+  "video_output": "scene_001319_001421.mp4",
+  "ffmpeg_executable": "env/Library/bin/ffmpeg.exe",
+  "video_encoding": "mpeg4 -q:v 2, 1920x1080; installed FFmpeg does not include libx264",
+  "verified_video_duration_seconds": 62.020292,
+  "verified_audio_duration_seconds": 62.0,
+  "gold_git_blob_hash_after_export": "be52027577ea43509f86fef38e842f575d7313c1",
+  "audio_outputs": [
+    {"file": "scene_audio_track1.wav", "source_stream_index": 1, "ffmpeg_map": "0:a:0", "language": "und"},
+    {"file": "scene_audio_track2.wav", "source_stream_index": 2, "ffmpeg_map": "0:a:1", "language": "und"}
+  ],
+  "audio_format": {"codec": "pcm_s24le", "sample_rate": 48000, "channels": 2},
+  "processing": "Continuous accurate-seek clip, no concatenation, no silence removal, no source separation, no diarization. Both unidentified source audio tracks retained separately.",
+  "return_audio_requirement": "Preserve 62-second duration and all silence; no leading trim, tempo changes or channel concatenation. Identify which original track was used. Gold remains on movie timebase and must not be evaluated directly against clip-local seconds."
+}

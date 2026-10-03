@@ -277,7 +277,7 @@ env\python.exe sub\llm\gemini_segment_diarize.py "<project>" --output-dir "<gemi
 ### 5.2 Gold 评估（免费）
 
 ```powershell
-env\python.exe sub\llm\evaluate_gemini_gold.py "<gemini-output-dir>/results.jsonl" "sub/intermediate/<project>/gold_set.srt" --final-srt "<gemini-output-dir>/segment_labeled.srt" --output "<gemini-output-dir>/gold_evaluation.md" --json-output "<gemini-output-dir>/gold_evaluation.json"
+env\python.exe sub\llm\evaluate_gemini_gold.py "<gemini-output-dir>/results.jsonl" "sub/intermediate/<project>/final_gold_set.srt" --final-srt "<gemini-output-dir>/segment_labeled.srt" --output "<gemini-output-dir>/gold_evaluation.md" --json-output "<gemini-output-dir>/gold_evaluation.json"
 ```
 
 Gold Set 有结构性合并/拆分，禁止按 idx 直接比较。评估后报告：
