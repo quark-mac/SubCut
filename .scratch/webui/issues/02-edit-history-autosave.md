@@ -81,3 +81,30 @@ npm run test:browser
 - `PUT /api/projects/{id}` 新增可选完整 `speakers` 配置，与 `entries` 原子保存；省略仍兼容旧调用。验证唯一身份/名称、颜色/顺序、特殊轨固定身份语义及有效条目引用。其它路由保持已有接口。
 - `useProjectSession` 的 `commit` 接收一次完整不可变有效编辑，后续结构/批量/人物操作在完成时调用一次即可进入历史和自动保存；`App.tsx` 负责草稿校验与选择。`persist` 负责统一保存/导出修订队列，禁止后续界面另行直接覆盖工程回执。详细约定见 [webui/README.md](../../../webui/README.md)。
 - 全部验收通过后标记 done。仅本票、`webui/` 代码/测试/文档有改动；工作树保留，不推送、不合入集成，由下一合并代理执行集成验收。
+
+### 2026-10-15 集成验收
+
+- 合并前确认集成目录 `D:\whisper-diarization` 的 `feat/webui` 为 `4b9936c1ed5cb3111895696d80ce03a23a7cf7f0`；任务工作树 `C:\Users\machi\AppData\Local\Temp\opencode\webui-worktrees\ticket-02` 的 `feat/webui-02` 为 `1f2d7eee1eef25a68362cf458b3f3e1eec81937b`。两个工作树均干净，票为 done，差异仅涉及 `webui/` 与本票，`git diff --check 4b9936c 1f2d7ee` 通过。
+- 实际核对 Comments、验收截图、任务工作树 `.last-run.json`（passed）及上述实际导出文件；导出保留 1200–4000 ms 时间、多行正文、重叠和连续编号。
+- 在集成目录执行 `git merge --ff-only feat/webui-02`，成功从 `4b9936c` 快进至 `1f2d7ee`。依赖清单与锁文件未变，复用票 01 集成时安装的前端依赖和既有 Python 环境，本次无需再次执行 npm ci。
+- 以下命令均在 `D:\whisper-diarization` 实际执行，全部通过：
+
+```powershell
+& 'D:\whisper-diarization\env\python.exe' -m unittest webui.tests.test_http -v
+# Ran 13 tests in 2.816s — OK，无跳过。
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& 'D:\whisper-diarization\env\python.exe' -m py_compile $Files.FullName
+# 11 个 Python 文件编译通过。
+npm --prefix webui/frontend run typecheck
+# tsc --noEmit 通过。
+npm --prefix webui/frontend run build
+# Vite 7.3.7；31 modules；JS 205.35 kB / gzip 65.70 kB。
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm --prefix webui/frontend run test:browser
+# 11 passed (14.6s)；真实 Edge + 集成目录生产构建 + 本地 FastAPI。
+```
+
+- HTTP 全套包括并发修订冲突、开放人物及稳定身份、非法配置，以及真实 Windows 文件共享锁造成的原子替换失败与解锁重试。浏览器全套包括历史/焦点/取消/分支、自动保存、延迟/丢失回执、导出快照、外部冲突、工程切换、保存/导出失败恢复及前票闭环。
+- 集成目录 `webui/frontend/test-results/.last-run.json` 为 passed；生成素材和工程保留于被忽略的 `.test-workspace/`。测试前确认 18761 空闲，测试后确认服务已退出；原有 18762 演示服务（PID 36112）保持运行。
+- 集成验证后工作树干净，再仅追加本段结果并单独提交。未启动其他代理，未推送，保留所有既有工作树。
