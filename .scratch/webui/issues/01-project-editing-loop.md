@@ -90,3 +90,32 @@ npm run test:browser
 - 测试入口：`python -m unittest webui.tests.test_http -v`；前端 `npm run typecheck` / `npm run build` / `npm run test:browser`（设置 `WEBUI_PYTHON`）。具体路由、请求/响应与工程 schema 入口见 `webui/README.md` 的“下一票接口”和运行服务的 `/docs`。
 - 编辑状态以 `Entry.id` 统一引用；毫秒时间、`sources[].subtitle_id/index` 与导出序号分离。`PUT /api/projects/{id}` 当前接收 `{revision, name, entries}`；`POST .../exports` 接收 `{revision}` 并返回实际文件和更新后的工程。
 - 本票所有验收项通过，Status 更新为 done；工作树保留、未推送。后续完整格式、历史、自动保存及媒体生成按对应票串行扩展。
+
+### 2026-10-15 集成验证
+
+- 合并前确认两个工作树均干净：集成目录 `D:\whisper-diarization` 的 `feat/webui` 为规划基线 `17b1aa80931e0f3a81ebec11c35071d8383b467a`；任务工作树的 `feat/webui-01` 为 `382c094e3ef9230b89bf76a65cf73f37e67c14a4`。票为 done，提交差异仅包含 `webui/` 与本票，`git diff --check 17b1aa8 382c094` 通过。
+- 实际读取并核对已有界面截图、任务工作树 Playwright `.last-run.json`（passed）及上述人工验收导出 SRT：连续编号、多行正文、重叠与同时间顺序符合记录。
+- 在集成目录执行 `git merge --ff-only feat/webui-01`，成功从 `17b1aa8` 快进至 `382c094`。
+- 下列命令均在 `D:\whisper-diarization` 实际执行；复用既有 Python 环境，前端按锁文件安装：
+
+```powershell
+npm --prefix webui/frontend ci
+# added 26 packages；0 vulnerabilities。
+& 'D:\whisper-diarization\env\python.exe' -m unittest webui.tests.test_http -v
+# Ran 9 tests in 2.528s — OK。
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& 'D:\whisper-diarization\env\python.exe' -m py_compile $Files.FullName
+# 10 个 Python 文件编译通过。
+npm --prefix webui/frontend run typecheck
+# tsc --noEmit 通过。
+npm --prefix webui/frontend run build
+# Vite 7.3.7；30 modules；JS 200.37 kB / gzip 64.02 kB。
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm --prefix webui/frontend run test:browser
+# 3 passed (5.3s)；真实 Edge + 集成目录生产构建 + 本地 FastAPI。
+```
+
+- 浏览器回归覆盖播放定位、编辑保存重开、实际导出文件、共享视图、非法字段、保存失败保留输入及重试。集成目录 `webui/frontend/test-results/.last-run.json` 为 passed；测试素材与工程保留于被忽略的 `.test-workspace/`。
+- 测试前确认 18761 空闲；测试后确认该服务已退出。现有 18762 演示服务（PID 36112）保持运行。
+- 本次仅集成任务 01 并记录验证；任务 02 仍为 ready-for-agent，其前置 01 已 done。两个既有工作树保留，未推送。
