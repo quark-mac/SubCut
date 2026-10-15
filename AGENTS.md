@@ -86,6 +86,16 @@ When using the installed Matt Pocock engineering/productivity skills, read `docs
 - API experiments must use a unique output directory and record model, prompt options, scene JSON, input SRT, and baseline commit.
 - Do not delete old experiment results unless the user explicitly approves the exact directories.
 
+## Agent skills
+
+### Issue tracker
+
+Use local Markdown for specs and tickets. Before planning, implementing, or reviewing tracked work, read `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Use the root `GLOSSARY.md` and `docs/adr/` as a single context. Before domain-related exploration or design, read `docs/agents/domain.md`.
+
 ## Validation
 
 For Python changes, at minimum run:

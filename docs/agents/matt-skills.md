@@ -8,7 +8,7 @@
 - 默认清单共 14 项：`diagnosing-bugs`、`research`、`tdd`、`code-review`、`implement`、`implement-spec`、`codebase-design`、`domain-modeling`、`grilling`、`grill-with-docs`、`handoff`、`writing-for-agents`、`retro`、`setup-matt-pocock-skills`。
 - 2026-10-02 按用户后续要求补齐主流程：新增 `ask-matt`、`to-spec`、`to-tickets`，合计 17 项；原 14 项内容匹配并复用。关系类型和其余候选见 [依赖分析](matt-skills-dependencies.md)。
 - 上游技能目录原样安装；本文件承载本项目的适配要求。
-- 安装时没有运行项目初始化。当前未发现 `docs/agents/issue-tracker.md`；需要 tracker 的审查、规划或实现流程首次使用前，先完成必要初始化。缺少配置时不能宣称完整 Standards/Spec 审查条件已具备。
+- 安装时没有运行项目初始化；2026-10-15 按用户确认完成最小初始化：本地 Markdown tracker 见 [issue-tracker.md](issue-tracker.md)，单领域文档消费规则见 [domain.md](domain.md)。Standards/Spec 审查仍需读取本次任务的实际规格与改动。
 - 初始化优先复用当时已有 tracker 和文档约定；若没有，建议本地 Markdown tracker。创建外部 issue 按用户当次授权执行。
 
 ## 入口选择与授权
@@ -29,7 +29,7 @@
 
 `ask-matt` 是路由参考；它提到某技能不代表本机已安装，也不代表应立即启动该流程。推荐时先核查发现清单，并遵循本项目“明确任务直接执行”的约定。其 `/clear`、`/compact` 是宿主会话操作示例，不是待安装的技能。
 
-首次运行 `to-spec` / `to-tickets` 前必须明确 tracker 和 `ready-for-agent` 等状态约定。上游 setup 在未安装 `triage` 时跳过独立标签文档，但这两个规划技能仍需要标签词汇；初始化时在 tracker 约定中明确所需状态即可，不必因此安装或运行完整 `triage`。当前补装没有执行这项初始化。
+`to-spec` / `to-tickets` 使用 [issue-tracker.md](issue-tracker.md) 中的路径、`ready-for-agent` 等状态、依赖与验证约定。当前未安装 `triage`，所需状态词汇集中在 tracker 文档中；后续安装 `triage` 时再按需配置独立标签映射。
 
 技能里的 commit、push、PR、发布等描述不构成额外授权。将来的任务按当次授权确定工作流；集成需要尚未授权的 Git 操作时，说明具体动作和已经验证的成果。只报告实际完成的步骤，不把未执行的集成称为完成。
 
