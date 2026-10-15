@@ -78,3 +78,31 @@ git diff --check
 - 工程 `d30daaf4-3d65-4b1d-a81a-2d2461b73135` 最终修订 3、六条；服务真实返回创建 201、读取 200、媒体 206、保存 200、导出 201。实际读取导出 `C:\Users\machi\AppData\Local\Temp\opencode\webui-04-acceptance\projects\d30daaf4-3d65-4b1d-a81a-2d2461b73135\exports\77b2de71-eade-413e-b22a-9f72954efbcb.srt`，连续六条，第 2 条 `[甲] 浏览器验收：同条目共享修改`，原时间与重叠均保留。
 - 自动测试服务已退出；额外验收服务 **18761 / PID 22100** 核实独有命令后主动停止，素材/工程/导出保留。最终 18761 无监听；既有 **18762 / PID 36112** 保持运行，未操作其工程。浏览器工具生成的两张截图移入上述 `webui/tests/evidence/` 后移除本次产生的 `.openchamber/` 临时副本。
 - 本票全部验收完成，标记 done。已在任务分支执行 `git merge feat/webui` 并验证，未合入集成分支、未推送、未创建其他代理；任务工作树保留。
+
+### 2026-10-16 集成验收
+
+- 合并前确认集成目录 `D:\whisper-diarization` 的 `feat/webui` 为 `06a8653cf9f242ff33a9aebe0b0047a92b1c2a9a`；任务工作树 `C:\Users\machi\AppData\Local\Temp\opencode\webui-worktrees\ticket-04` 的 `feat/webui-04` 为 `58d8c36b8588c514361a62fdb9185a0804b296e9`。两个工作树均干净，票为 done，差异仅涉及 WebUI 前端、测试、文档及本票，`git diff --check 06a8653 58d8c36` 通过。
+- 实际读取 Comments、两张验收截图、任务工作树 `.last-run.json`（passed）及上述实际 SRT 导出：连续六条，第 2 条共享修改正文、1000–4000 ms、同时间/跨轨重叠及特殊标签均保留。
+- 在集成目录执行 `git merge --ff-only feat/webui-04`，成功从 `06a8653` 快进至 `58d8c36`。依赖清单与锁文件未变，复用已有前端依赖和指定 Python 环境。
+- 以下命令均在 `D:\whisper-diarization` 实际执行，全部通过：
+
+```powershell
+& 'D:\whisper-diarization\env\python.exe' -m unittest webui.tests.test_http -v
+# Ran 20 tests in 5.682s — OK，无跳过。
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& 'D:\whisper-diarization\env\python.exe' -m py_compile $Files.FullName
+# 11 个 Python 文件编译通过；本票无 Python 源码改动。
+npm --prefix webui/frontend run typecheck
+# tsc --noEmit 通过。
+npm --prefix webui/frontend run build
+# Vite 7.3.7；32 modules；JS 212.72 kB / gzip 68.36 kB。
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm --prefix webui/frontend run test:browser
+# 20 passed (25.7s)：editing 11 + exchange 4 + timeline 5。
+# 真实 Edge + 集成目录生产构建 + 本地 FastAPI。
+```
+
+- HTTP 全套验证既有格式、保存、来源、修订冲突、真实 Windows 文件锁失败恢复及媒体接口。浏览器新增时间轴五项验证换轨/边界/历史/重开、轨序配色与共享编辑、键盘焦点/播放高亮、缩放滚动后实际原片帧定位、Esc 取消及片尾一毫秒点击；前票十五项全部通过。
+- 集成目录 `webui/frontend/test-results/.last-run.json` 为 passed；生成素材与工程保留于被忽略的 `.test-workspace/`。测试前确认 18761 空闲，测试后确认该服务已退出；既有 18762 / PID 36112 演示服务保持运行。
+- 集成验证后工作树干净，再仅追加本段并单独提交。未启动其他代理，未推送，保留全部既有工作树。
