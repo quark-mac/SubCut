@@ -4,6 +4,7 @@ import { useProjectSession } from './useProjectSession';
 import { useAudition } from './useAudition';
 import { WorkspaceSplitter } from './WorkspaceSplitter';
 import { WorkspaceHelp } from './WorkspaceHelp';
+import { ProjectResources } from './ProjectResources';
 import { SourceTimeline } from './SourceTimeline';
 import { BatchEditor } from './BatchEditor';
 import { AddSubtitleDialog } from './AddSubtitleDialog';
@@ -27,7 +28,7 @@ export function App() {
   const [fieldError, setFieldError] = useState<{ field: keyof Draft; message: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [dialog, setDialog] = useState<'new' | 'replace' | 'open' | 'help' | null>(null);
+  const [dialog, setDialog] = useState<'new' | 'replace' | 'open' | 'help' | 'save-as' | 'relocate' | 'new-media' | null>(null);
   const [menu, setMenu] = useState<'file' | 'edit' | 'view' | null>(null);
   const workspace = useRef<HTMLElement>(null);
   const [layout, setLayout] = useState({ left: 18, right: 29, bottom: 300 });
@@ -403,21 +404,44 @@ export function App() {
     setDraft(entry && next ? draftFor(entry, next) : null); setFieldError(null); setError('');
   }
 
-  async function showDialog(kind: 'new' | 'replace' | 'open' | 'help') {
+  async function showDialog(kind: NonNullable<typeof dialog>) {
     if (kind !== 'help' && session.isSaving()) return;
     setMenu(null); setError('');
     if (kind === 'replace') {
       const current = commitDraft();
       if (!current) return;
       setMediaPath(current.media.path); setSubtitlePath('');
-    } else if (kind !== 'help' && unsaved && !window.confirm('当前修改尚未保存。确定离开当前编辑工程吗？')) return;
+    } else if (kind !== 'help' && project) {
+      if (!commitDraft()) return;
+      setBusy(true);
+      const success = await session.persist();
+      setBusy(false);
+      if (!success) return;
+    }
     if (kind !== 'help') session.pauseAutosave();
+    if (kind === 'save-as' || kind === 'new-media') setName(`${session.getProject()?.name ?? '工程'}-副本`);
+    if (kind === 'relocate' || kind === 'new-media') setMediaPath('');
     if (kind === 'open') {
       setBusy(true);
       try { setProjects(await api<ProjectSummary[]>('/projects')); setDialog(kind); }
       catch (reason) { report(reason); session.resumeAutosave(); }
       finally { setBusy(false); }
     } else { setPreview(null); setDialog(kind); }
+  }
+
+  async function projectAction() {
+    const current = session.getProject();
+    if (!current || !['save-as', 'relocate', 'new-media'].includes(dialog ?? '')) return;
+    setBusy(true); setError('');
+    try {
+      const body = dialog === 'relocate' ? { revision: current.revision, media_path: mediaPath.trim() }
+        : { revision: current.revision, name, ...(dialog === 'new-media' ? { media_path: mediaPath.trim() } : {}) };
+      const next = await api<Project>(`/projects/${current.id}/${dialog}`, 'POST', body);
+      if (dialog === 'relocate') {
+        audition.cancel(true); session.relocate(next); setDialog(null); session.resumeAutosave();
+      } else accept(next);
+    } catch (reason) { report(reason); }
+    finally { setBusy(false); }
   }
 
   async function importAction(create: boolean) {
@@ -504,6 +528,7 @@ export function App() {
         {menu === 'file' && <div className="menu-popup">
           <button onClick={() => void showDialog('new')}>新建工程…</button>
           <button onClick={() => void showDialog('open')}>打开工程…</button>
+          <button disabled={!project} onClick={() => void showDialog('save-as')}>工程另存为…</button>
           <button disabled={!project} onClick={() => void showDialog('replace')}>替换工作字幕…</button>
           <button disabled={!project} onClick={() => { setMenu(null); void persist(); }}>保存</button>
           <button disabled={!project} onClick={() => { setMenu(null); void persist(true); }}>导出当前字幕</button>
@@ -548,31 +573,27 @@ export function App() {
     </div>
     {!dialog && (error || session.saveError || session.exportError) && <div role="alert" className="error">{error || session.saveError || session.exportError}
       {session.saveError && <button onClick={() => void persist()}>重试保存</button>}
+      {session.saveError && <button disabled={busy || session.saving} onClick={() => {
+        if (project && window.confirm('放弃本页面尚未保存的编辑与草稿，重新读取磁盘版本？取消会保留所有当前修改。')) {
+          session.pauseAutosave(); void openProject(project.id);
+        }
+      }}>放弃修改并重开磁盘版本</button>}
       {session.exportError && <button onClick={() => void persist(true)}>重试导出</button>}
       {error && <button aria-label="关闭错误" onClick={() => setError('')}>×</button>}</div>}
     <main className="workspace" ref={workspace} style={{ gridTemplateColumns: `minmax(140px, ${layout.left}fr) 7px minmax(300px, ${100 - layout.left - layout.right}fr) 7px minmax(300px, ${layout.right}fr)` }}>
       <aside className="resources panel" aria-label="工程资源">
         <h2>工程资源</h2>
-        {project ? <>
-          <h3>源视频</h3><p className="path">{project.media.path}</p>
-          <p className="muted">时长 {timeLabel(duration)} · 原路径引用</p>
-          <h3>字幕来源</h3>{project.subtitle_sources.map(source => <div key={source.id}><p className="path">{source.path}</p><small className="muted">{source.format}</small></div>)}
-          <h3>工作字幕</h3><p>{entries.length} 条 · 工程修订 {project.revision}</p>
-          <h3>预览副本</h3><p className="muted">当前直接播放原片</p>
-          <h3>导出文件</h3>
-          <p className="hint">继续编辑请保存工程。交换字幕不包含完整身份、来源和人物配置。</p>
-          {project.exports.length ? project.exports.map(file => <div className="export" key={file.id}>
-            <a href={`/api/projects/${project.id}/exports/${file.id}`} download>{file.filename}</a>
-            <p className="path muted">{file.path}</p>
-          </div>) : <p className="muted">保存校对结果后导出</p>}
-        </> : <p className="muted">新建工程，选定本机视频与字幕（SRT / JSONL / MOSS JSON）；也可从“文件”菜单继续已有工程。</p>}
+        {project ? <ProjectResources key={project.id} project={project} busy={busy || session.saving}
+          onRelocate={() => void showDialog('relocate')} onNewMedia={() => void showDialog('new-media')} />
+          : <p className="muted">新建工程，选定本机视频与字幕（SRT / JSONL / MOSS JSON）；也可从“文件”菜单继续已有工程。</p>}
       </aside>
       <WorkspaceSplitter label="调整资源面板宽度" onBegin={() => beginResize('left')} />
       <section className="preview-panel panel" aria-label="视频预览">
         <h2>视频预览 <span>原片时间轴</span></h2>
         <div className="video-stage">
           {project ? <>
-            <video key={project.id} ref={video} src={`/api/projects/${project.id}/media`} controls preload="auto"
+            <video key={`${project.id}:${project.media.path}`} ref={video} src={`/api/projects/${project.id}/media?identity=${project.media.identity ?? ''}&path=${encodeURIComponent(project.media.path)}`} controls preload="auto"
+              onLoadedMetadata={() => { if (video.current) video.current.currentTime = position / 1000; }}
               onTimeUpdate={audition.sync} onEnded={audition.sync}
               onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
               onError={() => setError('视频读取或解码失败，请检查源路径与浏览器编码兼容性（建议 H.264/AAC MP4）')} />
@@ -682,9 +703,16 @@ export function App() {
     {addition && project && <AddSubtitleDialog {...addition} speakers={project.speakers} onAdd={addSubtitle} onCancel={() => setAddition(null)} />}
     {merging && project && <MergeSubtitleDialog count={merging.size} speakers={project.speakers} onMerge={speakerId => mergeSubtitles(merging, speakerId)} onCancel={() => setMerging(null)} />}
     {dialog && <div className="modal-backdrop"><section role="dialog" aria-modal="true" aria-labelledby="dialog-title" className="dialog">
-      <header><h2 id="dialog-title">{dialog === 'new' ? '新建编辑工程' : dialog === 'replace' ? '整体替换工作字幕' : dialog === 'open' ? '打开工程' : '使用帮助'}</h2>
+      <header><h2 id="dialog-title">{{ new: '新建编辑工程', replace: '整体替换工作字幕', open: '打开工程', help: '使用帮助', 'save-as': '工程另存为', relocate: '重新定位同一原片', 'new-media': '用新视频建立工程' }[dialog]}</h2>
         <button disabled={busy} aria-label="关闭对话框" onClick={() => { setDialog(null); if (dialog !== 'help') session.resumeAutosave(); }}>×</button></header>
       {error && <p role="alert" className="error">{error}</p>}
+      {(dialog === 'save-as' || dialog === 'relocate' || dialog === 'new-media') && <>
+        <p className="hint">{dialog === 'relocate' ? '仅接受内容身份完全相同的原片。移动、重命名可恢复，重新编码或换片请新建工程。' : '复制完整工作字幕、人物配置与来源关系，产生独立工程。原视频按路径引用；已有导出与缓存留在原工程。'}</p>
+        {dialog !== 'relocate' && <label>副本工程名称<input disabled={busy} value={name} onChange={event => setName(event.target.value)} /></label>}
+        {dialog !== 'save-as' && <label>新视频绝对路径<input disabled={busy} value={mediaPath} onChange={event => setMediaPath(event.target.value)} /></label>}
+        {dialog === 'new-media' && <p className="hint">带入当前字幕副本，按新原片时长验证全部字幕。越界失败不会修改当前工程。</p>}
+        <button disabled={busy || (dialog !== 'relocate' && !name.trim()) || (dialog !== 'save-as' && !mediaPath.trim())} onClick={() => void projectAction()}>{dialog === 'relocate' ? '验证并重新定位' : '创建独立副本'}</button>
+      </>}
       {(dialog === 'new' || dialog === 'replace') && <>
         <p className="muted">使用浏览器可直接播放的原片。视频和字幕保留在原路径，校对结果保存为独立工程。</p>
         {dialog === 'new' && <label>工程名称<input value={name} disabled={busy} onChange={event => setName(event.target.value)} /></label>}
@@ -709,6 +737,7 @@ export function App() {
       {dialog === 'open' && <div className="project-list">{projects.length ? projects.map(item => <div key={item.id}>
         <button disabled={busy} onClick={() => void openProject(item.id)}>{item.name}</button>
         <small>{item.error?.message ?? `修订 ${item.revision}`} · {item.id}</small>
+        {item.media && <small className="path">{item.media_missing ? '原片失联 · 字幕可编辑' : '原片路径'} · {item.media.path}</small>}
       </div>) : <p>尚无工程，请先新建。</p>}</div>}
       {dialog === 'help' && <WorkspaceHelp />}
     </section></div>}

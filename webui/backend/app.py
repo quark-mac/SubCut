@@ -8,8 +8,9 @@ from fastapi.staticfiles import StaticFiles
 
 from .errors import Problem
 from .formats import EXPORT_TYPES, read_subtitles, validate_entries, validate_sources, write_subtitles
-from .media import local_file, probe_media
-from .models import CreateRequest, Export, ExportRequest, ImportRequest, Project, SaveRequest, SubtitleSource, identity
+from .media import local_file, probe_media, verify_media
+from .resources import inventory, open_folder
+from .models import CopyRequest, CreateRequest, Export, ExportRequest, ImportRequest, NewMediaRequest, Project, RelocateRequest, SaveRequest, SubtitleSource, identity
 from .storage import Store, atomic_write
 from .speakers import validate_speakers
 
@@ -84,7 +85,6 @@ def list_projects():
 def get_project(project_id: str):
     with store.lock:
         project = store.load(project_id)
-    local_file(project.media.path, "media_path")
     return project
 
 
@@ -92,7 +92,7 @@ def get_project(project_id: str):
 def get_media(project_id: str):
     with store.lock:
         project = store.load(project_id)
-    path = local_file(project.media.path, "media_path")
+    path = verify_media(project.media)
     # Starlette FileResponse supports standard byte ranges and 416 responses.
     return FileResponse(path)
 
@@ -102,12 +102,64 @@ def check_revision(project: Project, revision: int):
         raise Problem("工程已被更新，请重新打开工程后再保存；当前编辑仍保留在页面", status=409, code="revision_conflict", field="revision")
 
 
+@app.post('/api/projects/{project_id}/save-as', status_code=201)
+def copy_project(project_id: str, body: CopyRequest):
+    with store.lock:
+        project = store.load(project_id)
+        check_revision(project, body.revision)
+        if not body.name.strip():
+            raise Problem('工程名称不能为空', field='name')
+        duplicate = project.model_copy(deep=True)
+        duplicate.id = identity()
+        duplicate.name = body.name.strip()
+        duplicate.revision = 1
+        duplicate.exports = []
+        duplicate.media_artifacts = []
+        store.create(duplicate)
+        return duplicate
+
+
+@app.post('/api/projects/{project_id}/new-media', status_code=201)
+def new_media_project(project_id: str, body: NewMediaRequest):
+    with store.lock:
+        project = store.load(project_id)
+        check_revision(project, body.revision)
+        if not body.name.strip():
+            raise Problem('工程名称不能为空', field='name')
+        media = probe_media(body.media_path)
+        validate_entries(project.entries, media.duration_ms, {s.id for s in project.speakers})
+        duplicate = project.model_copy(deep=True)
+        duplicate.id = identity()
+        duplicate.name = body.name.strip()
+        duplicate.media = media
+        duplicate.revision = 1
+        duplicate.exports = []
+        duplicate.media_artifacts = []
+        store.create(duplicate)
+        return duplicate
+
+
+@app.post('/api/projects/{project_id}/relocate')
+def relocate_project(project_id: str, body: RelocateRequest):
+    with store.lock:
+        project = store.load(project_id)
+        check_revision(project, body.revision)
+        if not project.media.identity:
+            raise Problem('旧工程没有原片身份记录，无法核实同一原片；请恢复原路径后打开，或用新视频建立工程', status=409, code='media_identity_unknown', field='media_path')
+        media = probe_media(body.media_path)
+        if media.identity != project.media.identity or media.duration_ms != project.media.duration_ms:
+            raise Problem('不是同一原片：文件内容身份不一致。换片请使用“用新视频建立工程”', status=409, code='media_identity_mismatch', field='media_path')
+        project.media = media
+        project.revision += 1
+        atomic_write(store.directory(project_id) / 'project.json', project.model_dump_json(indent=2))
+        return project
+
+
 @app.put("/api/projects/{project_id}")
 def save_project(project_id: str, body: SaveRequest):
     with store.lock:
         project = store.load(project_id)
         check_revision(project, body.revision)
-        local_file(project.media.path, "media_path")
         if not body.name.strip():
             raise Problem("工程名称不能为空", field="name")
         speakers = body.speakers if body.speakers is not None else project.speakers
@@ -145,6 +197,26 @@ def export_project(project_id: str, body: ExportRequest):
             path.unlink(missing_ok=True)
             raise
         return {"project": project, "export": exported, "url": f"/api/projects/{project_id}/exports/{export_id}"}
+
+
+@app.get('/api/projects/{project_id}/resources')
+def get_resources(project_id: str):
+    with store.lock:
+        project = store.load(project_id)
+        return inventory(project, store.directory(project_id))
+
+
+@app.post('/api/projects/{project_id}/exports/{export_id}/open-location')
+def open_export_location(project_id: str, export_id: str):
+    with store.lock:
+        project = store.load(project_id)
+        exported = next((item for item in project.exports if item.id == export_id), None)
+        if exported is None:
+            raise Problem('找不到导出文件', status=404, code='export_not_found')
+        extension, _ = EXPORT_TYPES[exported.format]
+        path = local_file(str(store.directory(project_id) / 'exports' / f'{exported.id}.{extension}'), 'export')
+    open_folder(path.parent)
+    return {'project_id': project_id, 'export_id': export_id, 'path': str(path.parent), 'opened': True}
 
 
 @app.get("/api/projects/{project_id}/exports/{export_id}")

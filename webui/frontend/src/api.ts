@@ -15,7 +15,7 @@ export interface ExportOptions { format: ExportFormat; keep_tags: boolean }
 export interface Speaker { id: string; label: string; color: string; order: number }
 export interface ExportFile { id: string; filename: string; path: string; format: string; revision: number }
 export interface Imported {
-  media: { path: string; duration_ms: number };
+  media: { path: string; duration_ms: number; identity: string | null; size_bytes: number | null };
   subtitle_sources: { id: string; path: string; format: string }[];
   entries: Entry[];
   speakers: Speaker[];
@@ -27,9 +27,19 @@ export interface Project extends Imported {
   name: string;
   exports: ExportFile[];
 }
+export interface Resources {
+  project_id: string;
+  revision: number;
+  media: Imported['media'] & { status: string };
+  subtitle_sources: (Imported['subtitle_sources'][number] & { status: string })[];
+  working_subtitles: { path: string; count: number; status: string };
+  media_artifacts: { id: string; kind: string; path: string; media_identity: string; parameters: Record<string, unknown>; status: string }[];
+  exports: (ExportFile & { status: string })[];
+}
 export interface ImportPreview extends Imported { fingerprint: string }
 export interface ProjectSummary {
   id: string; name: string; revision?: number;
+  media?: Imported['media']; media_missing?: boolean;
   error: { message: string } | null;
 }
 

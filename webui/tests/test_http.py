@@ -91,6 +91,24 @@ class ProjectHTTPTests(unittest.TestCase):
         self.assertIn(project["id"], [p["id"] for p in listing])
         self.assertEqual(self.subtitle.read_text(encoding="utf-8"), SRT)
 
+    def test_save_as_copies_complete_editing_document_with_independent_project_identity(self):
+        project = self.create()
+        url = f'/api/projects/{project["id"]}'
+        response = self.client.post(url + '/save-as', json={"revision": project["revision"], "name": "独立副本"})
+        self.assertEqual(response.status_code, 201, response.text)
+        duplicate = response.json()
+        self.assertNotEqual(duplicate['id'], project['id'])
+        self.assertEqual(duplicate['revision'], 1)
+        for key in ('media', 'entries', 'speakers', 'subtitle_sources'):
+            self.assertEqual(duplicate[key], project[key])
+        self.assertTrue(duplicate['media']['identity'].startswith('sha256:'))
+        duplicate['entries'][0]['text'] = '只改副本'
+        saved = self.client.put(f'/api/projects/{duplicate["id"]}', json={k: duplicate[k] for k in ('revision', 'name', 'entries', 'speakers', 'subtitle_sources')})
+        self.assertEqual(saved.status_code, 200, saved.text)
+        self.assertEqual(self.client.get(url).json(), project)
+        conflict = self.client.post(url + '/save-as', json={"revision": 0, "name": "过期"})
+        self.assertEqual(conflict.status_code, 409)
+
     def test_explicit_srt_modes_preserve_labels_and_only_consume_known_metadata(self):
         subtitle = self.root / "modes.srt"
         subtitle.write_text("7\n00:00:01,000 --> 00:00:03,000\n[Iroha&Kaguya] {MULTI} {UNKNOWN} {MERGED} 台词: 正文\n第二行\n", encoding="utf-8")
@@ -514,6 +532,8 @@ class ProjectHTTPTests(unittest.TestCase):
             self.client.get(url),
             self.client.put(url, json={"revision": 1, "name": "覆盖", "entries": project["entries"]}),
             self.client.post(url + "/exports", json={"revision": 1}),
+            self.client.post(url + '/save-as', json={'revision': 1, 'name': '副本'}),
+            self.client.post(url + '/relocate', json={'revision': 1, 'media_path': str(self.video)}),
         ]
         for response in requests:
             self.assertEqual(response.status_code, 409, response.text)
@@ -525,11 +545,132 @@ class ProjectHTTPTests(unittest.TestCase):
         moved = self.video.with_suffix(".moved.mp4")
         self.video.rename(moved)
         try:
-            for response in (self.client.get(url), self.client.get(url + "/media"),
-                             self.client.put(url, json={"revision": 1, "name": "覆盖", "entries": project["entries"]})):
-                self.assertEqual(response.status_code, 404, response.text)
-                self.assertEqual(response.json()["error"]["code"], "missing_file")
+            self.assertEqual(self.client.get(url).json(), project)
+            self.assertEqual(self.client.get(url + '/media').json()['error']['code'], 'missing_file')
             self.assertEqual(document.read_bytes(), original)
+            project['entries'][0]['text'] = '媒体失联时继续编辑'
+            saved = self.client.put(url, json={k: project[k] for k in ('revision', 'name', 'entries')})
+            self.assertEqual(saved.status_code, 200, saved.text)
+            self.assertEqual(saved.json()['entries'], project['entries'])
+        finally:
+            moved.rename(self.video)
+
+    def test_relocation_verifies_full_content_identity_and_new_media_creates_separate_project(self):
+        project = self.create()
+        url = f'/api/projects/{project["id"]}'
+        moved = self.root / '原片新位置.mp4'
+        moved.write_bytes(self.video.read_bytes())
+        response = self.client.post(url + '/relocate', json={'revision': 1, 'media_path': str(moved)})
+        self.assertEqual(response.status_code, 200, response.text)
+        relocated = response.json()
+        self.assertEqual(relocated['media']['identity'], project['media']['identity'])
+        self.assertEqual(relocated['media']['duration_ms'], 8000)
+        self.assertEqual(relocated['entries'], project['entries'])
+        self.assertEqual(relocated['media']['path'], str(moved))
+        short = self.root / '另一短片.mp4'
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', str(self.video), '-t', '2', '-c', 'copy', str(short)], check=True)
+        wrong = self.client.post(url + '/relocate', json={'revision': 2, 'media_path': str(short)})
+        self.assertEqual(wrong.status_code, 409, wrong.text)
+        self.assertEqual(wrong.json()['error']['code'], 'media_identity_mismatch')
+        invalid = self.client.post(url + '/new-media', json={'revision': 2, 'name': '短片副本', 'media_path': str(short)})
+        self.assertEqual(invalid.status_code, 422, invalid.text)
+        self.assertIsNotNone(invalid.json()['error']['entry'])
+        self.assertEqual(self.client.get(url).json(), relocated)
+        longer = self.root / '另一原片.mp4'
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', str(self.video), '-an', '-c:v', 'copy', str(longer)], check=True)
+        created = self.client.post(url + '/new-media', json={'revision': 2, 'name': '新原片工程', 'media_path': str(longer)})
+        self.assertEqual(created.status_code, 201, created.text)
+        self.assertNotEqual(created.json()['id'], project['id'])
+        self.assertNotEqual(created.json()['media']['identity'], project['media']['identity'])
+        self.assertEqual(created.json()['entries'], project['entries'])
+        self.assertEqual(self.client.get(url).json(), relocated)
+
+    def test_resources_report_missing_changed_and_export_files_without_losing_edits(self):
+        project = self.create()
+        url = f'/api/projects/{project["id"]}'
+        response = self.client.get(url + '/resources')
+        self.assertEqual(response.status_code, 200, response.text)
+        resources = response.json()
+        self.assertEqual(resources['project_id'], project['id'])
+        self.assertEqual(resources['media']['status'], 'available')
+        self.assertEqual(resources['media']['identity'], project['media']['identity'])
+        self.assertEqual(resources['subtitle_sources'][0]['status'], 'available')
+        self.assertTrue(Path(resources['working_subtitles']['path']).is_file())
+        self.assertEqual(resources['media_artifacts'], [])
+        output = self.client.post(url + '/exports', json={'revision': 1}).json()
+        exported = self.client.get(url + '/resources').json()['exports'][0]
+        self.assertEqual(exported['path'], output['export']['path'])
+        self.assertEqual(exported['status'], 'available')
+        self.assertEqual(self.client.post(url + '/exports/no-such-export/open-location').status_code, 404)
+        # External replacement at the same pathname must not reuse original identity.
+        original = self.video.read_bytes()
+        try:
+            self.video.write_bytes(original + b'changed source')
+            self.assertEqual(self.client.get(url + '/resources').json()['media']['status'], 'changed')
+            self.assertEqual(self.client.get(url + '/media').json()['error']['code'], 'media_identity_mismatch')
+            self.assertEqual(self.client.get(url).json()['entries'], project['entries'])
+        finally:
+            self.video.write_bytes(original)
+
+    def test_existing_media_cache_references_survive_relocation_but_are_not_shared_by_copies(self):
+        project = self.create()
+        url = f'/api/projects/{project["id"]}'
+        directory = self.workspace / project['id']
+        artifact = directory / 'preview.mp4'
+        artifact.write_bytes(self.video.read_bytes())
+        # Public version-1 project-file boundary: an existing successful media artifact.
+        reference = {'id': 'preview-1', 'kind': 'preview', 'path': str(artifact),
+                     'media_identity': project['media']['identity'], 'parameters': {'codec': 'h264', 'timebase': 'original'}}
+        project['media_artifacts'] = [reference]
+        (directory / 'project.json').write_text(json.dumps(project), encoding='utf-8')
+        self.assertEqual(self.client.get(url).json()['media_artifacts'], [reference])
+        self.assertEqual(self.client.get(url + '/resources').json()['media_artifacts'][0]['status'], 'available')
+        moved = self.root / 'cache-relocated.mp4'
+        self.video.rename(moved)
+        try:
+            offline = self.client.get(url + '/resources').json()
+            self.assertEqual(offline['media']['status'], 'missing')
+            summary = next(item for item in self.client.get('/api/projects').json() if item['id'] == project['id'])
+            self.assertTrue(summary['media_missing'])
+            self.assertEqual(summary['media']['identity'], project['media']['identity'])
+            self.assertEqual(offline['media_artifacts'][0]['status'], 'stale')
+            copy_response = self.client.post(url + '/save-as', json={'revision': 1, 'name': '离线副本'})
+            self.assertEqual(copy_response.status_code, 201, copy_response.text)
+            self.assertEqual(copy_response.json()['entries'], project['entries'])
+            self.assertEqual(copy_response.json()['media_artifacts'], [])
+            restored = self.client.post(url + '/relocate', json={'revision': 1, 'media_path': str(moved)})
+            self.assertEqual(restored.status_code, 200, restored.text)
+            self.assertEqual(restored.json()['media_artifacts'], [reference])
+            self.assertEqual(self.client.get(url + '/resources').json()['media_artifacts'][0]['status'], 'available')
+            self.assertEqual(self.client.post(url + '/relocate', json={'revision': 1, 'media_path': str(moved)}).status_code, 409)
+            artifact.unlink()
+            self.assertEqual(self.client.get(url + '/resources').json()['media_artifacts'][0]['status'], 'missing')
+        finally:
+            moved.rename(self.video)
+
+    def test_legacy_identity_is_pinned_before_move_and_missing_legacy_cannot_claim_a_different_original(self):
+        project = self.create()
+        url = f'/api/projects/{project["id"]}'
+        document = self.workspace / project['id'] / 'project.json'
+        legacy = copy.deepcopy(project)
+        legacy['media'].pop('identity')
+        legacy['media'].pop('size_bytes')
+        legacy.pop('media_artifacts')
+        document.write_text(json.dumps(legacy), encoding='utf-8')
+        upgraded = self.client.get(url).json()
+        self.assertEqual(upgraded['revision'], 2)
+        self.assertEqual(upgraded['media']['identity'], project['media']['identity'])
+        self.assertEqual(upgraded['entries'], project['entries'])
+        self.assertEqual(json.loads(document.read_text(encoding='utf-8')), upgraded)
+        document.write_text(json.dumps(legacy), encoding='utf-8')
+        moved = self.root / 'legacy-moved.mp4'
+        self.video.rename(moved)
+        try:
+            self.assertEqual(self.client.get(url).json()['entries'], project['entries'])
+            response = self.client.post(url + '/relocate', json={'revision': 1, 'media_path': str(moved)})
+            self.assertEqual(response.status_code, 409, response.text)
+            self.assertEqual(response.json()['error']['code'], 'media_identity_unknown')
+            self.assertEqual(json.loads(document.read_text(encoding='utf-8')), legacy)
         finally:
             moved.rename(self.video)
 

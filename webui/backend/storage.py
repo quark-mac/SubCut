@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from .errors import Problem
 from .formats import validate_entries, validate_sources
 from .models import Project
+from .media import probe_media
 from .speakers import validate_speakers
 
 
@@ -57,6 +58,15 @@ class Store:
             validate_speakers(project.speakers)
             validate_entries(project.entries, project.media.duration_ms, {speaker.id for speaker in project.speakers})
             validate_sources(project.entries, project.subtitle_sources)
+            # Upgrade legacy version-1 documents while the original is still present.
+            # Pin identity on disk before a later move; missing originals stay editable.
+            if project.media.identity is None and Path(project.media.path).is_file():
+                media = probe_media(project.media.path)
+                if media.duration_ms != project.media.duration_ms:
+                    raise Problem('旧工程原片时长不一致，请用新视频建立工程', status=409, code='media_identity_unknown')
+                project.media = media
+                project.revision += 1
+                atomic_write(path, project.model_dump_json(indent=2))
             return project
         except (ValueError, ValidationError) as exc:
             raise Problem("工程文件损坏或结构无效，原文件已保留", status=422, code="invalid_project") from exc
@@ -80,7 +90,8 @@ class Store:
                 continue
             try:
                 project = self.load(folder.name)
-                result.append({"id": project.id, "name": project.name, "revision": project.revision, "error": None})
+                result.append({"id": project.id, "name": project.name, "revision": project.revision,
+                               "media": project.media.model_dump(), "media_missing": not Path(project.media.path).is_file(), "error": None})
             except Problem as exc:
                 result.append({"id": folder.name, "name": folder.name, "error": exc.detail})
         return result

@@ -250,9 +250,17 @@ test('外部修订冲突明确提示且保留当前编辑，不覆盖磁盘新�
   await page.getByRole('button', { name: '重试保存', exact: true }).click();
   await expect(page.getByRole('status', { name: '保存状态' })).toHaveText('保存失败');
   expect((await (await page.request.get(url)).json()).revision).toBe(2);
+  page.once('dialog', dialog => dialog.dismiss());
+  await page.getByRole('button', { name: '放弃修改并重开磁盘版本', exact: true }).click();
+  await expect(page.getByLabel('字幕正文')).toHaveValue('本窗口仍然保留的编辑');
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: '放弃修改并重开磁盘版本', exact: true }).click();
+  await expect(page.getByRole('status', { name: '保存状态' })).toHaveText('已保存');
+  await page.getByRole('button', { name: '列表字幕 1', exact: true }).click();
+  await expect(page.getByLabel('字幕正文')).toHaveValue('另一个窗口的更新');
 });
 
-test('确认放弃未保存修改后切换工程，旧自动保存计时器不会随后写回', async ({ page }) => {
+test('切换工程等待有效编辑落盘，旧自动保存计时器不会随后重复写回', async ({ page }) => {
   const project = await openFixture(page);
   const writes: string[] = [];
   let release!: () => void;
@@ -264,19 +272,23 @@ test('确认放弃未保存修改后切换工程，旧自动保存计时器不�
     await route.continue();
   });
   try {
-    await page.getByLabel('字幕正文').fill('将被放弃的修改');
+    await page.getByLabel('字幕正文').fill('切换前可靠保存的修改');
     await page.getByRole('button', { name: '应用修改', exact: true }).click();
-    page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: '文件', exact: true }).click();
     await page.getByRole('button', { name: '打开工程…' }).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.getByRole('status', { name: '保存状态' })).toHaveText('保存中…');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
     // Wait beyond the documented 650 ms debounce to detect an unwanted write.
     await page.waitForTimeout(900);
-    expect(writes).toEqual([]);
+    expect(writes).toEqual(['PUT']);
+    release();
+    await expect(page.getByRole('dialog')).toBeVisible();
     await page.getByRole('button', { name: project.name, exact: true }).click();
     await page.getByRole('button', { name: '列表字幕 1', exact: true }).click();
-    await expect(page.getByLabel('字幕正文')).toHaveValue(project.entries[1].text);
-    expect((await (await page.request.get(`/api/projects/${project.id}`)).json()).revision).toBe(1);
+    await expect(page.getByLabel('字幕正文')).toHaveValue('切换前可靠保存的修改');
+    await page.waitForTimeout(900);
+    expect(writes).toEqual(['PUT']);
+    expect((await (await page.request.get(`/api/projects/${project.id}`)).json()).revision).toBe(2);
   } finally { release(); }
 });
 

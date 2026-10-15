@@ -1,4 +1,6 @@
 import json
+import hashlib
+from functools import lru_cache
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 import subprocess
@@ -30,8 +32,35 @@ def probe_media(value: str) -> Media:
         if not any(s["codec_type"] == "video" for s in info["streams"]):
             raise ValueError("no video")
         duration_ms = int((duration * 1000).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
-        return Media(path=str(path), duration_ms=duration_ms)
+        return Media(path=str(path), duration_ms=duration_ms, identity=media_identity(path), size_bytes=path.stat().st_size)
     except FileNotFoundError as exc:
         raise Problem("未找到 ffprobe，请安装 FFmpeg 并加入 PATH", status=503, code="media_tool_missing") from exc
     except (subprocess.SubprocessError, ValueError, KeyError, InvalidOperation) as exc:
         raise Problem("无法读取有效视频及其时长，请检查媒体文件", field="media_path", code="invalid_media") from exc
+
+
+def media_identity(path: Path) -> str:
+    """Content identity is independent of filename/mtime; never sample the original."""
+    stat = path.stat()
+    signature = (stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns, stat.st_ino)
+    return _fingerprint(str(path.resolve()), signature)
+
+
+@lru_cache(maxsize=32)
+def _fingerprint(filename: str, signature: tuple) -> str:
+    path = Path(filename)
+    digest = hashlib.sha256()
+    with path.open('rb') as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b''):
+            digest.update(chunk)
+    stat = path.stat()
+    if signature != (stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns, stat.st_ino):
+        raise Problem('读取期间媒体发生变化，请重试', status=409, code='media_changed')
+    return 'sha256:' + digest.hexdigest()
+
+
+def verify_media(media: Media) -> Path:
+    path = local_file(media.path, 'media_path')
+    if media.identity and media_identity(path) != media.identity:
+        raise Problem('原路径文件已变化，请重新定位同一原片，或用新视频建立工程', status=409, code='media_identity_mismatch', field='media_path')
+    return path

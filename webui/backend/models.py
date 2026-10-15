@@ -40,6 +40,8 @@ class Speaker(Model):
 class Media(Model):
     path: str
     duration_ms: StrictInt
+    identity: str | None = Field(default=None, pattern=r'^sha256:[0-9a-f]{64}$')
+    size_bytes: StrictInt | None = None
 
 
 class SubtitleSource(Model):
@@ -57,6 +59,14 @@ class Export(Model):
     revision: int
 
 
+class MediaArtifact(Model):
+    id: str = Field(default_factory=identity)
+    kind: Literal['preview', 'waveform', 'thumbnails']
+    path: str
+    media_identity: str
+    parameters: dict = Field(default_factory=dict)
+
+
 class Project(Model):
     format_version: Literal[1] = 1
     id: str = Field(default_factory=identity)
@@ -67,6 +77,7 @@ class Project(Model):
     entries: list[Entry]
     speakers: list[Speaker]
     exports: list[Export] = Field(default_factory=list)
+    media_artifacts: list[MediaArtifact] = Field(default_factory=list)
 
 
 class ImportRequest(Model):
@@ -92,3 +103,17 @@ class ExportRequest(Model):
     revision: StrictInt
     format: Literal["plain-srt", "speaker-srt", "normalized-jsonl", "moss-json"] = "speaker-srt"
     keep_tags: bool = False
+
+
+class CopyRequest(Model):
+    revision: StrictInt
+    name: str
+
+
+class NewMediaRequest(CopyRequest):
+    media_path: str
+
+
+class RelocateRequest(Model):
+    revision: StrictInt
+    media_path: str

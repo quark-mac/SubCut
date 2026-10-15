@@ -77,24 +77,24 @@ export function useProjectSession() {
     setDirty(generation.current !== version);
   }
 
-  function persist(exporting: ExportOptions | false = false): Promise<void> {
+  function persist(exporting: ExportOptions | false = false): Promise<boolean> {
     clearTimeout(timer.current);
     const snapshot = current.current;
-    if (!snapshot) return Promise.resolve();
+    if (!snapshot) return Promise.resolve(true);
     const version = generation.current, session = epoch.current;
     pending.current++; setSaving(true); setSaveError('');
     if (exporting) setExportError('');
     // All writes (including export registration) share one revision stream.
     // Edits stay enabled while I/O runs; exports capture the trigger-time snapshot.
     const task = queue.current.then(async () => {
-      if (epoch.current !== session) return;
+      if (epoch.current !== session) return false;
       let stage: 'save' | 'export' = 'save';
       try {
         if (uncertain.current) {
           // The previous PUT may have reached disk before its response was lost.
           // Only acknowledge an exact match; a distinct external revision stays a conflict.
           const disk = await api<Project>(`/projects/${snapshot.id}`);
-          if (epoch.current !== session) return;
+          if (epoch.current !== session) return false;
           if (JSON.stringify(content(disk)) === JSON.stringify(content(uncertain.current.snapshot))) {
             receipt(disk, uncertain.current.version);
           }
@@ -106,7 +106,7 @@ export function useProjectSession() {
             revision: revision.current, name: snapshot.name, entries: snapshot.entries, speakers: snapshot.speakers,
             subtitle_sources: snapshot.subtitle_sources,
           });
-          if (epoch.current !== session) return;
+          if (epoch.current !== session) return false;
           uncertain.current = null;
           receipt(saved, version);
         }
@@ -114,27 +114,34 @@ export function useProjectSession() {
           stage = 'export';
           uncertain.current = { snapshot, version };
           const output = await api<{ project: Project }>(`/projects/${snapshot.id}/exports`, 'POST', { revision: revision.current, ...exporting });
-          if (epoch.current !== session) return;
+          if (epoch.current !== session) return false;
           uncertain.current = null;
           receipt(output.project, version);
           setExportError('');
         }
         setSaveError('');
+        return true;
       } catch (reason) {
         if (epoch.current === session) {
           const message = reason instanceof Error ? reason.message : String(reason);
           if (stage === 'export') setExportError(`导出失败：${message}`);
           else setSaveError(message);
         }
+        return false;
       } finally {
         if (epoch.current === session) { pending.current--; setSaving(pending.current > 0); }
       }
     });
-    queue.current = task;
+    queue.current = task.then(() => {});
     return task;
   }
 
-  return { project, dirty, saving, saveError, exportError, open, commit, travel, persist, pauseAutosave, resumeAutosave,
+  function relocate(next: Project) {
+    revision.current = next.revision;
+    update({ ...current.current!, media: next.media, revision: next.revision });
+  }
+
+  return { project, dirty, saving, saveError, exportError, open, commit, travel, persist, relocate, pauseAutosave, resumeAutosave,
     isSaving: () => pending.current > 0,
     getProject: () => current.current, canUndo: past.current.length > 0, canRedo: future.current.length > 0 };
 }
