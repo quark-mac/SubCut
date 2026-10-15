@@ -75,3 +75,32 @@ Get-NetTCPConnection -LocalPort 18761,18762,18763 -State Listen -ErrorAction Sil
 - typecheck / production build 成功。合并检查后的真实 Edge 全套 **65/65 passed，3.4 分钟**；包含 03/05/08 全套及新增组合验收。
 - 自检覆盖已跟踪差异与新增的资源模块、浏览器测试、证据文件。仅提交本票/WebUI 范围；全套生成的 05–08 截图恢复为基线，未混入本票。生产模块、集成工作树未改，未 push。
 - 端口核查：**18761 已释放，18763 已释放；18762 仍为 PID 7544**。没有替换、重启或停止原演示服务。工作树保留。
+
+### 2026-10-16 集成验收
+
+- 合并前确认集成目录 `D:\whisper-diarization` 的 `feat/webui` 为 `6eb68555cbea8f68fb9044affb83cbe06bbb082c`；任务工作树 `ticket-10` / `feat/webui-10` 为 `6ba83ca670f315fe210f7a4fad36b0deb430df4e`。两个工作树均干净，票为 done，差异仅涉及 WebUI 与本票；`git diff --check 6eb6855 6ba83ca` 通过。实际读取 Comments、README、Explorer JSON/截图、对应实际 SRT 和任务工作树 `.last-run.json`（passed）。
+- 已核对媒体身份实现及公共接口：完整文件流式 SHA-256，签名变化重新计算；同片重定位校验摘要和原时长、保留缓存引用；原路径替换拒绝播放错误原片；另存为/换片新工程清空导出和缓存登记；旧 v1 在线补记身份，缺摘要且失联时不猜同片；离线仍可读写完整字幕。资源记录保留源摘要/参数，生成与按参数复用仍由后续媒体任务实现。
+- 在集成目录执行 `git merge --ff-only feat/webui-10`，成功从 `6eb6855` 快进至 `6ba83ca`。依赖清单和锁文件未变，复用已有前端依赖与指定 Python 环境。以下命令均在 `D:\whisper-diarization` 实际执行：
+
+```powershell
+& 'D:\whisper-diarization\env\python.exe' -m unittest webui.tests.test_http -v
+# Ran 26 tests in 7.411s — OK，无跳过。
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& 'D:\whisper-diarization\env\python.exe' -m py_compile $Files.FullName
+# 12 个 Python 文件编译通过。
+npm --prefix webui/frontend run typecheck
+# tsc --noEmit 通过。
+npm --prefix webui/frontend run build
+# Vite 7.3.7；42 modules；JS 248.93 kB / gzip 79.93 kB。
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm --prefix webui/frontend run test:browser
+# 65 passed (3.8m)，无跳过：resources 5 + 既有 60 项。
+# 真实 Edge + 集成目录生产构建 + 本地 FastAPI + 真实 Explorer。
+```
+
+- 浏览器媒体移动场景期间服务输出一次 asyncio `_ProactorBasePipeTransport._call_connection_lost` 的 `ConnectionResetError / WinError 10054`。该用例及后续用例均通过，进程未中止；记录此日志，不将其描述为无错误日志运行。HTTP 全套包含完整身份、旧工程迁移、缓存移动/缺失/复制隔离及真实文件锁失败恢复。
+- 本轮真实 Explorer 证据：工程 `e86a13df-2e8f-4247-81a6-abd37524db80`，导出 `af17d30e-c4dc-4b31-9eeb-28a7d553d115`，Shell.Application 枚举 **HWND 267040** 指向集成 `.test-workspace/projects/<工程 ID>/exports`，与 HTTP 回执/实际文件一致。已读取 SRT，包含 `[甲&乙] 完整来源` 和第二行。测试后再次枚举该目录窗口数量为 **0**。已查看重定位截图；移动后恢复 4000 ms 实际播放、错误原片拒绝和换短片失败保护均由本轮浏览器通过。
+- 独立对证据引用原片运行 `Get-FileHash -Algorithm SHA256`，与记录 `sha256:dd5ca2cb993d3cf6122a71dd1eee524634edad8ffa14472508ff85f780298025` 一致。首次读取 JSON 未指定 UTF-8 导致 PowerShell 中文路径解码错误，指定 `Get-Content -Encoding UTF8` 后该核查成功；未修改媒体文件。
+- 回归生成的 05–08 截图与 10 的 export-location JPG/JSON、relocated-resources JPG 已复制至被忽略的 `webui/frontend/test-results/ticket-10-integration-<原文件名>`，随后仅恢复这七个已跟踪证据文件；本轮 `.last-run.json` 为 passed，实际工程/导出保留。
+- 测试前后 18762 均为 **PID 7544**，健康检查正常，未停止/重启/修改其演示工程；18761 测试服务已退出。恢复测试证据后工作树干净，再仅追加本段并独立提交。未启动其他代理，未推送，保留全部工作树。
