@@ -57,3 +57,30 @@ Spec: [WebUI 字幕与说话人编辑器](../spec.md)
 - `git diff --check`：通过。自行检查本票完整已提交实现及测试、文档，确认只修改 `webui/` 与本票；既有 speaker 截图被回归自动生成，恢复为原版本，不纳入本票提交。
 - 成功截图 `webui/tests/evidence/ticket-06-drag-timing.jpg` 已读取核看：原片 2 秒、右侧 2000–3000 ms、总览与甲轨同条目、重叠保留、重开后无历史，保存状态一致。README 记录拖动、极窄手柄、吸附阈值及公共回调契约。
 - 服务检查：`Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -in 18761,18762 } | Select-Object LocalAddress,LocalPort,OwningProcess` 仅返回 `127.0.0.1:18762` / PID `36112`；**18761 已释放，18762 演示保留**。任务工作树保留。
+
+### 2026-10-16 集成验收
+
+- 合并前确认集成目录 `D:\whisper-diarization` 的 `feat/webui` 为 `9d9266706eaeee3ebf7a3529f3ef597d36adc4a0`；任务工作树 `C:\Users\machi\AppData\Local\Temp\opencode\webui-worktrees\ticket-06` 的 `feat/webui-06` 为 `a8aa2de747fd01d83bfe3828954395b72a584eca`，包含实现 `48036e4169b69d7f43566d63b02a67e56eb573b2` 及验收记录提交。两个工作树均干净，票为 done，差异仅涉及 WebUI 前端、测试、文档及本票；`git diff --check 9d92667 a8aa2de` 通过。
+- 实际读取 Comments、已提交拖动截图和任务工作树 `.last-run.json`（passed）。在集成目录执行 `git merge --ff-only feat/webui-06`，成功从 `9d92667` 快进至 `a8aa2de`。依赖清单与锁文件未变，复用已有前端依赖和指定 Python 环境。
+- 以下命令均在 `D:\whisper-diarization` 实际执行，全部通过：
+
+```powershell
+& 'D:\whisper-diarization\env\python.exe' -m unittest webui.tests.test_http -v
+# Ran 21 tests in 6.193s — OK，无跳过。
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& 'D:\whisper-diarization\env\python.exe' -m py_compile $Files.FullName
+# 11 个 Python 文件编译通过；本票无 Python 源码改动。
+npm --prefix webui/frontend run typecheck
+# tsc --noEmit 通过。
+npm --prefix webui/frontend run build
+# Vite 7.3.7；33 modules；JS 223.46 kB / gzip 71.58 kB。
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm --prefix webui/frontend run test:browser
+# 33 passed (1.6m)：drag-timing 7 + editing 11 + exchange 4 + speakers 6 + timeline 5。
+# 真实 Edge + 集成目录生产构建 + 本地 FastAPI。
+```
+
+- 拖动七项覆盖横/纵/斜拖、两端 resize、片头片尾与 1 ms 下限、吸附开关/目标/屏幕阈值、Esc 取消、2×/8× 缩放滚动、极短块、预览不落盘、一步历史及保存重开；既有浏览器二十六项和 HTTP 二十一项全部通过。
+- 实际核看本次拖动截图：原片 2 秒、2000–3000 ms、甲轨与总览同步、重叠保留及已保存状态。回归自动重写的两张截图已复制至被忽略的 `webui/frontend/test-results/ticket-06-integration-drag-timing.jpg` 与 `ticket-06-integration-speaker-management.jpg`，随后仅将这两个已跟踪截图恢复为合并提交版本。集成 `.last-run.json` 为 passed；测试工程保留于 `.test-workspace/`。
+- 测试前确认 18761 空闲，测试后确认服务退出；原有 18762 / PID 36112 演示服务保持运行。恢复测试产物后工作树干净，再仅追加本段并独立提交。未启动其他代理，未推送，保留全部工作树。
