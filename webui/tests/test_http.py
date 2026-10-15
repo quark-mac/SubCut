@@ -9,6 +9,7 @@ import sys
 import tempfile
 import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 
 import httpx
 
@@ -125,6 +126,43 @@ class ProjectHTTPTests(unittest.TestCase):
         self.assertEqual(suffix.content, self.video.read_bytes()[-64:])
         self.assertEqual(self.client.get(url, headers={"Range": "bytes=99999999-"}).status_code, 416)
 
+    def test_open_speaker_labels_save_with_stable_entry_and_special_identities(self):
+        project = self.create()
+        url = f'/api/projects/{project["id"]}'
+        speakers = [{"id": "speaker-kaguya", "label": "Iroha&Kaguya", "color": "#71a8cc", "order": 0}]
+        speakers += [dict(s, order=i + 1) for i, s in enumerate(project["speakers"])]
+        entries = copy.deepcopy(project["entries"])
+        entries[1]["speaker_id"] = "speaker-kaguya"
+        entries[2]["speaker_id"] = speakers[2]["id"]
+        response = self.client.put(url, json={"revision": 1, "name": project["name"],
+                                             "entries": entries, "speakers": speakers})
+        self.assertEqual(response.status_code, 200, response.text)
+        reopened = self.client.get(url).json()
+        self.assertEqual(reopened["speakers"], speakers)
+        self.assertEqual(reopened["entries"], entries)
+        # Undoing attribution also restores the complete previous speaker configuration.
+        response = self.client.put(url, json={"revision": 2, "name": project["name"],
+                                             "entries": project["entries"], "speakers": project["speakers"]})
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["speakers"], project["speakers"])
+
+    def test_invalid_speakers_cannot_change_special_semantics_or_corrupt_references(self):
+        project = self.create()
+        url = f'/api/projects/{project["id"]}'
+        cases = [[], [project["speakers"][0]]]
+        for changes in ({"id": project["speakers"][1]["id"]}, {"label": "NONSPEECH"},
+                        {"label": "普通人"}, {"label": " "}, {"order": 1}, {"color": "bad"}):
+            speakers = copy.deepcopy(project["speakers"])
+            speakers[0].update(changes)
+            cases.append(speakers)
+        for speakers in cases:
+            with self.subTest(speakers=speakers):
+                response = self.client.put(url, json={"revision": 1, "name": project["name"],
+                                                     "entries": project["entries"], "speakers": speakers})
+                self.assertEqual(response.status_code, 422, response.text)
+                self.assertIn("speakers", response.json()["error"]["field"])
+                self.assertEqual(self.client.get(url).json(), project)
+
     def test_invalid_import_reports_entry_field_and_never_creates_partial_project(self):
         before = self.client.get("/api/projects").json()
         cases = [
@@ -166,6 +204,62 @@ class ProjectHTTPTests(unittest.TestCase):
         self.assertEqual(conflict.status_code, 409)
         self.assertEqual(conflict.json()["error"]["code"], "revision_conflict")
         self.assertEqual(self.client.get(url).json(), saved)
+
+    def test_competing_saves_have_one_winner_and_late_old_request_cannot_overwrite(self):
+        project = self.create()
+        url = f'/api/projects/{project["id"]}'
+        bodies = []
+        for text in ("并发修改 A", "并发修改 B"):
+            entries = copy.deepcopy(project["entries"])
+            entries[1]["text"] = text
+            bodies.append({"revision": 1, "name": project["name"], "entries": entries})
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(lambda body: self.client.put(url, json=body), bodies))
+        self.assertEqual(sorted(response.status_code for response in results), [200, 409])
+        winner = next(response.json() for response in results if response.status_code == 200)
+        self.assertEqual(self.client.get(url).json(), winner)
+        late = self.client.put(url, json=bodies[0])
+        self.assertEqual(late.status_code, 409)
+        document = self.workspace / project["id"] / "project.json"
+        self.assertEqual(json.loads(document.read_text(encoding="utf-8")), winner)
+
+    @unittest.skipUnless(sys.platform == "win32", "Windows sharing-lock fault injection")
+    def test_real_atomic_replace_failure_preserves_complete_file_and_retry_recovers(self):
+        # External OS-level fault: readers may open the file, but replacing it is
+        # temporarily denied. The real HTTP server/storage path runs unchanged.
+        import ctypes
+        from ctypes import wintypes
+
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
+                                      wintypes.LPVOID, wintypes.DWORD, wintypes.DWORD, wintypes.HANDLE]
+        kernel.CreateFileW.restype = wintypes.HANDLE
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel.CloseHandle.restype = wintypes.BOOL
+        project = self.create()
+        url = f'/api/projects/{project["id"]}'
+        document = self.workspace / project["id"] / "project.json"
+        before = document.read_bytes()
+        handle = kernel.CreateFileW(str(document), 0x80000000, 3, None, 3, 0x80, None)
+        self.assertNotEqual(handle, wintypes.HANDLE(-1).value, ctypes.get_last_error())
+        entries = copy.deepcopy(project["entries"])
+        entries[1]["text"] = "磁盘解锁后的最新完整版本"
+        body = {"revision": 1, "name": project["name"], "entries": entries}
+        try:
+            response = self.client.put(url, json=body)
+            self.assertEqual(response.status_code, 500, response.text)
+            self.assertEqual(response.json()["error"]["code"], "storage_error")
+            self.assertEqual(document.read_bytes(), before)
+            self.assertEqual(self.client.get(url).json(), project)
+            self.assertEqual([p.name for p in document.parent.iterdir()], ["project.json"])
+        finally:
+            kernel.CloseHandle(handle)
+        retried = self.client.put(url, json=body)
+        self.assertEqual(retried.status_code, 200, retried.text)
+        reopened = self.client.get(url).json()
+        self.assertEqual(reopened["revision"], 2)
+        self.assertEqual(reopened["entries"], entries)
+        self.assertEqual(json.loads(document.read_text(encoding="utf-8")), reopened)
 
     def test_unknown_version_and_missing_media_are_explicit_and_preserve_document(self):
         project = self.create()

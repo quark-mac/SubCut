@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from .errors import Problem
 from .formats import validate_entries
 from .models import Project
+from .speakers import validate_speakers
 
 
 def atomic_write(path: Path, content: str):
@@ -53,6 +54,7 @@ class Store:
             project = Project.model_validate(data)
             if project.id != project_id:
                 raise ValueError("project identity mismatch")
+            validate_speakers(project.speakers)
             validate_entries(project.entries, project.media.duration_ms, {speaker.id for speaker in project.speakers})
             return project
         except (ValueError, ValidationError) as exc:

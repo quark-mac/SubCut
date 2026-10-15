@@ -79,6 +79,7 @@ class SaveRequest(Model):
     revision: StrictInt
     name: str
     entries: list[Entry]
+    speakers: list[Speaker] | None = None
 
 
 class ExportRequest(Model):

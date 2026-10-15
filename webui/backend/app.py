@@ -11,6 +11,7 @@ from .formats import read_plain_srt, validate_entries, write_plain_srt
 from .media import local_file, probe_media
 from .models import CreateRequest, Export, ExportRequest, ImportRequest, Project, SaveRequest, Speaker, SubtitleSource, identity
 from .storage import Store, atomic_write
+from .speakers import validate_speakers
 
 
 app = FastAPI(title="字幕校对 WebUI", version="0.1.0")
@@ -109,13 +110,16 @@ def save_project(project_id: str, body: SaveRequest):
         local_file(project.media.path, "media_path")
         if not body.name.strip():
             raise Problem("工程名称不能为空", field="name")
-        validate_entries(body.entries, project.media.duration_ms, {s.id for s in project.speakers})
+        speakers = body.speakers if body.speakers is not None else project.speakers
+        validate_speakers(speakers, project.speakers)
+        validate_entries(body.entries, project.media.duration_ms, {s.id for s in speakers})
         source_ids = {s.id for s in project.subtitle_sources}
         for position, entry in enumerate(body.entries, 1):
             if any(source.subtitle_id not in source_ids for source in entry.sources):
                 raise Problem("字幕引用了不存在的来源", entry=position, field="sources")
         project.name = body.name.strip()
         project.entries = body.entries
+        project.speakers = speakers
         project.revision += 1
         atomic_write(store.directory(project_id) / "project.json", project.model_dump_json(indent=2))
         return project
