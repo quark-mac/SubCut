@@ -1,4 +1,5 @@
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -8,15 +9,25 @@ from fastapi.staticfiles import StaticFiles
 
 from .errors import Problem
 from .formats import EXPORT_TYPES, read_subtitles, validate_entries, validate_sources, write_subtitles
-from .media import local_file, probe_media, verify_media
+from .media import inspect_media, local_file, probe_media, verify_media
 from .resources import inventory, open_folder
-from .models import CopyRequest, CreateRequest, Export, ExportRequest, ImportRequest, NewMediaRequest, Project, RelocateRequest, SaveRequest, SubtitleSource, identity
+from .models import CopyRequest, CreateRequest, Export, ExportRequest, ImportRequest, NewMediaRequest, PreviewRequest, Project, RelocateRequest, SaveRequest, SubtitleSource, identity
+from .preview import PreviewTasks, cached_preview, parameters, valid_artifact
 from .storage import Store, atomic_write
 from .speakers import validate_speakers
 
 
-app = FastAPI(title="字幕校对 WebUI", version="0.1.0")
 store = Store(Path(os.environ.get("WEBUI_WORKSPACE", Path(__file__).resolve().parents[1] / "workspace")))
+tasks = PreviewTasks(store)
+
+
+@asynccontextmanager
+async def lifespan(app):
+    yield
+    tasks.close()
+
+
+app = FastAPI(title="字幕校对 WebUI", version="0.1.0", lifespan=lifespan)
 
 
 @app.exception_handler(Problem)
@@ -94,7 +105,41 @@ def get_media(project_id: str):
         project = store.load(project_id)
     path = verify_media(project.media)
     # Starlette FileResponse supports standard byte ranges and 416 responses.
-    return FileResponse(path)
+    return FileResponse(path, media_type=inspect_media(path)['mime_type'])
+
+
+@app.get('/api/projects/{project_id}/playback')
+def get_playback(project_id: str, quality: str = 'standard'):
+    if quality not in ('standard', 'small'):
+        raise Problem('未知预览质量', field='quality')
+    with store.lock:
+        project = store.load(project_id)
+    source = inspect_media(verify_media(project.media))
+    artifact = cached_preview(project, quality)
+    return {'project_id': project_id, 'source': source, 'preview': artifact,
+            'task': tasks.latest(project_id),
+            'url': f'/api/projects/{project_id}/previews/{artifact.id}' if artifact else f'/api/projects/{project_id}/media'}
+
+
+@app.post('/api/projects/{project_id}/preview', status_code=202)
+def generate_preview(project_id: str, body: PreviewRequest):
+    return tasks.submit(project_id, body.quality)
+
+
+@app.get('/api/projects/{project_id}/tasks/{task_id}')
+def get_task(project_id: str, task_id: str):
+    return tasks.get(project_id, task_id)
+
+
+@app.get('/api/projects/{project_id}/previews/{artifact_id}')
+def get_preview(project_id: str, artifact_id: str):
+    with store.lock:
+        project = store.load(project_id)
+    verify_media(project.media)
+    artifact = next((a for a in project.media_artifacts if a.id == artifact_id and a.kind == 'preview'), None)
+    if not artifact or not valid_artifact(artifact, project, parameters(artifact.parameters.get('quality', 'standard'))):
+        raise Problem('预览缓存已失效或未完成，请重新生成', status=409, code='preview_stale')
+    return FileResponse(artifact.path, media_type='video/mp4')
 
 
 def check_revision(project: Project, revision: int):

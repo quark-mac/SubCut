@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { api, timeLabel, type Project, type Resources } from './api';
 
 const statuses: Record<string, string> = { available: '可用', missing: '失联', changed: '文件已变化', unavailable: '无法读取', unverified: '身份未核实', stale: '缓存失效' };
-export function ProjectResources({ project, busy, onRelocate, onNewMedia }: {
-  project: Project; busy: boolean; onRelocate: () => void; onNewMedia: () => void;
+export function ProjectResources({ project, busy, onRelocate, onNewMedia, resourceVersion }: {
+  project: Project; busy: boolean; onRelocate: () => void; onNewMedia: () => void; resourceVersion?: string;
 }) {
   const [resources, setResources] = useState<Resources | null>(null);
   const [refresh, setRefresh] = useState(0);
@@ -15,7 +15,7 @@ export function ProjectResources({ project, busy, onRelocate, onNewMedia }: {
     void api<Resources>(`/projects/${project.id}/resources`).then(value => { if (active) setResources(value); })
       .catch(reason => { if (active) setError(String(reason)); });
     return () => { active = false; };
-  }, [project.id, project.revision, refresh]);
+  }, [project.id, project.revision, refresh, resourceVersion]);
   async function openLocation(id: string) {
     setError(''); setOpened('');
     try {

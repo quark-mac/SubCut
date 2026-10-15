@@ -5,6 +5,8 @@ import { useAudition } from './useAudition';
 import { WorkspaceSplitter } from './WorkspaceSplitter';
 import { WorkspaceHelp } from './WorkspaceHelp';
 import { ProjectResources } from './ProjectResources';
+import { usePreviewCopy } from './usePreviewCopy';
+import { PreviewCopyControls } from './PreviewCopyControls';
 import { SourceTimeline } from './SourceTimeline';
 import { BatchEditor } from './BatchEditor';
 import { AddSubtitleDialog } from './AddSubtitleDialog';
@@ -20,6 +22,7 @@ const exportLabels: Record<ExportFormat, string> = { 'speaker-srt': '说话人 S
 export function App() {
   const session = useProjectSession();
   const { project, dirty } = session;
+  const previewCopy = usePreviewCopy(project);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const anchor = useRef<string | null>(null);
   const selected = selectedIds.size === 1 ? [...selectedIds][0] : null;
@@ -583,8 +586,10 @@ export function App() {
     <main className="workspace" ref={workspace} style={{ gridTemplateColumns: `minmax(140px, ${layout.left}fr) 7px minmax(300px, ${100 - layout.left - layout.right}fr) 7px minmax(300px, ${layout.right}fr)` }}>
       <aside className="resources panel" aria-label="工程资源">
         <h2>工程资源</h2>
-        {project ? <ProjectResources key={project.id} project={project} busy={busy || session.saving}
+        {project ? <><PreviewCopyControls preview={previewCopy} busy={busy || !!dialog} onGenerate={() => void previewCopy.generate(async () => !!commitDraft() && await session.persist())} />
+          <ProjectResources key={project.id} project={project} busy={busy || session.saving} resourceVersion={previewCopy.resourceVersion}
           onRelocate={() => void showDialog('relocate')} onNewMedia={() => void showDialog('new-media')} />
+          </>
           : <p className="muted">新建工程，选定本机视频与字幕（SRT / JSONL / MOSS JSON）；也可从“文件”菜单继续已有工程。</p>}
       </aside>
       <WorkspaceSplitter label="调整资源面板宽度" onBegin={() => beginResize('left')} />
@@ -592,11 +597,12 @@ export function App() {
         <h2>视频预览 <span>原片时间轴</span></h2>
         <div className="video-stage">
           {project ? <>
-            <video key={`${project.id}:${project.media.path}`} ref={video} src={`/api/projects/${project.id}/media?identity=${project.media.identity ?? ''}&path=${encodeURIComponent(project.media.path)}`} controls preload="auto"
-              onLoadedMetadata={() => { if (video.current) video.current.currentTime = position / 1000; }}
-              onTimeUpdate={audition.sync} onEnded={audition.sync}
+            <video key={`${project.id}:${previewCopy.src}`} ref={video} src={previewCopy.src} controls preload="auto"
+              onLoadedMetadata={() => { if (video.current) { video.current.currentTime = position / 1000; video.current.playbackRate = audition.speed; setPlaying(!video.current.paused); } }}
+              onLoadedData={event => previewCopy.decoded(event.currentTarget)}
+              onTimeUpdate={() => { if (video.current?.videoWidth) audition.sync(); }} onEnded={audition.sync}
               onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
-              onError={() => setError('视频读取或解码失败，请检查源路径与浏览器编码兼容性（建议 H.264/AAC MP4）')} />
+              onError={previewCopy.failed} />
             {showSubtitles && <div className="subtitle-overlay" aria-label="播放字幕">{overlayEntries.map(entry => <div key={entry.id}>{showSpeakerNames && <span>[{project.speakers.find(s => s.id === entry.speaker_id)?.label ?? '?'}] </span>}{entry.text}</div>)}</div>}
           </> : <div className="empty-preview"><span>▷</span><p>视频与字幕，在同一时间线上</p></div>}
         </div>
@@ -714,7 +720,7 @@ export function App() {
         <button disabled={busy || (dialog !== 'relocate' && !name.trim()) || (dialog !== 'save-as' && !mediaPath.trim())} onClick={() => void projectAction()}>{dialog === 'relocate' ? '验证并重新定位' : '创建独立副本'}</button>
       </>}
       {(dialog === 'new' || dialog === 'replace') && <>
-        <p className="muted">使用浏览器可直接播放的原片。视频和字幕保留在原路径，校对结果保存为独立工程。</p>
+        <p className="muted">视频和字幕保留在原路径，校对结果保存为独立工程。原片不兼容时可在资源区生成保持原片时间的预览副本。</p>
         {dialog === 'new' && <label>工程名称<input value={name} disabled={busy} onChange={event => setName(event.target.value)} /></label>}
         <label>视频绝对路径<input value={mediaPath} disabled={busy || dialog === 'replace'} placeholder="D:\视频\短片.mp4" onChange={event => { setMediaPath(event.target.value); setPreview(null); }} /></label>
         <label>导入格式<select value={importFormat} disabled={busy} onChange={event => { setImportFormat(event.target.value as ImportFormat); setPreview(null); }}>

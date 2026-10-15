@@ -65,6 +65,7 @@ class MediaArtifact(Model):
     path: str
     media_identity: str
     parameters: dict = Field(default_factory=dict)
+    output_identity: str | None = None
 
 
 class Project(Model):
@@ -117,3 +118,7 @@ class NewMediaRequest(CopyRequest):
 class RelocateRequest(Model):
     revision: StrictInt
     media_path: str
+
+
+class PreviewRequest(Model):
+    quality: Literal['standard', 'small'] = 'standard'

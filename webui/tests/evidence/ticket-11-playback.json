@@ -1,0 +1,152 @@
+{
+  "browser": "155.0.4283.45",
+  "project": {
+    "format_version": 1,
+    "id": "617980cd-f072-40f8-958e-8895f3f76ebd",
+    "name": "兼容预览-1792100411841",
+    "revision": 1,
+    "media": {
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-11\\webui\\frontend\\.test-workspace\\preview\\1792100411578\\markers-offset-5-silent-False.mkv",
+      "duration_ms": 9000,
+      "identity": "sha256:6d9367232177ba2f0c20f05ac2c58846059145010a986f02b1e9c4da3e6a60d2",
+      "size_bytes": 946994
+    },
+    "subtitle_sources": [
+      {
+        "id": "686475db-f5fc-40c9-b147-3526efdbd4bf",
+        "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-11\\webui\\frontend\\.test-workspace\\preview\\1792100411578\\markers.srt",
+        "format": "plain-srt"
+      }
+    ],
+    "entries": [
+      {
+        "id": "1113a12d-f837-44c4-a833-c32815fc0c6e",
+        "start_ms": 200,
+        "end_ms": 1800,
+        "text": "红色 440Hz 开头",
+        "speaker_id": "872ef875-43af-4aff-8182-6b14b163a5f9",
+        "tags": [],
+        "sources": [
+          {
+            "subtitle_id": "686475db-f5fc-40c9-b147-3526efdbd4bf",
+            "index": 1,
+            "source_entries": [],
+            "moss_id": null
+          }
+        ]
+      },
+      {
+        "id": "0fd0e0fc-fa73-43f2-aefa-4c0569b06a0d",
+        "start_ms": 4200,
+        "end_ms": 5800,
+        "text": "绿色 880Hz 中部",
+        "speaker_id": "872ef875-43af-4aff-8182-6b14b163a5f9",
+        "tags": [],
+        "sources": [
+          {
+            "subtitle_id": "686475db-f5fc-40c9-b147-3526efdbd4bf",
+            "index": 2,
+            "source_entries": [],
+            "moss_id": null
+          }
+        ]
+      },
+      {
+        "id": "3391f843-4295-4ffb-97d9-28bb3405d7f8",
+        "start_ms": 8100,
+        "end_ms": 8900,
+        "text": "蓝色 1320Hz 结尾",
+        "speaker_id": "872ef875-43af-4aff-8182-6b14b163a5f9",
+        "tags": [],
+        "sources": [
+          {
+            "subtitle_id": "686475db-f5fc-40c9-b147-3526efdbd4bf",
+            "index": 3,
+            "source_entries": [],
+            "moss_id": null
+          }
+        ]
+      }
+    ],
+    "speakers": [
+      {
+        "id": "872ef875-43af-4aff-8182-6b14b163a5f9",
+        "label": "?",
+        "color": "#71a8cc",
+        "order": 0
+      },
+      {
+        "id": "f3853c4f-7812-425c-bc2f-844a642f2891",
+        "label": "NONSPEECH",
+        "color": "#a695ce",
+        "order": 1
+      }
+    ],
+    "exports": [],
+    "media_artifacts": [
+      {
+        "id": "4e48bc9c-71fc-4730-8592-b2b0d33767af",
+        "kind": "preview",
+        "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-11\\webui\\frontend\\.test-workspace\\projects\\617980cd-f072-40f8-958e-8895f3f76ebd\\previews\\4e48bc9c-71fc-4730-8592-b2b0d33767af.mp4",
+        "media_identity": "sha256:6d9367232177ba2f0c20f05ac2c58846059145010a986f02b1e9c4da3e6a60d2",
+        "parameters": {
+          "version": 1,
+          "quality": "standard",
+          "container": "mp4",
+          "video": "libx264",
+          "pixel_format": "yuv420p",
+          "audio": "aac",
+          "audio_bitrate": "160k",
+          "sample_rate": 48000,
+          "preset": "fast",
+          "crf": 23,
+          "max_width": 1920,
+          "timebase": "common-source-origin",
+          "gop": 50
+        },
+        "output_identity": "sha256:e28db040abf6636f90a5d19781358efea19932c9d07c9a9938c01dd3d8c68637"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "time": 1,
+      "pixel": [
+        254,
+        0,
+        0,
+        255
+      ],
+      "hz": 430,
+      "rms": 0.28279443342826854,
+      "duration": 9,
+      "url": "http://127.0.0.1:18761/api/projects/617980cd-f072-40f8-958e-8895f3f76ebd/previews/4e48bc9c-71fc-4730-8592-b2b0d33767af?identity=sha256:6d9367232177ba2f0c20f05ac2c58846059145010a986f02b1e9c4da3e6a60d2&path=C%3A%5CUsers%5Cmachi%5CAppData%5CLocal%5CTemp%5Copencode%5Cwebui-worktrees%5Cticket-11%5Cwebui%5Cfrontend%5C.test-workspace%5Cpreview%5C1792100411578%5Cmarkers-offset-5-silent-False.mkv"
+    },
+    {
+      "time": 5,
+      "pixel": [
+        0,
+        254,
+        0,
+        255
+      ],
+      "hz": 870,
+      "rms": 0.2827642215790115,
+      "duration": 9,
+      "url": "http://127.0.0.1:18761/api/projects/617980cd-f072-40f8-958e-8895f3f76ebd/previews/4e48bc9c-71fc-4730-8592-b2b0d33767af?identity=sha256:6d9367232177ba2f0c20f05ac2c58846059145010a986f02b1e9c4da3e6a60d2&path=C%3A%5CUsers%5Cmachi%5CAppData%5CLocal%5CTemp%5Copencode%5Cwebui-worktrees%5Cticket-11%5Cwebui%5Cfrontend%5C.test-workspace%5Cpreview%5C1792100411578%5Cmarkers-offset-5-silent-False.mkv"
+    },
+    {
+      "time": 8.5,
+      "pixel": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "hz": 1320,
+      "rms": 0.2826902745270191,
+      "duration": 9,
+      "url": "http://127.0.0.1:18761/api/projects/617980cd-f072-40f8-958e-8895f3f76ebd/previews/4e48bc9c-71fc-4730-8592-b2b0d33767af?identity=sha256:6d9367232177ba2f0c20f05ac2c58846059145010a986f02b1e9c4da3e6a60d2&path=C%3A%5CUsers%5Cmachi%5CAppData%5CLocal%5CTemp%5Copencode%5Cwebui-worktrees%5Cticket-11%5Cwebui%5Cfrontend%5C.test-workspace%5Cpreview%5C1792100411578%5Cmarkers-offset-5-silent-False.mkv"
+    }
+  ]
+}

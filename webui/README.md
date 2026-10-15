@@ -4,7 +4,7 @@
 
 ## 安装
 
-需要现有 Python 3.10+、Node.js 22.12+（本次使用 24.16）、npm，以及 PATH 中的 FFmpeg/ffprobe。使用已有 Python 环境；以下 PowerShell 命令在**当前 checkout 根目录**执行，Python 路径按本机环境调整：
+需要现有 Python 3.10+、Node.js 22.12+（本次使用 24.16）、npm，以及 FFmpeg/ffprobe。默认复用 PATH 中的工具，也可用 `WEBUI_FFMPEG` / `WEBUI_FFPROBE` 分别指定现有可执行文件的绝对路径（不是命令行参数或工具目录）。使用已有 Python 环境；以下 PowerShell 命令在**当前 checkout 根目录**执行，Python 路径按本机环境调整：
 
 ```powershell
 $env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
@@ -24,12 +24,20 @@ npm --prefix webui/frontend run build
 .\webui\start.ps1 -Python $env:WEBUI_PYTHON -Port 8765 -Workspace 'C:\MyEditingProjects' -NoBrowser
 ```
 
-启动器默认从当前 checkout 的 `env/python.exe` 查找，再查 Git 主工作树的现有环境。服务只监听 `127.0.0.1`，默认 <http://127.0.0.1:8765>，控制台 Ctrl+C 关闭服务。启动前检查 ffprobe 和已构建前端。`WEBUI_WORKSPACE` 或 `--workspace` 指定数据目录；默认 `webui/workspace/<工程 UUID>/project.json`。应用使用单进程服务；不要用多个服务进程同时写同一 workspace。
+启动器默认从当前 checkout 的 `env/python.exe` 查找，再查 Git 主工作树的现有环境。服务只监听 `127.0.0.1`，默认 <http://127.0.0.1:8765>，控制台 Ctrl+C 关闭服务。启动前检查已构建前端，并报告缺失的媒体工具；工具缺失仍能打开已保存工程、编辑和导出字幕，相应媒体操作返回明确错误。`WEBUI_WORKSPACE` 或 `--workspace` 指定数据目录；默认 `webui/workspace/<工程 UUID>/project.json`。应用使用单进程服务；不要用多个服务进程同时写同一 workspace。
+
+例如复用本机已有工具（不另装媒体栈）：
+
+```powershell
+$env:WEBUI_FFMPEG = 'D:\whisper-diarization\MOSS-Transcribe-Diarize\ffmpeg\ffmpeg-9.0.2-full_build\bin\ffmpeg.exe'
+$env:WEBUI_FFPROBE = 'D:\whisper-diarization\MOSS-Transcribe-Diarize\ffmpeg\ffmpeg-9.0.2-full_build\bin\ffprobe.exe'
+.\webui\start.ps1 -Python $env:WEBUI_PYTHON
+```
 
 ## 使用
 
 1. 点击“新建工程”，输入本机视频和 UTF-8 字幕的**绝对路径**（无外层引号），明确选择导入格式，解析预览，确认后创建。预览展示时间、正文、人物、元标签、输入序号、原来源索引与 MOSS ID。新建时核对文件/格式/时长指纹；来源已变化会要求重新预览。详见下方格式契约。
-2. 本票直接播放浏览器兼容原片，建议 H.264/AAC MP4。视频按原路径引用，选择字幕暂停并定位起点，原生播放器支持播放/拖动定位。原片范围读取返回 `206`。视频解码失败会提示。
+2. 原片先由 ffprobe 读取实际容器、视频/音频编码和原片时长，再尝试浏览器解码；扩展名不决定兼容性。资源区显示探测结果与实际画面解码状态，包括浏览器只认出音轨而没有画面的情况。不能完整播放时点击“生成预览副本”，成功后自动使用 H.264/AAC MP4；字幕、原片身份与时间保持不变。原片与副本均支持 `206` 范围读取和定位。
 3. 右侧编辑正文、起止毫秒和说话人归属。可选择已有标签，或输入新名称；新名称创建独立说话人身份，输入已有名称复用其引用。`?`、`NONSPEECH` 分别保留未标注、非对白语义并固定在底部。点击“应用修改”、离开编辑区、切换条目、保存或导出会校验并提交当前输入。非法字段显示原因并获得焦点，不能保存/导出非法草稿。Esc 或“取消修改”恢复本次输入前的有效值。重叠条目独立保留，轨内错层展示。
 4. 每次有效提交后延迟 **650 ms** 自动落盘；“保存工程”或 Ctrl+S 立即提交并保存。显示“未保存 / 保存中… / 已保存 / 保存失败”；已保存只代表服务确认的版本，保存期间可继续编辑。失败保留输入与历史，可点击“重试保存”。磁盘版本冲突保留页面当前修改，不自动覆盖外部更新；可明确点击“放弃修改并重开磁盘版本”，确认后重新读取，取消则保留全部草稿。已落盘但响应丢失时，重试先核对磁盘快照再继续保存。刷新后从“文件 → 打开工程…”重开。切换、新建、另存为及媒体操作先提交有效草稿并等待保存成功；无效字段阻止操作并定位，保存失败不切换。关闭页面仍有未保存提示。
 5. 时间轴工具栏的“撤销 / 重做”或输入框外 Ctrl+Z / Ctrl+Shift+Z 恢复正文、时间和归属（包括创建新标签）的完整操作。一次连续表单编辑提交算一步；保存不清历史，重开重置历史，撤销后新编辑清除旧重做分支。无效、取消或与原值相同的输入不产生历史。输入框内方向键、空格、删除及撤销交给原生文本编辑。
@@ -61,8 +69,10 @@ npm --prefix webui/frontend run build
 31. **工程另存为**：文件菜单选择“工程另存为…”，先保存当前有效字幕和人物输入，再输入副本名称。副本有独立工程 ID、修订从 1 开始；字幕条目、人物配置（身份、名称、颜色、顺序）、元标签、完整来源关联原样复制，视频仍按原路径引用。字幕/人物/来源 ID 作用域在各工程内，修改副本不修改原工程；导出和派生缓存归属原工程，不共享可写目录。新副本建立新编辑历史。
 32. **资源状态**：资源区展示源视频、字幕来源、工作工程文件、派生产物和导出文件及真实路径；“刷新资源状态”重新检查失联/变更。原片失联时仍可打开、编辑、保存、另存为和导出字幕。工程列表显示原片路径及失联提示。每个导出提供“打开导出位置”，服务调用 Windows Explorer 打开真实导出所在目录；打开失败显示错误，绝对路径仍可复制。
 33. **重新定位与换片**：“重新定位原片”只接受完整文件 SHA-256 身份及原片时长一致的新路径；移动/重命名可恢复，重新编码不视作同一原片。恢复保持原片时间、当前播放位置和字幕历史。真正换片请选择“用新视频建立工程”，带入完整字幕/人物/来源副本并按新时长验证全部条目；越界错误显示条目/字段，失败不创建半份工程、不改变原工程。
+34. **兼容预览副本**：资源区可选择标准（最大 1920 宽、CRF 23）或轻量（最大 960 宽、CRF 28），显示等待 / 运行中 / 成功 / 失败及百分比。启动生成先保存有效输入，生成期间仍可编辑和切换工程；后台任务归属原工程，重开可继续查看进度。失败显示实际工具或文件错误，“重试生成预览副本”创建新任务。“刷新预览状态”重查任务与缓存，查询失败也可使用此按钮恢复。
+35. **时间与缓存**：转换整条音视频时间线，保留静音、黑场、间隙及音轨相对视频的延迟。使用一个共同播放起点归零，不分别将各轨起点拉到零；非零起始 PTS 的素材请使用生成副本校对。副本不修改字幕/导出时间。音频采用 AAC 160k/48kHz；无音轨的原片保持无音轨。缓存同时关联完整源 SHA-256、全部生成参数/版本以及产物 SHA-256；切换质量不会误用另一组参数的结果，切回可复用仍有效的副本。失联、内容变化、损坏或缺失副本不作为有效缓存。
 
-工程文件保存稳定的工程/字幕/说话人身份、格式版本、媒体路径/内容身份/时长、字幕来源及来源序号、当前工作字幕、已有元标签及导出记录。未知版本和损坏工程会明确报错并保留文件；原片缺失不会以空工程代替。继续编辑以工程保存对象为准：交换字幕缺少工程人物配置、来源上下文等字段，不能替代完整工程保存。后续票补充媒体生成。
+工程文件保存稳定的工程/字幕/说话人身份、格式版本、媒体路径/内容身份/时长、字幕来源及来源序号、当前工作字幕、已有元标签及导出记录。未知版本和损坏工程会明确报错并保留文件；原片缺失不会以空工程代替。继续编辑以工程保存对象为准：交换字幕缺少工程人物配置、来源上下文等字段，不能替代完整工程保存。后续票补充波形与缩略图生成。
 
 ### 格式与来源契约
 
@@ -90,6 +100,8 @@ npm --prefix webui/frontend run build
 
 ```powershell
 & $env:WEBUI_PYTHON -m unittest webui.tests.test_http -v
+# 真实预览、缺工具及启动入口验收（先完成前端 build）：
+& $env:WEBUI_PYTHON -m unittest discover -s webui/tests -p 'test_*.py' -v
 $Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
 & $env:WEBUI_PYTHON -m py_compile $Files.FullName
 ```
@@ -126,6 +138,10 @@ npm --prefix webui/frontend run test:browser
 `review.spec.ts` 的 7 项真实 Edge 用例覆盖搜索/人物过滤不制造全体连续性、350 ms 短句的列表与轨道双击终点、0.5× 循环/2× 试听/退出/跳转、重叠多行与标签开关、草稿提交才更新叠加、播放中另一条编辑与输入快捷键、三面板/上下拖动及 Esc 恢复、1100×800 布局、帮助和真实菜单导出，另检查片尾循环及删除试听目标后的停止/撤销。使用真实媒体与公开 GET 核对导航不改工程；与 `structure.spec.ts` 一同覆盖过滤后的结构编辑边界。单独运行：`npm --prefix webui/frontend run test:browser -- review.spec.ts`。实际浏览器观察截图：`webui/tests/evidence/ticket-09-review-workspace.jpg`（1.2 秒原片、两条重叠多行/人物标签、编辑选择和播放高亮）。
 
 `resources.spec.ts` 的 5 项真实 Edge 用例组合 JSONL/MOSS 导入及替换、人物改名/颜色/排序、拆分/合并后另存为，核对完整来源（重复原索引、MOSS 段 ID）、元标签、人物和媒体身份；覆盖副本独立修改、切换前有效草稿落盘、无效字幕/人物草稿及保存/复制失败、重试恢复。移动实际测试原片后离线重开编辑，拒绝错误原片，再重定位恢复 4 秒播放位置并实际播放；短片新工程越界失败，另一等长原片成功新建。资源打开用真实 Explorer：通过 Shell.Application 查询实际窗口目录/HWND，核对实际导出文件，随后只关闭该测试目录窗口。证据为 `tests/evidence/ticket-10-export-location.json` / `.jpg`、`ticket-10-relocated-resources.jpg`；另有 OpenChamber 浏览器人工操作截图 `ticket-10-manual-save-as-export.jpg`。单独运行：`npm --prefix webui/frontend run test:browser -- resources.spec.ts`。
+
+`preview.spec.ts` 使用真实 FFV1/PCM Matroska（9 秒、320×180、25fps、起始 PTS +5 秒）。Edge 会识别音轨但无法解码视频，测试检查 `videoWidth === 0`，然后从 UI 生成实际副本、播放/定位、逐句与 2× 循环试听、重开复用和两档参数切换。浏览器 canvas 读取 1/5/8.5 秒的红/绿/蓝帧，Web Audio 解码实际 HTTP MP4 并在对应时间检查 440/880/1320Hz 音频及字幕叠加；HTTP 测试另验证 3/7 秒黑场静音保留、+500ms 音轨延迟和无音轨素材。频率证据是实际解码样本测量，不是人工听感结论。
+
+同文件的 54 秒/1280×720 夹具验证后台进度与自动保存、晚到任务/保存回执、未提交草稿及工程切换组合；真实请求先完成，回执在公共 HTTP 边界延迟，核对两份工程的实际保存结果。缺工具用独立空闲端口服务和实际可执行文件配置：缺失路径 → 错配真实 ffprobe 导致转码失败 → 安装现有 ffmpeg 到测试配置位置 → UI 重试成功。各服务在测试结束退出。截图和机器可读结果在 `tests/evidence/ticket-11-*`；产物与任务日志保留在 `.test-workspace/preview/` 和 `.test-workspace/projects/<id>/`。单独运行：`npm --prefix webui/frontend run test:browser -- preview.spec.ts`。
 
 ### 手动检查用自建素材
 
@@ -164,17 +180,23 @@ npm --prefix webui/frontend run dev
 | `POST /api/projects/{id}/new-media` | `{revision, name, media_path}` → 独立工程，201；带入字幕副本，按新媒体时长完整验证 |
 | `GET /api/projects/{id}/resources` | `{project_id, revision, media, subtitle_sources, working_subtitles, media_artifacts, exports}`；每项带路径/身份及可用状态 |
 | `POST /api/projects/{id}/exports/{export_id}/open-location` | 实际打开已登记导出所在目录，返回 `{project_id, export_id, path, opened}`；不存在/打开失败分别报错 |
+| `GET /api/projects/{id}/playback?quality=standard` | `{project_id, source, preview, task, url}`；实际源容器/编码/时长/起始 PTS、有效副本与最近任务；质量为 standard/small |
+| `POST /api/projects/{id}/preview` | `{quality?: standard\|small}` → 202 任务；状态 queued/running/succeeded/failed、progress 0–1、error、artifact_id、cached；同源同参数活动任务去重，有效缓存立即返回 succeeded/cached |
+| `GET /api/projects/{id}/tasks/{task_id}` | 持久任务状态/进度/错误、工具版本与实际命令；工程切换不改变任务归属 |
+| `GET /api/projects/{id}/previews/{artifact_id}` | 只读取已登记且身份/参数/产物完整性有效的 MP4；Range/206/416，失效返回 409 |
 
 错误：`{error: {code, message, field, entry}}`，SRT/MOSS 条目位置 `entry` 从 1 开始，JSONL 使用物理行号（含空行），文件级错误为 null。保存使用修订比较和同目录临时文件/fsync/原子替换；失败不覆盖现有文件。创建先完整验证，临时工程目录原子发布。`speakers` 为完整配置数组：身份/名称唯一、六位十六进制颜色、`order` 从零连续；最后两项为身份固定的 `?`、`NONSPEECH`。字幕只能引用本次配置中的有效人物与来源身份；整体替换预览的新人物 ID 应先映射到现有同名人物（尤其两个特殊轨）再提交。所有导出记录含 `format / keep_tags / revision`。工程版本仍为 1，旧 plain-srt 文档缺少的新增来源/导出字段按空值加载。
 
 后续票可扩展 `backend/models.py` 的文档与请求 schema、`formats.py` 的格式边界；前端 `api.ts` 定义相应传输类型。`App.tsx` 管理选择/草稿和校验，列表/总览/人物轨按同一条目 ID 选择。
 
-### 任务 11 媒体身份与缓存接缝
+### 媒体身份、预览任务与缓存接缝
 
 - `Media.identity` 是 `sha256:<完整文件摘要>`，`size_bytes` 为字节数，`path` 是当前原片绝对路径，`duration_ms` 始终为原片时长。新建/换片时流式计算，重定位比对全文件内容和时长；路径、文件名及修改时间不是持久身份。进程内只缓存最近 32 个文件签名（路径、大小、mtime、ctime、inode）对应的完整摘要，签名变化重新计算；计算期间变化报 `media_changed`。首读整片需要顺序读取原文件。
 - 原片读取用 `verify_media` 核对身份，原路径被另一文件替换返回 409/`media_identity_mismatch`，不会默默播放错误原片。资源清单状态为 `available / missing / changed / unavailable / unverified`，编辑文档读取和保存不依赖媒体在线。
 - 版本仍为 1，旧文档缺失的身份/大小默认为 null、`media_artifacts` 默认为 `[]`。旧工程原片在线且时长匹配时，在读取/列出时原子补记身份并递增修订；若早已失联且没有摘要，仍可编辑，但不能证明任意新路径属于同一原片，重定位返回 `media_identity_unknown`。先恢复原路径并打开以补记，或用新视频建立独立工程；不凭文件名/时长猜身份。
-- `Project.media_artifacts` 记录**已经成功发布**的派生产物：`{id, kind: preview|waveform|thumbnails, path, media_identity, parameters}`。任务 11 发布成功结果时记录源摘要和全部生成参数，复用时必须同时核对摘要、参数和文件存在性；失败/运行中的结果不要放进此数组。当前资源清单在源媒体失联/变化或摘要不匹配时标 `stale`，文件缺失标 `missing`。同一原片重定位保留这些引用；另存为/换片新工程清空缓存与导出登记，避免共享可写产物。任务进度/参数选择仍由 11 实现。
+- `Project.media_artifacts` 记录**已经成功发布**的派生产物：`{id, kind: preview|waveform|thumbnails, path, media_identity, parameters, output_identity?}`。预览必须同时匹配源摘要、当前全部参数及产物摘要；旧记录没有 `output_identity` 时保留引用但不作为可播预览。同一原片重定位保留有效引用；另存为/换片新工程清空缓存与导出登记，避免共享可写产物。
+- `backend/preview.py` 单 worker 排队执行 FFmpeg，进度来自 `-progress`，任务记录与 stderr 在 `<工程>/tasks/`。先写 `<工程>/previews/<task>.partial.mp4`，成功后检查实际编码/起点/时长、再次核验源身份，原子改名及登记；失败/运行中的文件不进入资源数组或播放接口。服务重启后未完成任务查询标为 failed/`task_interrupted`，允许重试；不自动恢复转码。
+- 资源登记在与 PUT 相同的锁内**重读最新工程，只追加资源**，不递增字幕编辑/导出的 `revision`。PUT 也重读最新资源，只更新编辑字段。这使后台完成不会制造编辑修订冲突或覆盖字幕/人物/导出；客户端资源刷新与字幕保存/历史独立，按工程身份和请求代次丢弃过期播放/任务回执。
 - `ProjectResources.tsx` 在工程 ID/修订变化或用户刷新时读取公开资源清单；`useProjectSession.persist()` 返回保存是否成功供切换门禁，失败仍保留草稿/历史。`relocate(project)` 只更新媒体与磁盘修订，不重置字幕历史；新工程 `open(project)` 建立新会话。
 
 `SourceTimeline.tsx` 负责原片坐标、缩放/滚动、刻度、轨内错层和 pointer 手势。接收同一 `project / selected: Set<Entry.id> / position`，通过 `onChoose(entry, modifiers?)` 请求选择、`onSeek(integerMilliseconds)` 请求播放定位；自身只持有临时手势，不维护第二份持久字幕。`onBeginEdit(id)` 先校验/提交已有表单并返回有效选择条目数组，暂停但不跳播放头；`onPreview(entries | null)` 同步 App 的临时列表/字段/播放叠加；`onCommitEdit(entries)` 在释放时一次提交整个集合的时间和归属。`onBeginSelect / onSelect(Set<id>) / onEndSelect` 承载框选校验、ID 去重与取消恢复，不调用播放定位或历史。预览不进入 `session.commit`，布局保持提交前轨道高度以免命中目标在手势中移动；释放后重新错层。取消、无变化或无效表单不产生拖动历史。坐标以原始条目整数时间为基准，不使用最小点击宽度反推时长。`selectionEditing.ts` 的共同轨道偏移供键盘与鼠标复用；`BatchEditor.tsx` 展示共同属性，仅暂存明确目标，提交由 App 构造单个完整快照。

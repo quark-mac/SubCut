@@ -615,14 +615,16 @@ class ProjectHTTPTests(unittest.TestCase):
     def test_existing_media_cache_references_survive_relocation_but_are_not_shared_by_copies(self):
         project = self.create()
         url = f'/api/projects/{project["id"]}'
-        directory = self.workspace / project['id']
-        artifact = directory / 'preview.mp4'
-        artifact.write_bytes(self.video.read_bytes())
-        # Public version-1 project-file boundary: an existing successful media artifact.
-        reference = {'id': 'preview-1', 'kind': 'preview', 'path': str(artifact),
-                     'media_identity': project['media']['identity'], 'parameters': {'codec': 'h264', 'timebase': 'original'}}
-        project['media_artifacts'] = [reference]
-        (directory / 'project.json').write_text(json.dumps(project), encoding='utf-8')
+        # Ticket 11 now supplies this artifact through the real public generation boundary.
+        task = self.client.post(url + '/preview', json={}).json()
+        for _ in range(300):
+            task = self.client.get(url + '/tasks/' + task['id']).json()
+            if task['state'] in ('succeeded', 'failed'):
+                break
+            time.sleep(.02)
+        self.assertEqual(task['state'], 'succeeded', task)
+        reference = self.client.get(url).json()['media_artifacts'][0]
+        artifact = Path(reference['path'])
         self.assertEqual(self.client.get(url).json()['media_artifacts'], [reference])
         self.assertEqual(self.client.get(url + '/resources').json()['media_artifacts'][0]['status'], 'available')
         moved = self.root / 'cache-relocated.mp4'

@@ -1,0 +1,57 @@
+{
+  "observed": [
+    {
+      "state": "running",
+      "progress": 0
+    },
+    {
+      "state": "running",
+      "progress": 0.09481481481481481
+    },
+    {
+      "state": "running",
+      "progress": 0.3887407407407407
+    },
+    {
+      "state": "running",
+      "progress": 0.6739753148148148
+    },
+    {
+      "state": "running",
+      "progress": 0.8636049444444445
+    },
+    {
+      "state": "succeeded",
+      "progress": 1
+    }
+  ],
+  "pendingProof": true,
+  "first": "61861da5-9433-496d-89f4-dde5aec6ed11",
+  "second": "31958717-caf3-42bd-af38-8825b57e9d3f",
+  "firstText": "任务完成时的新草稿",
+  "secondText": "另一工程独立草稿",
+  "artifacts": [
+    {
+      "id": "67a15613-6af4-41e3-838f-8a92fb39c3d3",
+      "kind": "preview",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-11\\webui\\frontend\\.test-workspace\\projects\\61861da5-9433-496d-89f4-dde5aec6ed11\\previews\\67a15613-6af4-41e3-838f-8a92fb39c3d3.mp4",
+      "media_identity": "sha256:280f99fcc3630b24a81715254a6f00dae2da7bd85dcd36d05aa85890e4e8af00",
+      "parameters": {
+        "version": 1,
+        "quality": "standard",
+        "container": "mp4",
+        "video": "libx264",
+        "pixel_format": "yuv420p",
+        "audio": "aac",
+        "audio_bitrate": "160k",
+        "sample_rate": 48000,
+        "preset": "fast",
+        "crf": 23,
+        "max_width": 1920,
+        "timebase": "common-source-origin",
+        "gop": 50
+      },
+      "output_identity": "sha256:3f18d41a295d07b013ca86846e51b7b4cab44ba12b7557649fbf18253141551c"
+    }
+  ]
+}

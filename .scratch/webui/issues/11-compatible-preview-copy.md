@@ -1,6 +1,6 @@
 # 11: 兼容性预览副本
 
-Status: ready-for-agent
+Status: done
 Blocked by: 10
 Spec: [WebUI 字幕与说话人编辑器](../spec.md)
 
@@ -14,14 +14,14 @@ Spec: [WebUI 字幕与说话人编辑器](../spec.md)
 
 ## Acceptance criteria
 
-- [ ] 按实际容器、编码和浏览器播放结果判断兼容性，不能只凭扩展名认为可播；不兼容时可触发生成预览副本。
-- [ ] 导入时可获取原片时长并验证字幕，即使浏览器尚不能解码原片；生成期间工程及字幕数据保持可读取。
-- [ ] 后台任务公开等待、运行、成功、失败状态和进度，UI 显示当前状态与失败原因；可在失败后重试。
-- [ ] 真实生成浏览器支持的音视频副本，保持原片播放时间基准、音画同步与有效时长，不移除静音/空隙或重排内容。
-- [ ] 成功后播放器使用有效副本，工程仍引用原片身份，字幕和导出时间不因副本改变；视频服务支持范围读取定位。
-- [ ] 结果登记到工程资源，缓存关联源媒体身份及生成参数；重开复用有效缓存，源媒体或参数变化时不误用旧结果。
-- [ ] 失败或未完成产物不作为可播放缓存；缺少媒体工具、生成失败或源文件失联有明确结果，已保存字幕不受损。
-- [ ] 记录实际调用的媒体工具版本、测试素材信息和预览检查结果；运行时复用/配置媒体工具的方式写入使用说明。
+- [x] 按实际容器、编码和浏览器播放结果判断兼容性，不能只凭扩展名认为可播；不兼容时可触发生成预览副本。
+- [x] 导入时可获取原片时长并验证字幕，即使浏览器尚不能解码原片；生成期间工程及字幕数据保持可读取。
+- [x] 后台任务公开等待、运行、成功、失败状态和进度，UI 显示当前状态与失败原因；可在失败后重试。
+- [x] 真实生成浏览器支持的音视频副本，保持原片播放时间基准、音画同步与有效时长，不移除静音/空隙或重排内容。
+- [x] 成功后播放器使用有效副本，工程仍引用原片身份，字幕和导出时间不因副本改变；视频服务支持范围读取定位。
+- [x] 结果登记到工程资源，缓存关联源媒体身份及生成参数；重开复用有效缓存，源媒体或参数变化时不误用旧结果。
+- [x] 失败或未完成产物不作为可播放缓存；缺少媒体工具、生成失败或源文件失联有明确结果，已保存字幕不受损。
+- [x] 记录实际调用的媒体工具版本、测试素材信息和预览检查结果；运行时复用/配置媒体工具的方式写入使用说明。
 
 ## Verification
 
@@ -30,3 +30,50 @@ Spec: [WebUI 字幕与说话人编辑器](../spec.md)
 3. 从 HTTP 和浏览器验证任务状态、工具缺失、失败重试、缓存复用及媒体变化失效；执行相应回归、构建和编译检查，在 Comments 留存证据。
 
 ## Comments
+
+- 2026-10-16 开始：独占写入 `ticket-11` / `feat/webui-11`，干净基线及 `feat/webui` 均为 `c9e669d`。测试接缝沿用规格 Testing Decisions 已确认的真实浏览器、公共 HTTP、实际 FFmpeg 产物；按纵向红绿循环实施。演示 18762/PID7544 保持不动。
+
+### 2026-10-16 实现与红绿证据
+
+- 修改仅在 `webui/` 及本票/README。没有代理或生产模块改动。新公共接口：`GET playback`、`POST preview`、`GET tasks/{id}`、`GET previews/{id}`（完整路由见 README）。后台单 worker，真实 FFmpeg `-copyts -start_at_zero`、H.264/yuv420p + AAC/48kHz、原片完整时间线，进度取自 `-progress`；先写 partial，探测及身份验证成功后原子发布。任务记录保留实际命令、工具版本和 stderr。
+- RED：`D:\whisper-diarization\env\python.exe -m unittest webui.tests.test_preview -v` 首次真实断言得到 **14000 != 9000**，暴露 +5 秒 Matroska 的 segment duration 被误认为播放长度；按共同原片起点计算长度后 GREEN。下一纵切的 `POST /preview` 首次返回 **404 != 202**，实现后台任务后真实编码、范围读取、缓存及音画定位测试 GREEN。
+- RED：`WEBUI_BROWSER=msedge npm run test:browser -- preview.spec.ts` 首次缺“浏览器解码状态”。真实观察发现 Edge 对 FFV1/PCM 文件不一定报 media.error：它能解码音轨但 `videoWidth === 0`，故验收和界面明确检查实际画面解码，不把“无 error”当兼容。实现 UI 触发/状态/成功切换后 GREEN。
+- RED：清空 PATH，仅设置正确 `WEBUI_FFPROBE` 时，`python -m webui --no-browser --port 18764` 原启动器仍退出 **2**。现在启动/运行均尊重工具配置；无工具也允许打开已保存字幕，媒体操作明确失败。公共 HTTP 启动验收 GREEN。
+- 首轮全浏览器回归暴露旧重定位测试匹配到两个 alert（后台媒体失联提示与模态表单错误）；将后台读取提示改为具名 status 后相关 8 项 GREEN。首轮命令 240s 超时不作为完整通过；最后使用 600s 上限完整运行 **68/68**。
+- 提交前公共接口复核另加“缓存命中后的任务 ID 仍可查询”断言，首次 RED（task_not_found）；缓存命中也持久化成功任务回执后 GREEN，随后再次执行全量 HTTP/浏览器回归。
+
+### 真实媒体验收
+
+- FFmpeg/ffprobe：`9.0.2-full_build-www.gyan.dev`（gcc 16.2.0，libavcodec 63.1.102 / libavformat 63.1.102）；复用 `D:\whisper-diarization\MOSS-Transcribe-Diarize\ffmpeg\ffmpeg-9.0.2-full_build\bin\`。运行配置为 PATH 或 `WEBUI_FFMPEG` / `WEBUI_FFPROBE` 绝对可执行路径，README 已写明。
+- 环境：Python **3.10.19**（指定现有环境）、Node **24.16.0**、npm **11.13.0**、真实 Microsoft Edge **155.0.4283.45**。已执行 `npm ci`，0 vulnerabilities；没有安装/修改生产 Python 环境。
+- 素材由 `webui/tests/fixtures.py:create_preview_fixture` 实际生成：**9s、320×180、25fps、FFV1 + PCM s16le Matroska，起始 PTS +5s**，红/440Hz（0–2s）、黑场静音（2–4s）、绿/880Hz（4–6s）、黑场静音（6–8s）、蓝/1320Hz（8–9s），三个独立字幕锚点。另把同一容器改名为 `.mp4`，公共探测仍返回 Matroska/FFV1/PCM；原时长 9000ms 与字幕有效性独立于浏览器解码。
+- 真实 Edge 由新建工程 UI 导入 → 显示无法解码视频 → 点击生成 → 等待/成功 100% → 实际 MP4 播放。浏览器 canvas 在 **1 / 5 / 8.5s** 读取 RGB **(254,0,0) / (0,254,0) / (0,0,255)**，叠加分别为开头/中部/结尾字幕；Web Audio 解码该 HTTP MP4，0.1s 样本测得约 **430 / 870 / 1320Hz**（过零计数分辨率 10Hz），RMS 约 **0.283**，浏览器 duration **9s**。这是实际浏览器解码的音频测量，未把自动化测试写成人工听感结论。
+- FFmpeg 独立解码产物验证 **3/7s 黑场和静音未被移除**，输出 H.264/AAC、起点 0、长度 9s；额外 **音轨相对视频延迟 +500ms** 的输入保留延迟，未分别归零音视频。无音轨素材生成有效 H.264 副本且不虚构音轨。JSONL 实际导出仍为 **0.2–1.8 / 4.2–5.8 / 8.1–8.9s**。
+- 原片身份、工作字幕、来源保持；成功资源登记后自动播放副本。浏览器重开复用；标准/轻量参数切换产生不同副本、切回复用有效旧副本。HTTP 覆盖源内容变更/失联、参数不匹配、产物损坏/缺失失效，以及实际字节 `206` / 越界 `416`。同源重定位保留有效缓存，另存为仍不共享可写产物；任务 10 的旧人工登记夹具升级为通过公开接口实际生成，原有断言保留。
+- **54s / 1280×720** 实片后台转换时观察到运行中多个中间进度。正在写入的非空 partial 文件未登记，播放接口返回 409。自动保存 PUT 已真实落盘后延迟其回执，同时任务完成、用户保留更新草稿并切换工程；再释放旧任务回执，第一工程保留“任务完成时的新草稿”及唯一资源，第二工程保留“另一工程独立草稿”且资源为空。后台登记在同一存储锁内重读最新文档，只追加资源，不增加编辑修订；前端不以后台文档替换编辑状态。
+- 缺工具/真实失败验收：独立服务配置不存在的 ffmpeg → UI failed/明确工具原因；配置真实 ffprobe 为转码程序 → 实际非零退出/FFmpeg 失败；用真实 ffmpeg 补齐该配置 → UI 重试 succeeded/实际播放。两次失败均无缓存登记、无可播产物，已保存文字完整。HTTP 另检查服务重启复用、缺 ffprobe、无 PATH 的绝对工具配置及完全无媒体工具时已保存工程仍可读取/保存。
+- 预览播放逐句终点、循环、2×速度、定位通过真实浏览器；全部既有工作区/重叠/人物/历史/保存/导出回归一起通过。
+
+### 最终命令与结果（在合并检查后运行）
+
+```powershell
+# workdir = C:\Users\machi\AppData\Local\Temp\opencode\webui-worktrees\ticket-11
+git merge feat/webui  # Already up to date，集成仍为 c9e669d
+& 'D:\whisper-diarization\env\python.exe' -m unittest discover -s webui/tests -p 'test_*.py' -v
+# 33 tests / OK，最终复跑 21.812s
+
+# workdir = <上述工作树>\webui\frontend
+npm ci
+npm run typecheck
+npm run build
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm run test:browser
+# 68 passed (3.8m)，真实 18761 测试服务，进程自动退出
+```
+
+- Python 对 `webui/` 14 个源文件执行 `py_compile.compile(..., doraise=True)`，全部通过；另对本次变更 Python 文件执行 `python -m py_compile`。`git diff --check` 通过。WIP 审查覆盖已跟踪差异、新增源文件/测试及证据，未仅检查 HEAD；全回归重写的旧票截图恢复为基线，只提交本票证据。
+- 证据：`webui/tests/evidence/ticket-11-{1s,5s,8.5s,retry}.jpg`、`ticket-11-playback.json`（实际浏览器、原片/产物身份与样本数值）、`ticket-11-concurrency.json`（运行进度、partial 不可播放、两个工程保存结果）。原片/产物/任务日志留在被忽略的 `webui/frontend/.test-workspace/`，JSON 内有实际路径。
+- 最后一轮完整浏览器输出保留于 `webui/frontend/.test-workspace/ticket-11-final-browser.log`（PowerShell 重定向日志；摘要 68 passed / 3.8m）。
+- 另用 OpenChamber 真实浏览器在 **18763** 手动新建/转换/跳转 5 秒，观察绿色画面、“[?] 绿色 880Hz 中部”、原片时间 5/9 秒、成功 100% 和已登记资源；截图 `ticket-11-manual-preview-5s.jpg`。实际工程 `f2e2432b-27ec-4e68-9213-b11376e60e86` 和 MP4 留在 repo 外 `C:\Users\machi\AppData\Local\Temp\opencode\webui-11-acceptance\`。该验收服务 **PID7216 已退出**。
+- 退出检查：18761/18763 均拒绝连接，无 ffmpeg/ffprobe 残留进程。未对 18762/PID7544 执行停止、重启或写入；当前环境检查 18762 未监听且 PID7544 不存在，未宣称该演示仍在线。测试切换媒体请求时 Python 3.10 Windows Proactor 曾记录一次 WinError10054 连接重置，68 项断言及持久化结果均通过，服务退出正常。
