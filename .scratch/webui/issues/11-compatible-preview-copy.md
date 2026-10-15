@@ -112,8 +112,12 @@ npm --prefix webui/frontend run test:browser
 
 ### 2026-10-16 集成阻塞根因与修复
 
-- **失败→复现**：集成报告为 67 pass / 1 fail，`preview.spec.ts:83`。从失败工程和 trace 恢复请求顺序后，加入最小回归“延后质量切换的旧 `GET playback?quality=small`，先提交新 small 任务，再交付旧响应”；修复前真实 Edge **2/2** 失败：任务显示成功 100%，播放器仍为原 MKV，`videoWidth=0`，解码状态保持“仅识别到音轨”。
+- **失败→复现**：集成报告为 67 pass / 1 fail，`preview.spec.ts:83`。原 trace.zip 尾部/中央目录不完整，仅从压缩流恢复调用记录及部分 DOM 快照，未恢复完整网络记录；从失败工程与调用记录提取最小操作链，在公共 HTTP 边界控制“延后质量切换的旧 `GET playback?quality=small`，先提交新 small 任务，再交付旧响应”。修复前真实 Edge **2/2** 失败：任务显示成功 100%，播放器仍为原 MKV，`videoWidth=0`，解码状态保持“仅识别到音轨”。
 - **排除**：原工程两份 standard/small MP4 的 `output_identity` 均匹配；ffprobe 均为 H.264/yuv420p + AAC、320×180、9.000 秒；FFmpeg 全量解码退出 0。单独用真实 Edge 从本地 HTTP 逐份加载，两份均产生 loadedmetadata/loadeddata、320×180、9 秒。因此不是小副本损坏或编码不兼容。
-- **根因**：`usePreviewCopy` 只用 `epoch` 判断播放查询回执。质量切换产生的 GET 在 POST 生成回执之后返回时，旧 GET 带着旧 standard 任务/空 preview，仍通过同一 epoch 检查，覆盖了新任务；轮询因此停止，video src 回到原 MKV。播放器 `onError/onLoadedData` 的实际检测正确报告 `videoWidth=0`，掩盖了资源切换竞态。
+- **根因**：`usePreviewCopy` 只用 `epoch` 判断播放查询回执。质量切换产生的 GET 在 POST 生成回执之后返回时，旧 GET 带着旧 standard 任务/空 preview，仍通过同一 epoch 检查，覆盖了新任务；轮询因此停止，video src 停留在原 MKV。播放器实际检测正确报告 `videoWidth=0`，表面呈现为解码失败，根因在资源/任务回执顺序。
 - **修复**：新增独立 `playbackRead` 代次。每次 playback GET 捕获 read token，只有 session 和 read token 同时仍有效才提交；生成操作在保存有效草稿后、POST 前推进 `playbackRead`，使所有已发出的旧播放查询回执失效。POST 返回后仍由任务状态和后续 playback refresh 驱动当前副本；工程切换继续由原有 session epoch 保护。未放宽等待，也未改变实际解码判定。
 - **修复后红绿**：最小竞态回归连续 **2/2** 通过；收紧断言为 POST 任务参数必须为 `small`、播放器必须指向该任务 `/previews/{task_id}`、Edge `videoWidth=320` 且状态为“已解码”。原完整 preview 用例和竞态用例 **2/2** 通过。红证据为 `ticket-11-quality-race-red.json`，真实产物独立检查为 `ticket-11-integration-artifacts.json`。
+- 修复后的最终回归新增该竞态用例后共 **69/69 Edge tests**（4.0m）通过；`33/33` HTTP/真实媒体测试（21.059s）通过；typecheck、build、14 个 Python 文件编译及 `git diff --check` 通过。全量回归自动改写的旧票证据已恢复，工作树保持干净。
+- GREEN 实测：`webui/tests/evidence/ticket-11-quality-race-green.json` 保留旧 GET、新 POST、真实完成任务与媒体事件，播放器最终指向新 small 任务的 MP4，出现宽度 320 的 loadedmetadata/loadeddata；与 `ticket-11-quality-race-red.json` 中仅原 MKV/宽度 0 的事件对照。没有修改集成失败原始文件。
+- 本轮命令（工作树根目录/前端目录分别执行）：`python -m unittest discover -s webui/tests -p 'test_*.py' -v`；`npm run typecheck`；`npm run build`；`npm run test:browser -- preview.spec.ts --grep '旧播放查询' --repeat-each=2`（修复前 RED 2/2、修复后 GREEN 2/2）；`npm run test:browser -- preview.spec.ts --grep '真实不兼容原片|旧播放查询'`（2/2）；最后 `npm run test:browser`（69/69）。Python 固定 `D:\whisper-diarization\env\python.exe`，浏览器固定 `WEBUI_BROWSER=msedge`，断言超时维持原 5000ms。最终全量日志位于 `webui/frontend/.test-workspace/ticket-11-final-fixed-browser.log`。
+- 服务检查：18761/18762/18763 均未监听，诊断用独立临时 HTTP 服务与 Edge 均已关闭；未重启 18762。保留 `ticket-11` 工作树，不合回 `feat/webui`、不推送，无新增代理及生产模块改动。
