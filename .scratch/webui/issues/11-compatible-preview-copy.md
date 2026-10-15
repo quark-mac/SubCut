@@ -77,3 +77,31 @@ npm run test:browser
 - 最后一轮完整浏览器输出保留于 `webui/frontend/.test-workspace/ticket-11-final-browser.log`（PowerShell 重定向日志；摘要 68 passed / 3.8m）。
 - 另用 OpenChamber 真实浏览器在 **18763** 手动新建/转换/跳转 5 秒，观察绿色画面、“[?] 绿色 880Hz 中部”、原片时间 5/9 秒、成功 100% 和已登记资源；截图 `ticket-11-manual-preview-5s.jpg`。实际工程 `f2e2432b-27ec-4e68-9213-b11376e60e86` 和 MP4 留在 repo 外 `C:\Users\machi\AppData\Local\Temp\opencode\webui-11-acceptance\`。该验收服务 **PID7216 已退出**。
 - 退出检查：18761/18763 均拒绝连接，无 ffmpeg/ffprobe 残留进程。未对 18762/PID7544 执行停止、重启或写入；当前环境检查 18762 未监听且 PID7544 不存在，未宣称该演示仍在线。测试切换媒体请求时 Python 3.10 Windows Proactor 曾记录一次 WinError10054 连接重置，68 项断言及持久化结果均通过，服务退出正常。
+
+### 2026-10-16 集成复验：已快进合并，浏览器验收未通过
+
+- 合并前确认集成目录 `D:\whisper-diarization` 的 `feat/webui` 为 `c9e669dfd804268dbdc24a7486a12f849169cd4f`；任务工作树 `ticket-11` / `feat/webui-11` 为 `8e56215d973b8ace66c6efc4c702efcfb44261ce`。两个工作树均干净，票顶部为 done；改动仅涉及 WebUI 与本票，`git diff --check c9e669d 8e56215` 通过。已读取原验收记录、音画/并发 JSON、5 秒截图及实际转换/探测实现和延迟音轨测试。
+- 集成目录执行 `git merge --ff-only feat/webui-11` 成功，从 `c9e669d` 快进至 `8e56215`。依赖未变，复用已安装前端依赖及现有 Python；没有实现修复或下一票。以下为本轮实际结果，不以任务工作树先前全绿替代集成结果。
+
+```powershell
+# cwd: D:\whisper-diarization；先构建以满足启动入口测试前提
+npm --prefix webui/frontend run typecheck
+# 通过。
+npm --prefix webui/frontend run build
+# 通过；Vite 44 modules；JS 253.08 kB / gzip 81.37 kB。
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& 'D:\whisper-diarization\env\python.exe' -m py_compile $Files.FullName
+# 14 个 Python 文件通过。
+& 'D:\whisper-diarization\env\python.exe' -m unittest discover -s webui/tests -p 'test_*.py' -v
+# 33 tests / OK，20.733s，无跳过：HTTP 26 + 真实媒体/启动入口 7。
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm --prefix webui/frontend run test:browser
+# 67 passed / 1 failed (4.5m)，退出码 1；并非 68/68 通过。
+```
+
+- 音画专项本轮实际通过：+5 秒 PTS 的 FFV1/PCM Matroska 探测为 9000 ms；真实生成 H.264/AAC 起点约 0、长度 9 秒，1/5/8.5 秒色块与音频频率、3/7 秒黑场静音、字幕导出时间不变。+500 ms 延迟音轨用实际解码样本检查 0.2/0.7/2.3/2.7 秒静音/有声模式，保留相对延迟；无音轨不虚构音轨。无 PATH 的绝对工具配置、无工具打开/保存、真实生成失败/重试与服务重启缓存复用均通过。
+- **集成失败位置**：`webui/frontend/tests/preview.spec.ts:83`，首个预览用例在标准副本完成音画采样、逐句/循环、重开及 Range 检查后，切到 small 并点击生成。任务状态显示“成功 · 100%”，但“浏览器解码状态”5 秒内仍为“浏览器视频解码失败（仅识别到音轨），请生成预览副本”，未出现“已解码”。报告另含 30000 ms test timeout。根因未确定，不将此描述为已确认编码损坏或已排除竞态；未通过重跑覆盖该失败。
+- 失败工程 `7e1b354e-30c9-4b27-9258-435c187950c7`，实际工程/原片/副本/任务文件留在集成 `webui/frontend/.test-workspace/`。本轮该用例在写出 `ticket-11-playback.json` 前失败，因此该已提交 JSON 仍是任务工作树旧证据，不能当作本轮完整成功记录。并发任务和失败重试两个新用例均通过，既有 65 项均通过。
+- 失败 `.last-run.json`、error-context、trace 及本轮自动重写的证据已另存至被忽略目录 `webui/frontend/.test-workspace/ticket-11-integration-failure/`；原始失败报告仍在 `webui/frontend/test-results/`。仅恢复本轮自动重写的已跟踪证据文件，源码未改。
+- 最后检查 18761/18762/18763 均无监听，无 WebUI Python、ffmpeg/ffprobe 残留进程；旧 PID7544 在验证前已不存在，没有重启演示服务。恢复测试产物后工作树干净，再仅追加本段并独立提交。保留全部工作树、未推送、未启动其他代理。**集成验收被上述浏览器失败阻塞，不能宣布本票集成通过；顶部 done 是原任务验收状态。**
