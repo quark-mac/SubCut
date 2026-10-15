@@ -78,13 +78,71 @@ test('真实不兼容原片从 UI 转换，Edge 解码并在开头中部结尾�
   expect(ranged.status()).toBe(206);
   await page.getByLabel('预览质量', { exact: true }).selectOption('small');
   await expect.poll(() => page.locator('video').getAttribute('src')).not.toContain('/previews/');
+  const smallSubmitted = page.waitForResponse(r => r.url().endsWith(`/projects/${project.id}/preview`) && r.request().method() === 'POST');
   await button(page, '生成预览副本').click();
+  const smallTask = await (await smallSubmitted).json();
+  expect(smallTask.parameters.quality).toBe('small');
   await expect(page.getByRole('status', { name: '预览任务状态' })).toContainText('成功');
   await expect(page.getByRole('status', { name: '浏览器解码状态' })).toContainText('已解码');
-  expect(await page.locator('video').getAttribute('src')).not.toContain(before.media_artifacts[0].id);
+  await expect(page.locator('video')).toHaveAttribute('src', new RegExp(`/previews/${smallTask.id}`));
+  await expect.poll(() => page.locator('video').evaluate((v: HTMLVideoElement) => v.videoWidth)).toBe(320);
   await page.getByLabel('预览质量', { exact: true }).selectOption('standard');
   await expect.poll(() => page.locator('video').getAttribute('src')).toContain(before.media_artifacts[0].id);
   await fs.writeFile('../tests/evidence/ticket-11-playback.json', JSON.stringify({ browser: browser.version(), project: before, observations: results }, null, 2));
+});
+
+test('质量切换的旧播放查询晚于生成回执时，仍跟踪当前任务并解码新副本', async ({ page }, testInfo) => {
+  const project = await fixture(page);
+  await button(page, '生成预览副本').click();
+  await expect(page.getByRole('status', { name: '浏览器解码状态' })).toContainText('已解码');
+  const events = await page.evaluateHandle(() => {
+    const observations: object[] = [];
+    for (const name of ['loadedmetadata', 'loadeddata', 'error']) document.addEventListener(name, event => {
+      const video = event.target;
+      if (video instanceof HTMLVideoElement) observations.push({ event: name, src: video.currentSrc, width: video.videoWidth, readyState: video.readyState });
+    }, true);
+    return observations;
+  });
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  let captured!: () => void;
+  const capturedResponse = new Promise<void>(resolve => { captured = resolve; });
+  let first = true;
+  let stale: { preview: unknown; task: { id: string; state: string; parameters: { quality: string } } } | undefined;
+  await page.route(`**/api/projects/${project.id}/playback?quality=small`, async route => {
+    if (!first) { await route.continue(); return; }
+    first = false;
+    const response = await route.fetch(); stale = await response.json(); captured();
+    await gate; await route.fulfill({ response });
+  });
+  try {
+    await page.getByLabel('预览质量', { exact: true }).selectOption('small');
+    await capturedResponse;
+    expect(stale?.preview).toBeNull();
+    expect(stale?.task.parameters.quality).toBe('standard');
+    const submitted = page.waitForResponse(r => r.url().endsWith(`/projects/${project.id}/preview`) && r.request().method() === 'POST');
+    await button(page, '生成预览副本').click();
+    const task = await (await submitted).json();
+    expect(task.parameters.quality).toBe('small');
+    await expect(page.getByRole('status', { name: '预览任务状态' })).toContainText('等待');
+    release(); // Deliver the real pre-submission GET only after the new task was acknowledged.
+    await expect.poll(async () => (await (await page.request.get(`/api/projects/${project.id}/tasks/${task.id}`)).json()).state).toBe('succeeded');
+    try {
+      await expect(page.getByRole('status', { name: '浏览器解码状态' })).toContainText('已解码');
+      await expect(page.locator('video')).toHaveAttribute('src', new RegExp(`/previews/${task.id}`));
+      await expect.poll(() => page.locator('video').evaluate((v: HTMLVideoElement) => v.videoWidth)).toBe(320);
+    } finally {
+      const observation = JSON.stringify({ stale, submitted: task,
+        completed: await (await page.request.get(`/api/projects/${project.id}/tasks/${task.id}`)).json(),
+        displayedTask: await page.getByRole('status', { name: '预览任务状态' }).textContent(),
+        displayedDecoder: await page.getByRole('status', { name: '浏览器解码状态' }).textContent(),
+        video: await page.locator('video').evaluate((v: HTMLVideoElement) => ({ src: v.currentSrc, width: v.videoWidth, readyState: v.readyState })),
+        events: await events.jsonValue() }, null, 2);
+      await fs.mkdir('.test-workspace/quality-switch-diagnosis', { recursive: true });
+      await fs.writeFile('.test-workspace/quality-switch-diagnosis/latest-race.json', observation);
+      await testInfo.attach('quality-response-order.json', { contentType: 'application/json', body: observation });
+    }
+  } finally { release(); }
 });
 
 test('后台完成与自动保存回执交错，切换后旧任务回执不覆盖新工程或草稿', async ({ page }) => {

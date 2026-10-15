@@ -105,3 +105,15 @@ npm --prefix webui/frontend run test:browser
 - 失败工程 `7e1b354e-30c9-4b27-9258-435c187950c7`，实际工程/原片/副本/任务文件留在集成 `webui/frontend/.test-workspace/`。本轮该用例在写出 `ticket-11-playback.json` 前失败，因此该已提交 JSON 仍是任务工作树旧证据，不能当作本轮完整成功记录。并发任务和失败重试两个新用例均通过，既有 65 项均通过。
 - 失败 `.last-run.json`、error-context、trace 及本轮自动重写的证据已另存至被忽略目录 `webui/frontend/.test-workspace/ticket-11-integration-failure/`；原始失败报告仍在 `webui/frontend/test-results/`。仅恢复本轮自动重写的已跟踪证据文件，源码未改。
 - 最后检查 18761/18762/18763 均无监听，无 WebUI Python、ffmpeg/ffprobe 残留进程；旧 PID7544 在验证前已不存在，没有重启演示服务。恢复测试产物后工作树干净，再仅追加本段并独立提交。保留全部工作树、未推送、未启动其他代理。**集成验收被上述浏览器失败阻塞，不能宣布本票集成通过；顶部 done 是原任务验收状态。**
+
+### 2026-10-16 集成阻塞修复开始
+
+- 已确认 `ticket-11` 干净并 fast-forward merge `feat/webui` 到 `9401c1a`；重新置为 in-progress。沿用已确认的公共 HTTP / 真实 Edge 接缝，读取原失败 trace 与实际媒体，先建立确定性失败再修复，不放宽等待或用重跑覆盖失败。仍为唯一写入者，无代理，不启动任务 12。
+
+### 2026-10-16 集成阻塞根因与修复
+
+- **失败→复现**：集成报告为 67 pass / 1 fail，`preview.spec.ts:83`。从失败工程和 trace 恢复请求顺序后，加入最小回归“延后质量切换的旧 `GET playback?quality=small`，先提交新 small 任务，再交付旧响应”；修复前真实 Edge **2/2** 失败：任务显示成功 100%，播放器仍为原 MKV，`videoWidth=0`，解码状态保持“仅识别到音轨”。
+- **排除**：原工程两份 standard/small MP4 的 `output_identity` 均匹配；ffprobe 均为 H.264/yuv420p + AAC、320×180、9.000 秒；FFmpeg 全量解码退出 0。单独用真实 Edge 从本地 HTTP 逐份加载，两份均产生 loadedmetadata/loadeddata、320×180、9 秒。因此不是小副本损坏或编码不兼容。
+- **根因**：`usePreviewCopy` 只用 `epoch` 判断播放查询回执。质量切换产生的 GET 在 POST 生成回执之后返回时，旧 GET 带着旧 standard 任务/空 preview，仍通过同一 epoch 检查，覆盖了新任务；轮询因此停止，video src 回到原 MKV。播放器 `onError/onLoadedData` 的实际检测正确报告 `videoWidth=0`，掩盖了资源切换竞态。
+- **修复**：新增独立 `playbackRead` 代次。每次 playback GET 捕获 read token，只有 session 和 read token 同时仍有效才提交；生成操作在保存有效草稿后、POST 前推进 `playbackRead`，使所有已发出的旧播放查询回执失效。POST 返回后仍由任务状态和后续 playback refresh 驱动当前副本；工程切换继续由原有 session epoch 保护。未放宽等待，也未改变实际解码判定。
+- **修复后红绿**：最小竞态回归连续 **2/2** 通过；收紧断言为 POST 任务参数必须为 `small`、播放器必须指向该任务 `/previews/{task_id}`、Edge `videoWidth=320` 且状态为“已解码”。原完整 preview 用例和竞态用例 **2/2** 通过。红证据为 `ticket-11-quality-race-red.json`，真实产物独立检查为 `ticket-11-integration-artifacts.json`。

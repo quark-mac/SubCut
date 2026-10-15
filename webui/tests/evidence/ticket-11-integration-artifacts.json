@@ -1,0 +1,46 @@
+{
+  "browser": "155.0.4283.45",
+  "projectId": "7e1b354e-30c9-4b27-9258-435c187950c7",
+  "observations": [
+    {
+      "src": "http://127.0.0.1:51488/standard",
+      "width": 320,
+      "height": 180,
+      "duration": 9,
+      "events": [
+        {
+          "event": "loadedmetadata",
+          "width": 320,
+          "readyState": 1,
+          "src": "http://127.0.0.1:51488/standard"
+        },
+        {
+          "event": "loadeddata",
+          "width": 320,
+          "readyState": 4,
+          "src": "http://127.0.0.1:51488/standard"
+        }
+      ]
+    },
+    {
+      "src": "http://127.0.0.1:51488/small",
+      "width": 320,
+      "height": 180,
+      "duration": 9,
+      "events": [
+        {
+          "event": "loadedmetadata",
+          "width": 320,
+          "readyState": 1,
+          "src": "http://127.0.0.1:51488/small"
+        },
+        {
+          "event": "loadeddata",
+          "width": 320,
+          "readyState": 4,
+          "src": "http://127.0.0.1:51488/small"
+        }
+      ]
+    }
+  ]
+}

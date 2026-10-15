@@ -20,17 +20,19 @@ export function usePreviewCopy(project: Project | null) {
   const [submitting, setSubmitting] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const epoch = useRef(0);
+  const playbackRead = useRef(0);
   const id = project?.id, path = project?.media.path;
   const playbackKey = `${id}:${path}:${quality}`;
   const currentId = useRef(id); currentId.current = id;
 
   useEffect(() => {
     const session = ++epoch.current;
+    const read = ++playbackRead.current;
     setTask(null); setError(''); setSubmitting(false);
     if (!id) return;
     void api<Playback>(`/projects/${id}/playback?quality=${quality}`).then(value => {
-      if (session === epoch.current) { setPlayback(value); setLoadedKey(`${id}:${path}:${quality}`); setTask(value.task); }
-    }).catch(reason => { if (session === epoch.current) { setPlayback(null); setError(String(reason)); } });
+      if (session === epoch.current && read === playbackRead.current) { setPlayback(value); setLoadedKey(`${id}:${path}:${quality}`); setTask(value.task); }
+    }).catch(reason => { if (session === epoch.current && read === playbackRead.current) { setPlayback(null); setError(String(reason)); } });
     return () => { epoch.current++; };
   }, [id, path, quality, refresh]);
 
@@ -58,6 +60,9 @@ export function usePreviewCopy(project: Project | null) {
     setSubmitting(true); setError('');
     try {
       if (!await before() || currentId.current !== owner || session !== epoch.current) return;
+      // A pre-submission playback snapshot must not replace the acknowledged task,
+      // even when it belongs to the same project/quality epoch. Completion re-reads it.
+      playbackRead.current++;
       const next = await api<PreviewTask>(`/projects/${owner}/preview`, 'POST', { quality });
       if (session !== epoch.current || currentId.current !== owner) return;
       setTask(next);
