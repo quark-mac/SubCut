@@ -87,3 +87,30 @@ npm run test:browser
 - `useProjectSession.commit` 仍提交一次完整不可变编辑；整体替换一次更新 entries/speakers/subtitle_sources。`persist()` 保存，`persist({format, keep_tags})` 捕获工程与选项快照串行导出。后续功能继续使用该历史和保存队列。
 - `POST /api/projects/{id}/exports` 接受 format/keep_tags，默认 speaker-srt / false；记录格式、选项、来源修订，下载按实际扩展名和 MIME 类型响应。四格式均为交换产物，完整继续编辑仍用工程保存对象。
 - 全部验收通过后标记 done；提交至 `feat/webui-03`，交由集成会话合入与复验。未合入 `feat/webui`、未推送、未启动其他代理。
+
+### 2026-10-16 集成验收
+
+- 合并前确认集成目录 `D:\whisper-diarization` 的 `feat/webui` 为 `5eee44c94d21b3cffc37a23b2a8c3d209a868911`；任务工作树 `C:\Users\machi\AppData\Local\Temp\opencode\webui-worktrees\ticket-03` 的 `feat/webui-03` 为 `7f48013b2226dce1c5c773bf1106d1db84f9ca48`。两个工作树均干净，票为 done，差异仅涉及 `webui/` 与本票，`git diff --check 5eee44c 7f48013` 通过。
+- 实际读取 Comments、两张验收截图、任务工作树 `.last-run.json`（passed）及上述实际 JSONL 导出：原来源 `[91, 0, 91]`、MULTI/MERGED、多行、秒制时间、组合人物/特殊标签与连续 idx 均保留。
+- 在集成目录执行 `git merge --ff-only feat/webui-03`，成功从 `5eee44c` 快进至 `7f48013`。依赖清单和锁文件未变，复用已安装前端依赖与指定现有 Python 环境。
+- 以下命令均在 `D:\whisper-diarization` 实际执行，全部通过：
+
+```powershell
+& 'D:\whisper-diarization\env\python.exe' -m unittest webui.tests.test_http -v
+# Ran 20 tests in 6.124s — OK，无跳过。
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& 'D:\whisper-diarization\env\python.exe' -m py_compile $Files.FullName
+# 11 个 Python 文件编译通过。
+npm --prefix webui/frontend run typecheck
+# tsc --noEmit 通过。
+npm --prefix webui/frontend run build
+# Vite 7.3.7；31 modules；JS 208.24 kB / gzip 66.70 kB。
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm --prefix webui/frontend run test:browser
+# 15 passed (19.4s)；真实 Edge + 集成目录生产构建 + 本地 FastAPI。
+```
+
+- HTTP 全套覆盖五格式输入、四实际输出、来源/标签、预览指纹、原子替换、错误定位，以及前票并发修订/真实 Windows 文件锁失败恢复等回归。浏览器全套包含原有 11 项及格式交换 4 项：替换/撤销/重做/保存重开、四实际导出、元标签选项、MOSS 重导入与来源变化拒绝。
+- 集成目录 `webui/frontend/test-results/.last-run.json` 为 passed，测试素材与工程保留于被忽略的 `.test-workspace/`。测试前确认 18761 空闲，测试后确认该服务已退出；原有 18762 / PID 36112 演示服务保持运行。
+- 集成验证后工作树干净，再仅追加本段并单独提交。未启动其他代理，未推送，保留全部既有工作树。
