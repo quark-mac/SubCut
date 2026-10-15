@@ -1,6 +1,6 @@
 # 08: 新增、拆分与合并字幕
 
-Status: ready-for-agent
+Status: in-progress
 Blocked by: 03, 07
 Spec: [WebUI 字幕与说话人编辑器](../spec.md)
 
@@ -29,3 +29,17 @@ Spec: [WebUI 字幕与说话人编辑器](../spec.md)
 3. 导入带标签和来源的 JSONL 后执行结构编辑、保存重开并导出；用公共接口和实际产物检查来源、排序、身份及元标签，运行相关回归并记录结果。
 
 ## Comments
+
+- 2026-10-16 开始：`feat/webui-08` 工作树干净，HEAD 与集成 `D:\whisper-diarization` / `feat/webui` 同为 `3bfd026`；03、07 已 done。唯一实现写入者，范围 WebUI、配套文档和本票。
+- 沿用规格 Testing Decisions 已确认的边界：真实 Edge 用户操作 + 公开 HTTP 工程/保存/导出 + 实际输出文件；不测试组件私有状态。按新增、拆分、合并纵向红绿实现，保留可复跑验收。
+
+### 实现与红 → 绿
+
+- `npm --prefix webui/frontend ci`：26 packages，0 vulnerabilities。环境固定 `WEBUI_PYTHON=D:\whisper-diarization\env\python.exe`、`WEBUI_BROWSER=msedge`；所有 shell 明确 task-08 工作目录，patch 使用绝对路径。
+- 新增切片：先运行 `npm --prefix webui/frontend run test:browser -- structure.spec.ts`，真实失败为缺少“新增字幕”。新增原生模态对话框、实际播放头捕获、非空提交、默认 2 秒/片尾夹取、空来源和一次历史后 **1 passed**。补充普通/片尾/终点检查通过。
+- 拆分切片：同一命令 **2 passed / 1 failed**，失败为缺少“拆分字幕”。实现单选严格内部验证、两条新 UUID、全文/来源/元标签复制、Ctrl+B 与单次快照后 **3 passed**。核对端点/多选/文本焦点不执行，撤销完整恢复原 UUID，重做保持两个结果身份。
+- 合并切片：`... test:browser -- structure.spec.ts -g '合并'` **2 failed**（缺少合并按钮、跨人对话框）。实现 `mergeSelection(project, ids)` 从完整工作字幕判连续，按最早开始/最晚结束/全文换行合并；同人直接、跨人必须明确目标后 **5 passed**。取消目标选择及 Esc 不写历史、不清重做分支。
+- 完整产物和嵌套重叠补充：`... test:browser -- structure.spec.ts` **7 passed**。包括新增→拆分→跨人合并→保存重开→UI 四格式导出、读取实际文件与 HTTP 下载逐项核对。同时间排序、嵌套取 max end、同人物轨被另一人物插入以及两段拆分间插入重叠条目均使用全体工作集连续性。
+- 显式轨道切片：`... test:browser -- structure.spec.ts -g '明确点击'` 先因缺少人物轨标题选择按钮失败；标题变为可选择（空轨也可）、与工具栏目标同步后 **1 passed**。总览/视频清空明确目标；没有明确轨道时使用 `?`，不从字幕选择猜人。
+- MOSS 补充：`... test:browser -- structure.spec.ts -g 'MOSS 重复'` **1 passed**。重复源 ID 拆分后每段保留，重新合并仍保留两份来源关联，正文保持两段完整换行；两步撤销完整恢复、重做 ID 不变；实际 MOSS 输出 UUID 唯一，JSONL 原来源索引为空。
+- 每次实现修改后先运行 `npm --prefix webui/frontend run build` 再验证真实生产构建。没有组件内部测试或 mock；没有修改后端 schema 或生产路径。合并元标签按首次出现合为集合，来源关联按参与顺序拼接且不去重，现有历史/保存/四格式导出边界直接复用。

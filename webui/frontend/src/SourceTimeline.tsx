@@ -7,6 +7,8 @@ interface Props {
   selected: Set<string>;
   position: number;
   busy: boolean;
+  currentTrack: string;
+  onTrack: (id: string) => void;
   onChoose: (entry: Entry, modifiers?: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) => void;
   onSeek: (milliseconds: number) => void;
   onBeginEdit: (id: string) => Entry[] | null;
@@ -35,7 +37,7 @@ interface EditGesture {
   targets: number[];
 }
 
-export function SourceTimeline({ project, selected, position, busy, onChoose, onSeek, onBeginEdit, onPreview, onCommitEdit, onBeginSelect, onSelect, onEndSelect }: Props) {
+export function SourceTimeline({ project, selected, position, busy, currentTrack, onTrack, onChoose, onSeek, onBeginEdit, onPreview, onCommitEdit, onBeginSelect, onSelect, onEndSelect }: Props) {
   const viewport = useRef<HTMLDivElement>(null);
   const ruler = useRef<HTMLDivElement>(null);
   const gesture = useRef<{ pointer: number; start: number } | null>(null);
@@ -310,7 +312,9 @@ export function SourceTimeline({ project, selected, position, busy, onChoose, on
         </div>
         {tracks.map(track => <div className="track" key={track.id}
           data-speaker-id={project.speakers.some(s => s.id === track.id) ? track.id : undefined}>
-          <div className="track-label" style={{ color: track.color }}>{track.label}</div>
+          <button className="track-label" style={{ color: track.color }} aria-label={`选择轨道 ${track.label}`}
+            aria-pressed={currentTrack === track.id} disabled={busy || !!preview}
+            onClick={() => onTrack(project.speakers.some(s => s.id === track.id) ? track.id : '')}>{track.label}</button>
           <div className={`track-body ${track.id === 'video' ? 'locked' : ''}`} style={{ height: track.height }}>
             {track.id === 'video' && <span>原片 · {timeLabel(duration)} · 锁定</span>}
             {[...track.blocks.filter(b => !previewById.has(b.entry.id) || track.id === 'overview' || track.id === previewById.get(b.entry.id)!.speaker_id),

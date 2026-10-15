@@ -3,6 +3,9 @@ import { api, ordered, timeLabel, type Entry, type ExportFormat, type ImportPrev
 import { useProjectSession } from './useProjectSession';
 import { SourceTimeline } from './SourceTimeline';
 import { BatchEditor } from './BatchEditor';
+import { AddSubtitleDialog } from './AddSubtitleDialog';
+import { MergeSubtitleDialog } from './MergeSubtitleDialog';
+import { mergeSelection } from './structureEditing';
 import { offsetSpeakers } from './selectionEditing';
 import { SpeakerManager, specialSpeaker, type SpeakerDraft } from './SpeakerManager';
 
@@ -38,6 +41,9 @@ export function App() {
   const [speakerDraft, setSpeakerDraft] = useState<SpeakerDraft | null>(null);
   const [speakerError, setSpeakerError] = useState('');
   const [timingPreview, setTimingPreview] = useState<Entry[] | null>(null);
+  const [currentTrack, setCurrentTrack] = useState('');
+  const [addition, setAddition] = useState<{ start: number; end: number; speakerId: string } | null>(null);
+  const [merging, setMerging] = useState<Set<string> | null>(null);
   const timing = useRef(false);
   const video = useRef<HTMLVideoElement>(null);
   const textInput = useRef<HTMLTextAreaElement>(null);
@@ -200,7 +206,7 @@ export function App() {
     video.current?.pause();
     session.open(project); setSelected(null); setDraft(null); setFieldError(null);
     setSpeakerDraft(null); setSpeakerError(''); setEditorTab('subtitles');
-    setError(''); setPosition(0); setPlaying(false); setDialog(null);
+    setError(''); setPosition(0); setPlaying(false); setDialog(null); setCurrentTrack(''); setAddition(null); setMerging(null);
   }
 
   function selectIds(ids: Set<string>) {
@@ -237,7 +243,7 @@ export function App() {
   }
 
   async function persist(exporting = false) {
-    if (busy || dialog) return;
+    if (busy || dialog || addition || merging) return;
     const snapshot = commitDraft();
     if (!snapshot) return;
     setError('');
@@ -247,6 +253,10 @@ export function App() {
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.defaultPrevented || timing.current) return;
+      if (addition || merging) {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') event.preventDefault();
+        return;
+      }
       const input = event.target instanceof HTMLElement && event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])');
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
         event.preventDefault(); void persist();
@@ -256,6 +266,10 @@ export function App() {
         else { setSelected(null); setDraft(null); setFieldError(null); }
       } else if (!dialog && !busy && !input && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
         event.preventDefault(); history(event.shiftKey);
+      } else if (!dialog && !busy && !input && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
+        event.preventDefault(); if (!event.repeat) splitSubtitle();
+      } else if (!dialog && !busy && !input && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'm') {
+        event.preventDefault(); if (!event.repeat) beginMerge();
       } else if (!dialog && !busy && !input && !event.ctrlKey && !event.metaKey && !event.altKey) {
         if (['ArrowUp', 'ArrowDown'].includes(event.key)) {
           event.preventDefault(); moveSpeaker(event.key === 'ArrowUp' ? -1 : 1);
@@ -299,6 +313,63 @@ export function App() {
     if (!snapshot || !snapshot.entries.some(e => selectedIds.has(e.id))) return;
     session.commit({ ...snapshot, entries: snapshot.entries.filter(e => !selectedIds.has(e.id)) });
     setSelected(null); setDraft(null); setFieldError(null);
+  }
+
+  function beginAdd() {
+    if (busy || timing.current) return;
+    const snapshot = commitDraft();
+    if (!snapshot) return;
+    video.current?.pause();
+    const start = Math.round((video.current?.currentTime ?? position / 1000) * 1000);
+    if (start < 0 || start >= snapshot.media.duration_ms) return;
+    const speakerId = snapshot.speakers.find(s => s.id === currentTrack)?.id ?? snapshot.speakers.find(s => s.label === '?')!.id;
+    setAddition({ start, end: Math.min(start + 2000, snapshot.media.duration_ms), speakerId });
+  }
+
+  function splitSubtitle() {
+    if (busy || timing.current || selectedIds.size !== 1) return;
+    const snapshot = commitDraft();
+    const entry = snapshot?.entries.find(e => selectedIds.has(e.id));
+    if (!snapshot || !entry) return;
+    const at = Math.round((video.current?.currentTime ?? position / 1000) * 1000);
+    if (at <= entry.start_ms || at >= entry.end_ms) return;
+    video.current?.pause();
+    const parts = [{ ...entry, id: crypto.randomUUID(), end_ms: at }, { ...entry, id: crypto.randomUUID(), start_ms: at }];
+    session.commit({ ...snapshot, entries: snapshot.entries.flatMap(e => e.id === entry.id ? parts : [e]) });
+    setSelectedIds(new Set(parts.map(e => e.id))); anchor.current = parts[0].id;
+    setDraft(null); setFieldError(null); setError(''); setEditorTab('subtitles');
+  }
+
+  function beginMerge() {
+    if (busy || timing.current) return;
+    const snapshot = commitDraft();
+    const group = snapshot && mergeSelection(snapshot, selectedIds);
+    if (!group) return;
+    video.current?.pause();
+    if (group.every(e => e.speaker_id === group[0].speaker_id)) mergeSubtitles(selectedIds, group[0].speaker_id);
+    else setMerging(new Set(selectedIds));
+  }
+
+  function mergeSubtitles(ids: Set<string>, speakerId: string) {
+    const snapshot = session.getProject();
+    const group = snapshot && mergeSelection(snapshot, ids);
+    if (!snapshot || !group || !snapshot.speakers.some(s => s.id === speakerId)) return;
+    const entry: Entry = {
+      id: crypto.randomUUID(), start_ms: group[0].start_ms, end_ms: Math.max(...group.map(e => e.end_ms)),
+      text: group.map(e => e.text).join('\n'), speaker_id: speakerId,
+      tags: [...new Set(group.flatMap(e => e.tags))], sources: group.flatMap(e => e.sources),
+    };
+    const next = { ...snapshot, entries: snapshot.entries.flatMap(e => e.id === group[0].id ? [entry] : ids.has(e.id) ? [] : [e]) };
+    session.commit(next); setSelected(entry.id); setDraft(draftFor(entry, next));
+    setMerging(null); setFieldError(null); setError(''); setEditorTab('subtitles');
+  }
+
+  function addSubtitle(text: string, speakerId: string) {
+    const snapshot = session.getProject();
+    if (!snapshot || !addition || !text.trim() || !snapshot.speakers.some(s => s.id === speakerId)) return;
+    const entry: Entry = { id: crypto.randomUUID(), start_ms: addition.start, end_ms: addition.end, text, speaker_id: speakerId, tags: [], sources: [] };
+    const next = { ...snapshot, entries: [...snapshot.entries, entry] };
+    session.commit(next); setSelected(entry.id); setDraft(draftFor(entry, next)); setEditorTab('subtitles'); setAddition(null); setError('');
   }
 
   function history(redo: boolean) {
@@ -499,12 +570,22 @@ export function App() {
         <button disabled={busy || (!session.canUndo && !draftChanged && !speakerChanged)} onClick={() => history(false)}>撤销</button>
         <button disabled={busy || !session.canRedo || draftChanged || speakerChanged} onClick={() => history(true)}>重做</button>
         <button disabled={busy || !selectedIds.size || timing.current} onClick={deleteSelected}>删除选中字幕</button>
+        <button disabled={!project || busy || timing.current || position >= duration} onClick={beginAdd}>新增字幕</button>
+        <button disabled={busy || timing.current || !current || position <= current.start_ms || position >= current.end_ms} onClick={splitSubtitle} title="Ctrl+B · 单选且播放头严格位于内部，两段复制全文">拆分字幕</button>
+        <button disabled={busy || timing.current || !project || !mergeSelection(project, selectedIds)} onClick={beginMerge} title="Ctrl+M · 全体工作字幕时间排序中连续多选">合并字幕</button>
+        <select aria-label="当前说话人轨" value={project?.speakers.some(s => s.id === currentTrack) ? currentTrack : ''} disabled={!project || busy || timing.current} onChange={event => setCurrentTrack(event.target.value)}>
+          <option value="">未明确轨道 → ?</option>
+          {project?.speakers.map(s => <option key={s.id} value={s.id}>{speakerName(s.id)}</option>)}
+        </select>
         <span className="muted">视频轨锁定 · 合法重叠保留</span></div>
       {project ? <SourceTimeline key={project.id} project={project} selected={selectedIds} position={position} busy={busy}
+        currentTrack={currentTrack} onTrack={setCurrentTrack}
         onBeginSelect={() => { if (!commitDraft()) return false; timing.current = true; return true; }}
         onSelect={selectIds} onEndSelect={() => { timing.current = false; }}
         onChoose={choose} onSeek={seek} onBeginEdit={beginTiming} onPreview={previewTiming} onCommitEdit={commitTiming} /> : <div className="timeline-empty">工程打开后将在此显示原片与工作字幕</div>}
     </section>
+    {addition && project && <AddSubtitleDialog {...addition} speakers={project.speakers} onAdd={addSubtitle} onCancel={() => setAddition(null)} />}
+    {merging && project && <MergeSubtitleDialog count={merging.size} speakers={project.speakers} onMerge={speakerId => mergeSubtitles(merging, speakerId)} onCancel={() => setMerging(null)} />}
     {dialog && <div className="modal-backdrop"><section role="dialog" aria-modal="true" aria-labelledby="dialog-title" className="dialog">
       <header><h2 id="dialog-title">{dialog === 'new' ? '新建编辑工程' : dialog === 'replace' ? '整体替换工作字幕' : dialog === 'open' ? '打开工程' : '使用帮助'}</h2>
         <button disabled={busy} aria-label="关闭对话框" onClick={() => { setDialog(null); if (dialog !== 'help') session.resumeAutosave(); }}>×</button></header>

@@ -81,6 +81,11 @@ video { width: 100%; height: 100%; max-height: 100%; object-fit: contain; }
 .timeline { margin: 0 7px 7px; height: 300px; flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; }
 .timeline-toolbar { display: flex; align-items: center; gap: 20px; padding: 10px 15px; background: #222a37; border-bottom: 1px solid #343f50; }
 .timeline-toolbar .muted { font-size: 11px; }
+.timeline-toolbar { gap: 10px; flex-wrap: wrap; }
+.timeline-toolbar select { width: 160px; }
+.structure-dialog { color: #dfe5ef; }
+.structure-dialog::backdrop { background: #050810bb; }
+.structure-dialog footer { gap: 10px; }
 .timeline-empty { margin: auto; color: #7f91aa; }
 .timeline-navigation { display: flex; align-items: center; gap: 12px; padding: 4px 15px; flex-shrink: 0; font-size: 11px; color: #94a2b8; }
 .timeline-navigation label { flex-direction: row; align-items: center; }
@@ -98,6 +103,8 @@ video { width: 100%; height: 100%; max-height: 100%; object-fit: contain; }
 .playhead-handle { position: absolute; top: 0; bottom: 0; width: 16px; transform: translateX(-50%); padding: 0; color: #ffc18d; background: #5c3627; border: 0; border-radius: 0; cursor: ew-resize; }
 .track { display: grid; grid-template-columns: 150px 1fr; border-top: 1px solid #303848; min-height: 46px; }
 .track-label { position: sticky; left: 0; z-index: 2; padding: 12px; color: #bbc9dc; background: #242c3a; font-size: 12px; overflow-wrap: anywhere; }
+.track-label { border: 0; border-radius: 0; text-align: left; }
+.track-label[aria-pressed=true] { box-shadow: inset 3px 0 #7cbbff; background: #30425c; }
 .track-body { position: relative; overflow: clip; background: repeating-linear-gradient(90deg, transparent, transparent calc(10% - 1px), #2d3544 calc(10% - 1px), #2d3544 10%); }
 .locked { background-color: #262c37; color: #8696ae; padding: 13px; font-size: 11px; }
 .clip { position: absolute; height: 28px; text-align: left; padding: 3px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid #b1c6de66; color: #101925; font-size: 11px; border-radius: 4px; min-width: 4px; }
