@@ -10,8 +10,10 @@ def validate_speakers(speakers, previous=None):
         field = f"speakers.{index}"
         if not speaker.id.strip() or speaker.id in ids:
             raise Problem("说话人身份为空或重复", field=field + ".id")
-        if not speaker.label.strip() or speaker.label != speaker.label.strip() or speaker.label in labels:
-            raise Problem("说话人名称为空、含首尾空白或重复", field=field + ".label")
+        if not speaker.label.strip() or speaker.label != speaker.label.strip():
+            raise Problem("说话人名称为空或含首尾空白", field=field + ".label")
+        if speaker.label in labels:
+            raise Problem("说话人名称已存在，请使用明确的合并说话人操作", field=field + ".label")
         if speaker.order != index:
             raise Problem("说话人顺序须从零连续编号", field=field + ".order")
         if not re.fullmatch(r"#[0-9a-fA-F]{6}", speaker.color):

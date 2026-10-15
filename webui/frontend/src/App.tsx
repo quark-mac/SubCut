@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api, ordered, timeLabel, type Entry, type ExportFormat, type ImportPreview, type ImportFormat, type Project, type ProjectSummary } from './api';
 import { useProjectSession } from './useProjectSession';
 import { SourceTimeline } from './SourceTimeline';
+import { SpeakerManager, specialSpeaker, type SpeakerDraft } from './SpeakerManager';
 
 interface Draft { text: string; start: string; end: string; speaker: string }
 const draftFor = (entry: Entry, project: Project): Draft => ({ text: entry.text, start: String(entry.start_ms), end: String(entry.end_ms), speaker: project.speakers.find(s => s.id === entry.speaker_id)!.label });
@@ -28,6 +29,9 @@ export function App() {
   const [position, setPosition] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [showSubtitles, setShowSubtitles] = useState(true);
+  const [editorTab, setEditorTab] = useState<'subtitles' | 'speakers'>('subtitles');
+  const [speakerDraft, setSpeakerDraft] = useState<SpeakerDraft | null>(null);
+  const [speakerError, setSpeakerError] = useState('');
   const video = useRef<HTMLVideoElement>(null);
   const textInput = useRef<HTMLTextAreaElement>(null);
   const startInput = useRef<HTMLInputElement>(null);
@@ -35,7 +39,9 @@ export function App() {
   const speakerInput = useRef<HTMLInputElement>(null);
   const current = project?.entries.find(entry => entry.id === selected);
   const draftChanged = !!(project && current && draft && JSON.stringify(draftFor(current, project)) !== JSON.stringify(draft));
-  const unsaved = dirty || draftChanged;
+  const speakerOriginal = project?.speakers.find(s => s.id === speakerDraft?.id);
+  const speakerChanged = !!speakerDraft && (!speakerOriginal || speakerOriginal.label !== speakerDraft.label || speakerOriginal.color !== speakerDraft.color);
+  const unsaved = dirty || draftChanged || speakerChanged;
 
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
@@ -56,6 +62,7 @@ export function App() {
   }
 
   function cancelDraft() {
+    setSpeakerDraft(null); setSpeakerError('');
     const snapshot = session.getProject();
     const entry = snapshot?.entries.find(e => e.id === selected);
     setDraft(entry && snapshot ? draftFor(entry, snapshot) : null);
@@ -68,6 +75,21 @@ export function App() {
 
   function commitDraft(): Project | null {
     const project = session.getProject();
+    if (project && speakerDraft) {
+      const label = speakerDraft.label.trim();
+      const conflict = project.speakers.some(s => s.id !== speakerDraft.id && s.label === label);
+      if (!label || conflict) {
+        setSpeakerError(!label ? '说话人名称不能为空' : '名称已存在，请使用“合并说话人”操作');
+        document.querySelector<HTMLInputElement>('.speaker-form input')?.focus();
+        return null;
+      }
+      const speaker = { id: speakerDraft.id ?? crypto.randomUUID(), label, color: speakerDraft.color, order: project.speakers.length - 2 };
+      const speakers = (speakerDraft.id ? project.speakers.map(s => s.id === speakerDraft.id ? { ...s, label, color: speaker.color } : s)
+        : [...project.speakers.slice(0, -2), speaker, ...project.speakers.slice(-2)]).map((s, order) => ({ ...s, order }));
+      const next = { ...project, speakers };
+      commitSpeakers(next);
+      return next;
+    }
     const current = project?.entries.find(entry => entry.id === selected);
     if (!project || !current || !draft) return project;
     if (JSON.stringify(draftFor(current, project)) === JSON.stringify(draft)) {
@@ -97,12 +119,54 @@ export function App() {
     return next;
   }
 
+  function commitSpeakers(next: Project) {
+    session.commit(next);
+    const entry = next.entries.find(e => e.id === selected);
+    setDraft(entry ? draftFor(entry, next) : null);
+    setSpeakerDraft(null); setSpeakerError(''); setError('');
+  }
+
+  function reorderSpeakers(source: string, target: string) {
+    const snapshot = commitDraft();
+    if (!snapshot || source === target) return;
+    const ordinary = snapshot.speakers.filter(s => !specialSpeaker(s.label));
+    const from = ordinary.findIndex(s => s.id === source), to = ordinary.findIndex(s => s.id === target);
+    if (from < 0 || to < 0) return;
+    ordinary.splice(to, 0, ordinary.splice(from, 1)[0]);
+    const speakers = [...ordinary, ...snapshot.speakers.slice(-2)].map((s, order) => ({ ...s, order }));
+    commitSpeakers({ ...snapshot, speakers });
+  }
+
+  function mergeSpeakers(source: string, target: string): boolean {
+    const snapshot = commitDraft();
+    if (!snapshot || source === target) return false;
+    const from = snapshot.speakers.find(s => s.id === source), to = snapshot.speakers.find(s => s.id === target);
+    if (!from || !to || specialSpeaker(from.label) || specialSpeaker(to.label)) return false;
+    commitSpeakers({ ...snapshot,
+      speakers: snapshot.speakers.filter(s => s.id !== source).map((s, order) => ({ ...s, order })),
+      entries: snapshot.entries.map(e => e.speaker_id === source ? { ...e, speaker_id: target } : e),
+    });
+    return true;
+  }
+
+  function deleteSpeaker(source: string) {
+    const snapshot = commitDraft();
+    const speaker = snapshot?.speakers.find(s => s.id === source);
+    if (!snapshot || !speaker || specialSpeaker(speaker.label)) return;
+    const unknown = snapshot.speakers.find(s => s.label === '?')!;
+    commitSpeakers({ ...snapshot,
+      speakers: snapshot.speakers.filter(s => s.id !== source).map((s, order) => ({ ...s, order })),
+      entries: snapshot.entries.map(e => e.speaker_id === source ? { ...e, speaker_id: unknown.id } : e),
+    });
+  }
+
   function choose(entry: Entry) {
     if (busy) return;
     const snapshot = commitDraft();
     if (!snapshot) return;
     const committed = snapshot.entries.find(item => item.id === entry.id)!;
     setSelected(committed.id); setDraft(draftFor(committed, snapshot));
+    setEditorTab('subtitles');
     if (video.current) { video.current.pause(); video.current.currentTime = committed.start_ms / 1000; }
     setPosition(committed.start_ms);
   }
@@ -110,6 +174,7 @@ export function App() {
   function accept(project: Project) {
     video.current?.pause();
     session.open(project); setSelected(null); setDraft(null); setFieldError(null);
+    setSpeakerDraft(null); setSpeakerError(''); setEditorTab('subtitles');
     setError(''); setPosition(0); setPlaying(false); setDialog(null);
   }
 
@@ -129,7 +194,7 @@ export function App() {
         event.preventDefault(); void persist();
       } else if (!dialog && !busy && event.key === 'Escape') {
         event.preventDefault();
-        if (input || draftChanged) cancelDraft();
+        if (input || draftChanged || speakerDraft) cancelDraft();
         else { setSelected(null); setDraft(null); setFieldError(null); }
       } else if (!dialog && !busy && !input && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
         event.preventDefault(); history(event.shiftKey);
@@ -302,6 +367,20 @@ export function App() {
         <p className="hint">单击字幕定位原片 · 有效编辑自动保存 · Ctrl+S 立即保存</p>
       </section>
       <section className="editor panel" aria-label="字幕编辑器">
+        <div className="editor-tabs" role="tablist" aria-label="编辑页签">
+          <button role="tab" aria-selected={editorTab === 'subtitles'} onClick={() => { if (commitDraft()) setEditorTab('subtitles'); }}>字幕</button>
+          <button role="tab" aria-selected={editorTab === 'speakers'} onClick={() => { if (commitDraft()) setEditorTab('speakers'); }}>说话人</button>
+        </div>
+        {editorTab === 'speakers' ? project ? <SpeakerManager project={project} draft={speakerDraft} error={speakerError} busy={busy}
+          onEdit={value => {
+            const snapshot = commitDraft();
+            if (snapshot) { setSpeakerDraft(value.id ? snapshot.speakers.find(s => s.id === value.id)! : value); setSpeakerError(''); }
+          }}
+          onChange={value => { setSpeakerDraft(value); setSpeakerError(''); }} onApply={() => commitDraft()}
+          onReorder={reorderSpeakers}
+          onMerge={mergeSpeakers}
+          onDelete={deleteSpeaker}
+          onCancel={() => { setSpeakerDraft(null); setSpeakerError(''); }} /> : <p className="editor-prompt muted">请先打开工程</p> : <>
         <h2>字幕 <span>{entries.length} 条</span></h2>
         <div className="subtitle-list" aria-label="字幕列表">
           {entries.map((entry, index) => <button key={entry.id} aria-label={`列表字幕 ${index + 1}`} disabled={busy}
@@ -335,12 +414,13 @@ export function App() {
           {fieldError && <p id="entry-field-error" className="field-error">{fieldError.message}</p>}
           <p className="hint">离开编辑区或应用修改时提交，随后自动保存。保存/导出先校验输入；Esc 取消草稿。</p>
         </div> : <p className="muted editor-prompt">选择一条字幕，开始校对</p>}
+        </>}
       </section>
     </main>
     <section className="timeline panel" aria-label="原片时间轴">
       <div className="timeline-toolbar"><h2>时间轴</h2>
-        <button disabled={busy || (!session.canUndo && !draftChanged)} onClick={() => history(false)}>撤销</button>
-        <button disabled={busy || !session.canRedo || draftChanged} onClick={() => history(true)}>重做</button>
+        <button disabled={busy || (!session.canUndo && !draftChanged && !speakerChanged)} onClick={() => history(false)}>撤销</button>
+        <button disabled={busy || !session.canRedo || draftChanged || speakerChanged} onClick={() => history(true)}>重做</button>
         <span className="muted">视频轨锁定 · 合法重叠保留</span></div>
       {project ? <SourceTimeline key={project.id} project={project} selected={selected} position={position} busy={busy}
         onChoose={choose} onSeek={seek} /> : <div className="timeline-empty">工程打开后将在此显示原片与工作字幕</div>}

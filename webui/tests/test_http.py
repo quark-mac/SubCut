@@ -277,6 +277,60 @@ class ProjectHTTPTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json()["speakers"], project["speakers"])
 
+    def test_speaker_management_conflicts_are_explicit_and_saves_are_atomic(self):
+        project = self.create()
+        url = f'/api/projects/{project["id"]}'
+        speakers = [
+            {"id": "ordinary-a", "label": "Iroha&Kaguya", "color": "#ab1234", "order": 0},
+            {"id": "ordinary-b", "label": "同义标签", "color": "#12ab34", "order": 1},
+        ] + [dict(s, order=i + 2) for i, s in enumerate(project["speakers"])]
+        entries = copy.deepcopy(project["entries"])
+        entries[0]["speaker_id"] = "ordinary-a"
+        entries[1]["speaker_id"] = "ordinary-b"
+
+        def save(config, items, status=200):
+            before = self.client.get(url).json()
+            response = self.client.put(url, json={"revision": before["revision"], "name": before["name"],
+                                                  "speakers": config, "entries": items})
+            self.assertEqual(response.status_code, status, response.text)
+            after = self.client.get(url).json()
+            if status == 200:
+                self.assertEqual(after["speakers"], config)
+                self.assertEqual(after["entries"], items)
+                self.assertEqual(after["subtitle_sources"], project["subtitle_sources"])
+            else:
+                self.assertEqual(after, before)
+            return response
+
+        save(speakers, entries)
+        duplicate = copy.deepcopy(speakers)
+        duplicate[0]["label"] = "同义标签"
+        response = save(duplicate, entries, 422)
+        self.assertEqual(response.json()["error"]["field"], "speakers.1.label")
+        self.assertIn("合并", response.json()["error"]["message"])
+        # Reject reordering/removing/renaming/replacing special identities, and dangling references.
+        for config in (
+            [speakers[2], speakers[0], speakers[1], speakers[3]],
+            speakers[:-1],
+            speakers[:2] + [dict(speakers[2], label="改掉未标注"), speakers[3]],
+            speakers[:2] + [dict(speakers[2], id="replacement"), speakers[3]],
+            [speakers[0], *speakers[2:]],
+        ):
+            with self.subTest(config=config):
+                save([dict(s, order=i) for i, s in enumerate(config)], entries, 422)
+        # Rename/recolor/reorder retain identities, then merge and delete by explicit complete snapshots.
+        configured = [dict(speakers[1], order=0), dict(speakers[0], label="新名字", color="#123abc", order=1), *speakers[2:]]
+        save(configured, entries)
+        merged_entries = [dict(e, speaker_id="ordinary-b") if e["speaker_id"] == "ordinary-a" else e for e in entries]
+        merged = [dict(s, order=i) for i, s in enumerate([configured[0], *configured[2:]])]
+        save(merged, merged_entries)
+        save(configured, entries)  # Restore full identities/configuration/attribution, as undo does.
+        unknown = project["speakers"][0]["id"]
+        deleted_entries = [dict(e, speaker_id=unknown) if e["speaker_id"] == "ordinary-a" else e for e in entries]
+        save(merged, deleted_entries)
+        save(speakers, entries)
+        self.assertEqual([e["id"] for e in entries], [e["id"] for e in project["entries"]])
+
     def test_invalid_speakers_cannot_change_special_semantics_or_corrupt_references(self):
         project = self.create()
         url = f'/api/projects/{project["id"]}'
