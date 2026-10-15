@@ -13,6 +13,7 @@ async function openFixture(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: '文件', exact: true }).click();
   await page.getByRole('button', { name: '打开工程…' }).click();
   await page.getByRole('button', { name: project.name, exact: true }).click();
+  await page.getByLabel('导出格式').selectOption('plain-srt');
   await page.getByRole('button', { name: '列表字幕 1', exact: true }).click();
   return project;
 }
@@ -307,7 +308,7 @@ test('普通 SRT 从预览、原片播放、正文校对到保存重开和真实
   await page.getByRole('button', { name: '新建工程', exact: true }).click();
   await page.getByLabel('工程名称').fill(name);
   await page.getByLabel('视频绝对路径').fill(path.join(inputs, '短片.mp4'));
-  await page.getByLabel('普通 SRT 绝对路径').fill(path.join(inputs, '来源.srt'));
+  await page.getByLabel('字幕绝对路径', { exact: true }).fill(path.join(inputs, '来源.srt'));
   await page.getByRole('button', { name: '解析预览' }).click();
   await expect(page.getByRole('dialog').getByText('[不是人物] 原样保留：正文\n第二行', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '创建工程', exact: true }).click();
@@ -333,6 +334,7 @@ test('普通 SRT 从预览、原片播放、正文校对到保存重开和真实
   await expect(page.getByLabel('开始时间（毫秒）')).toHaveValue('1200');
   // Export must commit a focused editor, not silently use the last saved text.
   await page.getByLabel('字幕正文').fill('导出时提交\n第二行保留');
+  await page.getByLabel('导出格式').selectOption('plain-srt');
   const exportedResponse = page.waitForResponse(r => r.url().endsWith('/exports') && r.request().method() === 'POST');
   await page.getByRole('button', { name: '导出普通 SRT', exact: true }).click();
   const result = await (await exportedResponse).json();

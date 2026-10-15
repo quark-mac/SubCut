@@ -15,7 +15,9 @@ class Model(BaseModel):
 
 class Source(Model):
     subtitle_id: str
-    index: int
+    index: StrictInt | None = None
+    source_entries: list[StrictInt] = Field(default_factory=list)
+    moss_id: str | None = None
 
 
 class Entry(Model):
@@ -43,14 +45,15 @@ class Media(Model):
 class SubtitleSource(Model):
     id: str = Field(default_factory=identity)
     path: str
-    format: Literal["plain-srt"] = "plain-srt"
+    format: Literal["plain-srt", "speaker-srt", "moss-srt", "normalized-jsonl", "moss-json"] = "plain-srt"
 
 
 class Export(Model):
     id: str
     filename: str
     path: str
-    format: Literal["plain-srt"] = "plain-srt"
+    format: Literal["plain-srt", "speaker-srt", "normalized-jsonl", "moss-json"] = "plain-srt"
+    keep_tags: bool = False
     revision: int
 
 
@@ -69,6 +72,8 @@ class Project(Model):
 class ImportRequest(Model):
     media_path: str
     subtitle_path: str
+    format: Literal["plain-srt", "speaker-srt", "moss-srt", "normalized-jsonl", "moss-json"] = "plain-srt"
+    preview_fingerprint: str | None = None
 
 
 class CreateRequest(ImportRequest):
@@ -80,7 +85,10 @@ class SaveRequest(Model):
     name: str
     entries: list[Entry]
     speakers: list[Speaker] | None = None
+    subtitle_sources: list[SubtitleSource] | None = None
 
 
 class ExportRequest(Model):
     revision: StrictInt
+    format: Literal["plain-srt", "speaker-srt", "normalized-jsonl", "moss-json"] = "speaker-srt"
+    keep_tags: bool = False

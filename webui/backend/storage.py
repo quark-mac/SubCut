@@ -10,7 +10,7 @@ from uuid import UUID
 from pydantic import ValidationError
 
 from .errors import Problem
-from .formats import validate_entries
+from .formats import validate_entries, validate_sources
 from .models import Project
 from .speakers import validate_speakers
 
@@ -56,6 +56,7 @@ class Store:
                 raise ValueError("project identity mismatch")
             validate_speakers(project.speakers)
             validate_entries(project.entries, project.media.duration_ms, {speaker.id for speaker in project.speakers})
+            validate_sources(project.entries, project.subtitle_sources)
             return project
         except (ValueError, ValidationError) as exc:
             raise Problem("工程文件损坏或结构无效，原文件已保留", status=422, code="invalid_project") from exc

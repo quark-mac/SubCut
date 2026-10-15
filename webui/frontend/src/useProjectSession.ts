@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { api, type Project } from './api';
+import { api, type ExportOptions, type Project } from './api';
 
 // History contains editing content only. Disk revision/export receipts never rewind.
 type Content = Pick<Project, 'name' | 'entries' | 'speakers' | 'subtitle_sources'>;
@@ -77,7 +77,7 @@ export function useProjectSession() {
     setDirty(generation.current !== version);
   }
 
-  function persist(exporting = false): Promise<void> {
+  function persist(exporting: ExportOptions | false = false): Promise<void> {
     clearTimeout(timer.current);
     const snapshot = current.current;
     if (!snapshot) return Promise.resolve();
@@ -104,6 +104,7 @@ export function useProjectSession() {
           uncertain.current = { snapshot, version };
           const saved = await api<Project>(`/projects/${snapshot.id}`, 'PUT', {
             revision: revision.current, name: snapshot.name, entries: snapshot.entries, speakers: snapshot.speakers,
+            subtitle_sources: snapshot.subtitle_sources,
           });
           if (epoch.current !== session) return;
           uncertain.current = null;
@@ -112,7 +113,7 @@ export function useProjectSession() {
         if (exporting) {
           stage = 'export';
           uncertain.current = { snapshot, version };
-          const output = await api<{ project: Project }>(`/projects/${snapshot.id}/exports`, 'POST', { revision: revision.current });
+          const output = await api<{ project: Project }>(`/projects/${snapshot.id}/exports`, 'POST', { revision: revision.current, ...exporting });
           if (epoch.current !== session) return;
           uncertain.current = null;
           receipt(output.project, version);

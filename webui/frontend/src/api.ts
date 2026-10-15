@@ -5,8 +5,12 @@ export interface Entry {
   text: string;
   speaker_id: string;
   tags: string[];
-  sources: { subtitle_id: string; index: number }[];
+  sources: { subtitle_id: string; index: number | null; source_entries: number[]; moss_id: string | null }[];
 }
+
+export type ImportFormat = 'plain-srt' | 'speaker-srt' | 'moss-srt' | 'normalized-jsonl' | 'moss-json';
+export type ExportFormat = Exclude<ImportFormat, 'moss-srt'>;
+export interface ExportOptions { format: ExportFormat; keep_tags: boolean }
 
 export interface Speaker { id: string; label: string; color: string; order: number }
 export interface ExportFile { id: string; filename: string; path: string; format: string; revision: number }
@@ -23,6 +27,7 @@ export interface Project extends Imported {
   name: string;
   exports: ExportFile[];
 }
+export interface ImportPreview extends Imported { fingerprint: string }
 export interface ProjectSummary {
   id: string; name: string; revision?: number;
   error: { message: string } | null;

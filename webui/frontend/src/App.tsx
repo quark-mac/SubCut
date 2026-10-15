@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { api, ordered, timeLabel, type Entry, type Imported, type Project, type ProjectSummary } from './api';
+import { api, ordered, timeLabel, type Entry, type ExportFormat, type ImportPreview, type ImportFormat, type Project, type ProjectSummary } from './api';
 import { useProjectSession } from './useProjectSession';
 
 interface Draft { text: string; start: string; end: string; speaker: string }
 const draftFor = (entry: Entry, project: Project): Draft => ({ text: entry.text, start: String(entry.start_ms), end: String(entry.end_ms), speaker: project.speakers.find(s => s.id === entry.speaker_id)!.label });
+const exportLabels: Record<ExportFormat, string> = { 'speaker-srt': '说话人 SRT', 'plain-srt': '普通 SRT', 'normalized-jsonl': '项目 JSONL', 'moss-json': 'MOSS JSON' };
 
 export function App() {
   const session = useProjectSession();
@@ -13,13 +14,16 @@ export function App() {
   const [fieldError, setFieldError] = useState<{ field: keyof Draft; message: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [dialog, setDialog] = useState<'new' | 'open' | 'help' | null>(null);
+  const [dialog, setDialog] = useState<'new' | 'replace' | 'open' | 'help' | null>(null);
   const [menu, setMenu] = useState(false);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [name, setName] = useState('新建校对工程');
   const [mediaPath, setMediaPath] = useState('');
   const [subtitlePath, setSubtitlePath] = useState('');
-  const [preview, setPreview] = useState<Imported | null>(null);
+  const [importFormat, setImportFormat] = useState<ImportFormat>('plain-srt');
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('speaker-srt');
+  const [keepTags, setKeepTags] = useState(false);
+  const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [position, setPosition] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [showSubtitles, setShowSubtitles] = useState(true);
@@ -113,7 +117,7 @@ export function App() {
     const snapshot = commitDraft();
     if (!snapshot) return;
     setError('');
-    await session.persist(exporting);
+    await session.persist(exporting ? { format: exportFormat, keep_tags: keepTags && exportFormat.endsWith('-srt') } : false);
   }
 
   useEffect(() => {
@@ -138,10 +142,14 @@ export function App() {
     setDraft(entry && next ? draftFor(entry, next) : null); setFieldError(null); setError('');
   }
 
-  async function showDialog(kind: 'new' | 'open' | 'help') {
+  async function showDialog(kind: 'new' | 'replace' | 'open' | 'help') {
     if (kind !== 'help' && session.isSaving()) return;
     setMenu(false); setError('');
-    if (kind !== 'help' && unsaved && !window.confirm('当前修改尚未保存。确定离开当前编辑工程吗？')) return;
+    if (kind === 'replace') {
+      const current = commitDraft();
+      if (!current) return;
+      setMediaPath(current.media.path); setSubtitlePath('');
+    } else if (kind !== 'help' && unsaved && !window.confirm('当前修改尚未保存。确定离开当前编辑工程吗？')) return;
     if (kind !== 'help') session.pauseAutosave();
     if (kind === 'open') {
       setBusy(true);
@@ -154,9 +162,16 @@ export function App() {
   async function importAction(create: boolean) {
     setBusy(true); setError('');
     try {
-      const body = { media_path: mediaPath.trim(), subtitle_path: subtitlePath.trim() };
-      if (create) accept(await api<Project>('/projects', 'POST', { ...body, name }));
-      else setPreview(await api<Imported>('/imports/preview', 'POST', body));
+      const body = { media_path: mediaPath.trim(), subtitle_path: subtitlePath.trim(), format: importFormat };
+      if (create && dialog === 'replace' && preview) {
+        const current = session.getProject()!;
+        const remap = new Map(preview.speakers.map(s => [s.id, current.speakers.find(old => old.label === s.label)]));
+        const speakers = preview.speakers.map(s => ({ ...s, id: remap.get(s.id)?.id ?? s.id, color: remap.get(s.id)?.color ?? s.color }));
+        const entries = preview.entries.map(e => ({ ...e, speaker_id: remap.get(e.speaker_id)?.id ?? e.speaker_id }));
+        session.commit({ ...current, entries, speakers, subtitle_sources: preview.subtitle_sources });
+        setSelected(null); setDraft(null); setFieldError(null); setDialog(null); setPreview(null);
+      } else if (create) accept(await api<Project>('/projects', 'POST', { ...body, name, preview_fingerprint: preview?.fingerprint }));
+      else setPreview(await api<ImportPreview>('/imports/preview', 'POST', body));
     } catch (reason) { setPreview(null); report(reason); }
     finally { setBusy(false); }
   }
@@ -227,11 +242,16 @@ export function App() {
       <span role="status" aria-label="保存状态" className={unsaved || session.saveError ? 'unsaved' : ''}>{session.saving ? '保存中…' : session.saveError ? '保存失败' : unsaved ? '未保存' : project ? '已保存' : '尚未打开工程'}</span>
       <div className="actions">
         <button onClick={() => void showDialog('new')} disabled={busy || session.saving}>新建工程</button>
+        <button onClick={() => void showDialog('replace')} disabled={!project || busy || session.saving}>替换字幕</button>
         <button onClick={() => void persist()} disabled={!project || busy}>保存工程</button>
-        <button className="primary" onClick={() => void persist(true)} disabled={!project || busy}>导出普通 SRT</button>
+        <select aria-label="导出格式" value={exportFormat} onChange={event => setExportFormat(event.target.value as ExportFormat)}>
+          {Object.entries(exportLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+        <label className="export-tags"><input type="checkbox" checked={keepTags} disabled={!exportFormat.endsWith('-srt')} onChange={event => setKeepTags(event.target.checked)} />保留已有元标签</label>
+        <button className="primary" onClick={() => void persist(true)} disabled={!project || busy}>导出{exportLabels[exportFormat]}</button>
       </div>
     </div>
-    {(error || session.saveError || session.exportError) && <div role="alert" className="error">{error || session.saveError || session.exportError}
+    {!dialog && (error || session.saveError || session.exportError) && <div role="alert" className="error">{error || session.saveError || session.exportError}
       {session.saveError && <button onClick={() => void persist()}>重试保存</button>}
       {session.exportError && <button onClick={() => void persist(true)}>重试导出</button>}
       {error && <button aria-label="关闭错误" onClick={() => setError('')}>×</button>}</div>}
@@ -241,15 +261,16 @@ export function App() {
         {project ? <>
           <h3>源视频</h3><p className="path">{project.media.path}</p>
           <p className="muted">时长 {timeLabel(duration)} · 原路径引用</p>
-          <h3>字幕来源</h3>{project.subtitle_sources.map(source => <p key={source.id} className="path">{source.path}</p>)}
+          <h3>字幕来源</h3>{project.subtitle_sources.map(source => <div key={source.id}><p className="path">{source.path}</p><small className="muted">{source.format}</small></div>)}
           <h3>工作字幕</h3><p>{entries.length} 条 · 工程修订 {project.revision}</p>
           <h3>预览副本</h3><p className="muted">当前直接播放原片</p>
           <h3>导出文件</h3>
+          <p className="hint">继续编辑请保存工程。交换字幕不包含完整身份、来源和人物配置。</p>
           {project.exports.length ? project.exports.map(file => <div className="export" key={file.id}>
             <a href={`/api/projects/${project.id}/exports/${file.id}`} download>{file.filename}</a>
             <p className="path muted">{file.path}</p>
           </div>) : <p className="muted">保存校对结果后导出</p>}
-        </> : <p className="muted">新建工程，选定本机视频与普通 SRT；也可从“文件”菜单继续已有工程。</p>}
+        </> : <p className="muted">新建工程，选定本机视频与字幕（SRT / JSONL / MOSS JSON）；也可从“文件”菜单继续已有工程。</p>}
       </aside>
       <section className="preview-panel panel" aria-label="视频预览">
         <h2>视频预览 <span>原片时间轴</span></h2>
@@ -320,25 +341,35 @@ export function App() {
       </> : <div className="timeline-empty">工程打开后将在此显示原片与工作字幕</div>}
     </section>
     {dialog && <div className="modal-backdrop"><section role="dialog" aria-modal="true" aria-labelledby="dialog-title" className="dialog">
-      <header><h2 id="dialog-title">{dialog === 'new' ? '新建编辑工程' : dialog === 'open' ? '打开工程' : '使用帮助'}</h2>
+      <header><h2 id="dialog-title">{dialog === 'new' ? '新建编辑工程' : dialog === 'replace' ? '整体替换工作字幕' : dialog === 'open' ? '打开工程' : '使用帮助'}</h2>
         <button disabled={busy} aria-label="关闭对话框" onClick={() => { setDialog(null); if (dialog !== 'help') session.resumeAutosave(); }}>×</button></header>
-      {dialog === 'new' && <>
+      {error && <p role="alert" className="error">{error}</p>}
+      {(dialog === 'new' || dialog === 'replace') && <>
         <p className="muted">使用浏览器可直接播放的原片。视频和字幕保留在原路径，校对结果保存为独立工程。</p>
-        <label>工程名称<input value={name} disabled={busy} onChange={event => setName(event.target.value)} /></label>
-        <label>视频绝对路径<input value={mediaPath} disabled={busy} placeholder="D:\视频\短片.mp4" onChange={event => { setMediaPath(event.target.value); setPreview(null); }} /></label>
-        <label>普通 SRT 绝对路径<input value={subtitlePath} disabled={busy} placeholder="D:\字幕\来源.srt" onChange={event => { setSubtitlePath(event.target.value); setPreview(null); }} /></label>
-        <p className="hint">普通模式完整保留方括号、冒号与换行，归属设为未标注 ?。字幕需 UTF-8 编码。</p>
+        {dialog === 'new' && <label>工程名称<input value={name} disabled={busy} onChange={event => setName(event.target.value)} /></label>}
+        <label>视频绝对路径<input value={mediaPath} disabled={busy || dialog === 'replace'} placeholder="D:\视频\短片.mp4" onChange={event => { setMediaPath(event.target.value); setPreview(null); }} /></label>
+        <label>导入格式<select value={importFormat} disabled={busy} onChange={event => { setImportFormat(event.target.value as ImportFormat); setPreview(null); }}>
+          <option value="plain-srt">普通 SRT · 全文保留，未标注 ?</option>
+          <option value="speaker-srt">本项目 SRT · [Speaker] 与已知元标签</option>
+          <option value="moss-srt">MOSS SRT · Speaker: 正文</option>
+          <option value="normalized-jsonl">本项目 normalized JSONL</option>
+          <option value="moss-json">MOSS JSON · 五字段数组</option>
+        </select></label>
+        <label>字幕绝对路径<input value={subtitlePath} disabled={busy} placeholder="D:\字幕\来源.srt" onChange={event => { setSubtitlePath(event.target.value); setPreview(null); }} /></label>
+        <p className="hint">UTF-8 字幕。普通 SRT 不猜测人物；项目 SRT 仅解析前置 MULTI / MERGED，未知花括号起保留正文；MOSS SRT 按首个 ASCII 冒号加空格解析。JSON 时间为秒。替换可一步撤销。</p>
         <button disabled={busy || !mediaPath || !subtitlePath} onClick={() => void importAction(false)}>{busy ? '处理中…' : '解析预览'}</button>
-        {preview && <div className="import-preview"><h3>预览 · {preview.entries.length} 条 · 未标注 ?</h3>
-          {preview.entries.map((entry, index) => <div key={entry.id}><small>{index + 1} · {timeLabel(entry.start_ms)} → {timeLabel(entry.end_ms)}</small><p>{entry.text}</p></div>)}
+        {preview && <div className="import-preview"><h3>预览 · {preview.entries.length} 条</h3>
+          {preview.entries.map((entry, index) => <div key={entry.id}><small>{index + 1} · {timeLabel(entry.start_ms)} → {timeLabel(entry.end_ms)} · [{preview.speakers.find(s => s.id === entry.speaker_id)?.label}]</small><p>{entry.text}</p>
+            <small>元标签：{entry.tags.join(', ') || '无'} · {entry.sources.map(s => `输入序号 ${s.index ?? '无'} / 原来源索引 [${s.source_entries.join(', ')}] / MOSS ID ${s.moss_id ?? '无'}`).join('；')}</small>
+          </div>)}
         </div>}
-        <footer><button disabled={busy || !preview || !name.trim()} className="primary" onClick={() => void importAction(true)}>创建工程</button></footer>
+        <footer><button disabled={busy || !preview || (dialog === 'new' && !name.trim())} className="primary" onClick={() => void importAction(true)}>{dialog === 'replace' ? '应用替换' : '创建工程'}</button></footer>
       </>}
       {dialog === 'open' && <div className="project-list">{projects.length ? projects.map(item => <div key={item.id}>
         <button disabled={busy} onClick={() => void openProject(item.id)}>{item.name}</button>
         <small>{item.error?.message ?? `修订 ${item.revision}`} · {item.id}</small>
       </div>) : <p>尚无工程，请先新建。</p>}</div>}
-      {dialog === 'help' && <div className="help"><p>1. 新建工程，输入本机视频与普通 SRT 的绝对路径，先预览再创建。</p><p>2. 点击字幕暂停并定位；右侧编辑正文、整数毫秒时间与归属。可选择现有人物或输入新名称，重叠字幕各自保留。</p><p>3. 点击应用修改或离开编辑区后自动保存；Ctrl+S 立即提交并保存。非法字段需修正或取消，保存失败可重试。</p><p>4. 时间轴工具栏撤销/重做，或在输入框外使用 Ctrl+Z / Ctrl+Shift+Z。保存保留历史，重开工程重置历史；输入框内撤销优先编辑文字，Esc 取消草稿。</p><p>5. 通过文件菜单重开工程。导出使用触发时的有效输入，生成独立普通 SRT，可从资源区下载。请使用 H.264/AAC MP4 等浏览器兼容原片。</p></div>}
+      {dialog === 'help' && <div className="help"><p>1. 新建工程，输入本机视频与字幕绝对路径，选择 SRT 解释方式、normalized JSONL 或 MOSS JSON，先预览再创建。替换字幕同样先预览，整体替换可一步撤销。</p><p>2. 点击字幕暂停并定位；右侧编辑正文、整数毫秒时间与归属。可选择现有人物或输入新名称，重叠字幕各自保留。</p><p>3. 点击应用修改或离开编辑区后自动保存；Ctrl+S 立即提交并保存。非法字段需修正或取消，保存失败可重试。</p><p>4. 时间轴工具栏撤销/重做，或在输入框外使用 Ctrl+Z / Ctrl+Shift+Z。保存保留历史，重开工程重置历史；输入框内撤销优先编辑文字，Esc 取消草稿。</p><p>5. 通过文件菜单重开工程。导出使用触发时的有效输入，默认干净说话人 SRT，也可选择普通 SRT、项目 JSONL、MOSS JSON。SRT 元标签须显式勾选；资源区提供实际文件下载。继续编辑请保存完整工程。请使用 H.264/AAC MP4 等浏览器兼容原片。</p></div>}
     </section></div>}
   </div>;
 }

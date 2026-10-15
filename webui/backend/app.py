@@ -7,9 +7,9 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .errors import Problem
-from .formats import read_plain_srt, validate_entries, write_plain_srt
+from .formats import EXPORT_TYPES, read_subtitles, validate_entries, validate_sources, write_subtitles
 from .media import local_file, probe_media
-from .models import CreateRequest, Export, ExportRequest, ImportRequest, Project, SaveRequest, Speaker, SubtitleSource, identity
+from .models import CreateRequest, Export, ExportRequest, ImportRequest, Project, SaveRequest, SubtitleSource, identity
 from .storage import Store, atomic_write
 from .speakers import validate_speakers
 
@@ -52,11 +52,9 @@ def health():
 
 def import_subtitles(body: ImportRequest):
     media = probe_media(body.media_path)
-    source = SubtitleSource(path=str(local_file(body.subtitle_path, "subtitle_path")))
-    speakers = [Speaker(label="?", color="#7899b5", order=0),
-                Speaker(label="NONSPEECH", color="#a18baa", order=1)]
-    entries = read_plain_srt(Path(source.path), media.duration_ms, source.id, speakers[0].id)
-    return {"media": media, "subtitle_sources": [source], "speakers": speakers, "entries": entries}
+    source = SubtitleSource(path=str(local_file(body.subtitle_path, "subtitle_path")), format=body.format)
+    entries, speakers, fingerprint = read_subtitles(Path(source.path), media.duration_ms, source.id, body.format, body.preview_fingerprint)
+    return {"media": media, "subtitle_sources": [source], "speakers": speakers, "entries": entries, "fingerprint": fingerprint}
 
 
 @app.post("/api/imports/preview")
@@ -68,7 +66,9 @@ def preview(body: ImportRequest):
 def create_project(body: CreateRequest):
     if not body.name.strip():
         raise Problem("工程名称不能为空", field="name")
-    project = Project(name=body.name.strip(), **import_subtitles(body))
+    imported = import_subtitles(body)
+    imported.pop("fingerprint")
+    project = Project(name=body.name.strip(), **imported)
     with store.lock:
         store.create(project)
     return project
@@ -113,13 +113,12 @@ def save_project(project_id: str, body: SaveRequest):
         speakers = body.speakers if body.speakers is not None else project.speakers
         validate_speakers(speakers, project.speakers)
         validate_entries(body.entries, project.media.duration_ms, {s.id for s in speakers})
-        source_ids = {s.id for s in project.subtitle_sources}
-        for position, entry in enumerate(body.entries, 1):
-            if any(source.subtitle_id not in source_ids for source in entry.sources):
-                raise Problem("字幕引用了不存在的来源", entry=position, field="sources")
+        sources = body.subtitle_sources if body.subtitle_sources is not None else project.subtitle_sources
+        validate_sources(body.entries, sources)
         project.name = body.name.strip()
         project.entries = body.entries
         project.speakers = speakers
+        project.subtitle_sources = sources
         project.revision += 1
         atomic_write(store.directory(project_id) / "project.json", project.model_dump_json(indent=2))
         return project
@@ -133,9 +132,11 @@ def export_project(project_id: str, body: ExportRequest):
         export_id = identity()
         folder = store.directory(project_id) / "exports"
         folder.mkdir(exist_ok=True)
-        path = folder / f"{export_id}.srt"
-        exported = Export(id=export_id, filename=f"字幕-r{project.revision}.srt", path=str(path), revision=project.revision)
-        atomic_write(path, write_plain_srt(project.entries))
+        extension, _ = EXPORT_TYPES[body.format]
+        path = folder / f"{export_id}.{extension}"
+        exported = Export(id=export_id, filename=f"字幕-{body.format}-r{project.revision}.{extension}", path=str(path),
+                          revision=project.revision, format=body.format, keep_tags=body.keep_tags)
+        atomic_write(path, write_subtitles(project, body.format, body.keep_tags))
         project.exports.append(exported)
         project.revision += 1
         try:
@@ -153,9 +154,10 @@ def download_export(project_id: str, export_id: str):
     exported = next((item for item in project.exports if item.id == export_id), None)
     if exported is None:
         raise Problem("找不到导出文件", status=404, code="export_not_found")
-    path = store.directory(project_id) / "exports" / f"{exported.id}.srt"
+    extension, media_type = EXPORT_TYPES[exported.format]
+    path = store.directory(project_id) / "exports" / f"{exported.id}.{extension}"
     local_file(str(path), "export")
-    return FileResponse(path, media_type="application/x-subrip; charset=utf-8", filename=exported.filename)
+    return FileResponse(path, media_type=media_type + "; charset=utf-8", filename=exported.filename)
 
 
 dist = Path(__file__).resolve().parents[1] / "frontend" / "dist"

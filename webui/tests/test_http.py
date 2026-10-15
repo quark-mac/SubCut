@@ -91,6 +91,25 @@ class ProjectHTTPTests(unittest.TestCase):
         self.assertIn(project["id"], [p["id"] for p in listing])
         self.assertEqual(self.subtitle.read_text(encoding="utf-8"), SRT)
 
+    def test_explicit_srt_modes_preserve_labels_and_only_consume_known_metadata(self):
+        subtitle = self.root / "modes.srt"
+        subtitle.write_text("7\n00:00:01,000 --> 00:00:03,000\n[Iroha&Kaguya] {MULTI} {UNKNOWN} {MERGED} 台词: 正文\n第二行\n", encoding="utf-8")
+        body = {"media_path": str(self.video), "subtitle_path": str(subtitle)}
+        plain = self.client.post("/api/imports/preview", json=body).json()
+        self.assertEqual(plain["entries"][0]["text"], "[Iroha&Kaguya] {MULTI} {UNKNOWN} {MERGED} 台词: 正文\n第二行")
+        response = self.client.post("/api/imports/preview", json=dict(body, format="speaker-srt"))
+        self.assertEqual(response.status_code, 200, response.text)
+        parsed = response.json()
+        self.assertEqual(parsed["speakers"][0]["label"], "Iroha&Kaguya")
+        self.assertEqual(parsed["entries"][0]["tags"], ["MULTI"])
+        self.assertEqual(parsed["entries"][0]["text"], "{UNKNOWN} {MERGED} 台词: 正文\n第二行")
+        self.assertEqual(parsed["entries"][0]["sources"][0]["source_entries"], [])
+        subtitle.write_text("9\n00:00:01,000 --> 00:00:03,000\nS00: 时间: 台词\n换行: 原样\n", encoding="utf-8")
+        response = self.client.post("/api/imports/preview", json=dict(body, format="moss-srt"))
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["speakers"][0]["label"], "S00")
+        self.assertEqual(response.json()["entries"][0]["text"], "时间: 台词\n换行: 原样")
+
     def test_save_reopen_and_export_current_text_in_stable_time_order(self):
         project = self.create()
         entries = project["entries"]
@@ -104,7 +123,7 @@ class ProjectHTTPTests(unittest.TestCase):
         self.assertEqual(saved["revision"], 2)
         reopened = self.client.get(f'/api/projects/{project["id"]}').json()
         self.assertEqual(reopened["entries"], entries)
-        output = self.client.post(f'/api/projects/{project["id"]}/exports', json={"revision": saved["revision"]})
+        output = self.client.post(f'/api/projects/{project["id"]}/exports', json={"revision": saved["revision"], "format": "plain-srt"})
         self.assertEqual(output.status_code, 201, output.text)
         exported = output.json()
         expected = "1\n00:00:01,000 --> 00:00:04,000\n修改后的正文\n仍然保留换行\n\n2\n00:00:01,000 --> 00:00:04,000\n同时出现\n\n3\n00:00:04,500 --> 00:00:05,000\n稍后的字幕\n"
@@ -113,6 +132,37 @@ class ProjectHTTPTests(unittest.TestCase):
         reopened = self.client.get(f'/api/projects/{project["id"]}').json()
         self.assertIn(exported["export"], reopened["exports"])
         self.assertEqual(self.subtitle.read_text(encoding="utf-8"), SRT)
+
+    def test_json_imports_keep_four_distinct_identities_seconds_and_open_labels(self):
+        subtitle = self.root / "normalized.jsonl"
+        rows = [
+            {"idx": 72, "start": 1.2345, "end": 3.456, "speaker": "Iroha&Kaguya", "text": "第一行\n第二行", "tags": ["MULTI", "MERGED"], "source_entries": [91, 0, 91]},
+            {"idx": 8, "start": 1.2345, "end": 3.456, "speaker": "NONSPEECH", "text": "笑声"},
+            {"idx": 19, "start": 1, "end": 2, "speaker": "OTHER", "text": "原样标签"},
+            {"idx": 20, "start": 1, "end": 2, "speaker": "?", "text": "未知"},
+        ]
+        subtitle.write_text("\ufeff" + "\n\n".join(json.dumps(row, ensure_ascii=False) for row in rows), encoding="utf-8")
+        body = {"name": "JSONL", "media_path": str(self.video), "subtitle_path": str(subtitle), "format": "normalized-jsonl"}
+        response = self.client.post("/api/projects", json=body)
+        self.assertEqual(response.status_code, 201, response.text)
+        project = response.json()
+        self.assertEqual([s["label"] for s in project["speakers"]], ["Iroha&Kaguya", "OTHER", "?", "NONSPEECH"])
+        entry = project["entries"][0]
+        self.assertEqual((entry["start_ms"], entry["end_ms"], entry["text"], entry["tags"]), (1234, 3456, "第一行\n第二行", ["MULTI", "MERGED"]))
+        self.assertEqual(entry["sources"][0]["index"], 72)
+        self.assertEqual(entry["sources"][0]["source_entries"], [91, 0, 91])
+        self.assertNotEqual(entry["id"], "72")
+        self.assertEqual(project["entries"][1]["sources"][0]["source_entries"], [])
+        self.assertEqual(self.client.get(f'/api/projects/{project["id"]}').json(), project)
+        moss = self.root / "moss.json"
+        moss.write_text(json.dumps([{"id": "seg-72", "start": 1.25, "end": 2.75, "speaker": "S00", "text": "MOSS\n多行"}]), encoding="utf-8")
+        response = self.client.post("/api/imports/preview", json={"media_path": str(self.video), "subtitle_path": str(moss), "format": "moss-json"})
+        self.assertEqual(response.status_code, 200, response.text)
+        parsed = response.json()
+        self.assertEqual(parsed["speakers"][0]["label"], "S00")
+        source = parsed["entries"][0]["sources"][0]
+        self.assertEqual((source["moss_id"], source["index"], source["source_entries"]), ("seg-72", None, []))
+        self.assertNotEqual(parsed["entries"][0]["id"], "seg-72")
 
     def test_original_video_supports_browser_byte_range_seeking(self):
         project = self.create()
@@ -125,6 +175,87 @@ class ProjectHTTPTests(unittest.TestCase):
         suffix = self.client.get(url, headers={"Range": "bytes=-64"})
         self.assertEqual(suffix.content, self.video.read_bytes()[-64:])
         self.assertEqual(self.client.get(url, headers={"Range": "bytes=99999999-"}).status_code, 416)
+
+    def test_four_real_exports_keep_source_indices_tags_labels_and_stable_sort(self):
+        subtitle = self.root / "export.jsonl"
+        rows = [
+            {"idx": 90, "start": 3, "end": 4, "speaker": "NONSPEECH", "text": "晚", "source_entries": [77]},
+            {"idx": 8, "start": 1.25, "end": 2.75, "speaker": "Iroha&Kaguya", "text": "甲\n乙", "source_entries": [91, 0, 91], "tags": ["MULTI", "MERGED"]},
+            {"idx": 7, "start": 1.25, "end": 2.75, "speaker": "?", "text": "同时间", "tags": ["CUSTOM"]},
+        ]
+        subtitle.write_text("\n".join(json.dumps(row) for row in rows), encoding="utf-8")
+        project = self.client.post("/api/projects", json={"name": "四格式", "media_path": str(self.video), "subtitle_path": str(subtitle), "format": "normalized-jsonl"}).json()
+        url = f'/api/projects/{project["id"]}'
+        outputs = {}
+        for format, keep in ((None, False), ("speaker-srt", True), ("plain-srt", False), ("plain-srt", True), ("normalized-jsonl", False), ("moss-json", False)):
+            body = {"revision": project["revision"], "keep_tags": keep}
+            if format:
+                body["format"] = format
+            response = self.client.post(url + "/exports", json=body)
+            self.assertEqual(response.status_code, 201, response.text)
+            result = response.json()
+            project = result["project"]
+            text = Path(result["export"]["path"]).read_text(encoding="utf-8")
+            self.assertEqual(self.client.get(result["url"]).text, text)
+            outputs[(format, keep)] = text
+        self.assertEqual(outputs[(None, False)], "1\n00:00:01,250 --> 00:00:02,750\n[Iroha&Kaguya] 甲\n乙\n\n2\n00:00:01,250 --> 00:00:02,750\n[?] 同时间\n\n3\n00:00:03,000 --> 00:00:04,000\n[NONSPEECH] 晚\n")
+        self.assertIn("[Iroha&Kaguya] {MULTI} {MERGED} 甲\n乙", outputs[("speaker-srt", True)])
+        self.assertIn("\n甲\n乙\n", outputs[("plain-srt", False)])
+        self.assertNotIn("{MULTI}", outputs[("plain-srt", False)])
+        self.assertIn("\n{MULTI} {MERGED} 甲", outputs[("plain-srt", True)])
+        exported = [json.loads(line) for line in outputs[("normalized-jsonl", False)].splitlines()]
+        self.assertEqual(exported, [dict(rows[1], idx=1), dict(rows[2], idx=2, source_entries=[]), dict(rows[0], idx=3, tags=[])])
+        moss = json.loads(outputs[("moss-json", False)])
+        self.assertEqual(len({entry["id"] for entry in moss}), 3)
+        self.assertEqual([entry["speaker"] for entry in moss], ["Iroha&Kaguya", "?", "NONSPEECH"])
+        self.assertEqual(set(moss[0]), {"id", "start", "end", "speaker", "text"})
+        # Files can be consumed by the actual production JSONL/SRT public readers.
+        from sub._srt_io import parse_jsonl, parse_srt
+        tagged_path = Path(project["exports"][1]["path"])
+        self.assertEqual(parse_srt(tagged_path)[0].tags, ["MULTI", "MERGED"])
+        self.assertEqual(parse_jsonl(Path(project["exports"][4]["path"]))[0].source_entries, [91, 0, 91])
+        response = self.client.post("/api/imports/preview", json={"media_path": str(self.video), "subtitle_path": project["exports"][5]["path"], "format": "moss-json"})
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["entries"][0]["sources"][0]["source_entries"], [])
+        # Later edits and old-revision export attempts cannot mutate already-written output.
+        before = outputs[(None, False)]
+        entries = copy.deepcopy(project["entries"])
+        entries[1]["text"] = "后续修改"
+        self.assertEqual(self.client.put(url, json={"revision": project["revision"], "name": project["name"], "entries": entries}).status_code, 200)
+        self.assertEqual(self.client.post(url + "/exports", json={"revision": project["revision"]}).status_code, 409)
+        self.assertEqual(Path(project["exports"][0]["path"]).read_text(encoding="utf-8"), before)
+
+    def test_preview_applies_complete_replacement_atomically_and_can_restore_previous_sources(self):
+        project = self.create()
+        url = f'/api/projects/{project["id"]}'
+        subtitle = self.root / "replacement.jsonl"
+        subtitle.write_text(json.dumps({"idx": 90, "start": 1, "end": 2, "speaker": "新人物", "text": "替换", "source_entries": [900, 2, 900], "tags": ["MULTI"]}), encoding="utf-8")
+        response = self.client.post("/api/imports/preview", json={"media_path": str(self.video), "subtitle_path": str(subtitle), "format": "normalized-jsonl"})
+        self.assertEqual(response.status_code, 200, response.text)
+        preview = response.json()
+        self.assertEqual(self.client.get(url).json(), project)
+        # Client retains fixed special-track identities when replacing the working set.
+        for speaker in preview["speakers"]:
+            old = next((s for s in project["speakers"] if s["label"] == speaker["label"]), None)
+            if old:
+                for entry in preview["entries"]:
+                    if entry["speaker_id"] == speaker["id"]:
+                        entry["speaker_id"] = old["id"]
+                speaker["id"] = old["id"]
+        body = {"revision": 1, "name": project["name"], **{key: preview[key] for key in ("entries", "speakers", "subtitle_sources")}}
+        invalid = copy.deepcopy(body)
+        invalid["entries"][0]["sources"][0]["subtitle_id"] = "missing"
+        bad = self.client.put(url, json=invalid)
+        self.assertEqual(bad.status_code, 422, bad.text)
+        self.assertEqual(self.client.get(url).json(), project)
+        applied = self.client.put(url, json=body)
+        self.assertEqual(applied.status_code, 200, applied.text)
+        for key in ("entries", "speakers", "subtitle_sources"):
+            self.assertEqual(applied.json()[key], preview[key])
+        restored = self.client.put(url, json={"revision": 2, **{key: project[key] for key in ("name", "entries", "speakers", "subtitle_sources")}})
+        self.assertEqual(restored.status_code, 200, restored.text)
+        for key in ("entries", "speakers", "subtitle_sources"):
+            self.assertEqual(self.client.get(url).json()[key], project[key])
 
     def test_open_speaker_labels_save_with_stable_entry_and_special_identities(self):
         project = self.create()
@@ -184,6 +315,61 @@ class ProjectHTTPTests(unittest.TestCase):
                     self.assertEqual(response.json()["error"]["field"], field)
                     self.assertTrue(response.json()["error"]["message"])
                 self.assertEqual(self.client.get("/api/projects").json(), before)
+
+    def test_structured_errors_are_located_and_never_partially_imported(self):
+        project = self.create()
+        before = self.client.get("/api/projects").json()
+        good = {"idx": 9, "start": 1, "end": 2, "speaker": "?", "text": "有效"}
+        bad = self.root / "bad.jsonl"
+        cases = [({"start": -0.0001}, "time"), ({"start": 2}, "time"),
+                 ({"start": 1.0001, "end": 1.0002}, "time"), ({"end": 8.0001}, "time"),
+                 ({"start": float("nan")}, "start"), ({"end": float("inf")}, "end"),
+                 ({"start": "1"}, "start"), ({"start": True}, "start"), ({"end": 10 ** 400}, "end"),
+                 ({"text": " \n "}, "text"), ({"text": None}, "text"), ({"speaker": ""}, "speaker"),
+                 ({"idx": True}, "idx"), ({"tags": "MULTI"}, "tags"), ({"tags": [1]}, "tags"),
+                 ({"source_entries": [True]}, "source_entries"), ({"source_entries": [-1]}, "source_entries"),
+                 ({"source_entries": [1.2]}, "source_entries")]
+        for change, field in cases:
+            with self.subTest(change=change):
+                bad.write_text(json.dumps(good) + "\n\n" + json.dumps(dict(good, **change)), encoding="utf-8")
+                body = {"name": "不能部分导入", "media_path": str(self.video), "subtitle_path": str(bad), "format": "normalized-jsonl"}
+                for endpoint in ("/api/imports/preview", "/api/projects"):
+                    request = dict(body)
+                    if endpoint.endswith("preview"):
+                        request.pop("name")
+                    response = self.client.post(endpoint, json=request)
+                    self.assertEqual(response.status_code, 422, response.text)
+                    self.assertEqual(response.json()["error"]["entry"], 3)  # Physical JSONL line, including blank lines.
+                    self.assertEqual(response.json()["error"]["field"], field)
+        for format, text, entry, field in (
+            ("normalized-jsonl", json.dumps(good) + "\n{broken", 2, "json"),
+            ("moss-json", '{"segments": []}', None, "json"),
+            ("moss-json", '[{"id": 1, "start": 1, "end": 2, "speaker": "S00", "text": "a"}]', 1, "id"),
+            ("moss-json", '[null]', 1, "json"),
+            ("speaker-srt", '1\n00:00:01,000 --> 00:00:02,000\n无前缀', 1, "speaker"),
+            ("moss-srt", '1\n00:00:01,000 --> 00:00:02,000\nS00：正文', 1, "speaker"),
+            ("plain-srt", '²\n00:00:01,000 --> 00:00:02,000\n非法序号', 1, "index"),
+        ):
+            bad.write_text(text, encoding="utf-8")
+            response = self.client.post("/api/imports/preview", json={"media_path": str(self.video), "subtitle_path": str(bad), "format": format})
+            self.assertEqual(response.status_code, 422, response.text)
+            self.assertEqual((response.json()["error"]["entry"], response.json()["error"]["field"]), (entry, field))
+        self.assertEqual(self.client.get("/api/projects").json(), before)
+        self.assertEqual(self.client.get(f'/api/projects/{project["id"]}').json(), project)
+
+    def test_creation_rejects_changed_source_after_preview_instead_of_importing_unseen_content(self):
+        subtitle = self.root / "changing.srt"
+        subtitle.write_text(SRT, encoding="utf-8")
+        body = {"media_path": str(self.video), "subtitle_path": str(subtitle)}
+        response = self.client.post("/api/imports/preview", json=body)
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertIn("fingerprint", response.json())
+        before = self.client.get("/api/projects").json()
+        subtitle.write_text(SRT.replace("稍后的字幕", "未经预览的外部修改"), encoding="utf-8")
+        response = self.client.post("/api/projects", json=dict(body, name="必须重新预览", preview_fingerprint=response.json()["fingerprint"]))
+        self.assertEqual(response.status_code, 409, response.text)
+        self.assertEqual(response.json()["error"]["code"], "source_changed")
+        self.assertEqual(self.client.get("/api/projects").json(), before)
 
     def test_invalid_edits_and_stale_revision_preserve_saved_state(self):
         project = self.create()
@@ -325,6 +511,16 @@ class ProjectHTTPTests(unittest.TestCase):
         })
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual([entry["text"] for entry in response.json()["entries"]], ["  A: 原文  \n第二行", "末条"])
+
+    def test_project_srt_accepts_production_hour_width_and_arrow_spacing(self):
+        subtitle = self.root / "production.srt"
+        subtitle.write_text("1\n0:00:01,000-->0:00:02,000\n[先生] {MERGED} 多行\n正文\n", encoding="utf-8")
+        response = self.client.post("/api/imports/preview", json={
+            "media_path": str(self.video), "subtitle_path": str(subtitle), "format": "speaker-srt",
+        })
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["entries"][0]["text"], "多行\n正文")
+        self.assertEqual(response.json()["speakers"][0]["label"], "先生")
 
 
 if __name__ == "__main__":
