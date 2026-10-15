@@ -1,6 +1,6 @@
 # 07: 多选与批量编辑
 
-Status: in-progress
+Status: done
 Blocked by: 06
 Spec: [WebUI 字幕与说话人编辑器](../spec.md)
 
@@ -13,14 +13,14 @@ Spec: [WebUI 字幕与说话人编辑器](../spec.md)
 
 ## Acceptance criteria
 
-- [ ] Ctrl 点选、Shift 连续选择及时间轴框选有效；同一条目在总览和人物轨都被框住时只进入选择集合一次。
-- [ ] 修饰键点选与框选只改选择，不暂停或跳转播放头；普通单击沿用选中、暂停并定位的语义。
-- [ ] 右侧展示共同属性及混合值；明确选择目标说话人后所有选中条目统一归到该标签。
-- [ ] 批量横向移动保持相对时间和各条时长，到片头/片尾时整体停止，而非逐条截短或独立夹取。
-- [ ] 多选 ↑/↓ 按当前说话人轨顺序整体偏移一行，保持相对轨道间距；任何一条越界则整次不执行，不循环。
-- [ ] 批量鼠标移动继承单条手势的时间、归属及撤销规则，任何提交均保持有效状态；未选条目不受影响。
-- [ ] Delete 可删除单选或多选条目，正文输入时优先删文字；一次批量改人、移动或删除各算一步历史。
-- [ ] Esc 取消手势或清除选择；无效、取消及纯选择操作不污染历史。撤销恢复完整条目集合，保存重开保持结果。
+- [x] Ctrl 点选、Shift 连续选择及时间轴框选有效；同一条目在总览和人物轨都被框住时只进入选择集合一次。
+- [x] 修饰键点选与框选只改选择，不暂停或跳转播放头；普通单击沿用选中、暂停并定位的语义。
+- [x] 右侧展示共同属性及混合值；明确选择目标说话人后所有选中条目统一归到该标签。
+- [x] 批量横向移动保持相对时间和各条时长，到片头/片尾时整体停止，而非逐条截短或独立夹取。
+- [x] 多选 ↑/↓ 按当前说话人轨顺序整体偏移一行，保持相对轨道间距；任何一条越界则整次不执行，不循环。
+- [x] 批量鼠标移动继承单条手势的时间、归属及撤销规则，任何提交均保持有效状态；未选条目不受影响。
+- [x] Delete 可删除单选或多选条目，正文输入时优先删文字；一次批量改人、移动或删除各算一步历史。
+- [x] Esc 取消手势或清除选择；无效、取消及纯选择操作不污染历史。撤销恢复完整条目集合，保存重开保持结果。
 
 ## Verification
 
@@ -47,3 +47,30 @@ Spec: [WebUI 字幕与说话人编辑器](../spec.md)
   8. 自查与 03 集成的 `-g 撤销整体替换`：撤销后仍出现“已选 0 条”，继续 Ctrl 点击残留旧 ID → 历史恢复时过滤失效 ID 转绿。先修正导入格式 select 的测试定位，再复现实际失效选择问题。
 - 补充用例直接通过现有实现：无效正文的修饰键选择保持错误焦点，取消后继续多选；05 重排后的鼠标偏移；多选两端调整到共同合法范围（最短 1 ms）；2× 吸附、跨视图框选每条只移动一次、总览无归属目标不写历史。2× 测试初次框选起点在 sticky 标签下，改用真实横向滚轮回到片头后通过，未为该测试修改实现。
 - 每轮使用 `$env:WEBUI_PYTHON='D:\whisper-diarization\env\python.exe'`、`$env:WEBUI_BROWSER='msedge'`，实现修改后 `npm --prefix webui/frontend run build`，再 `npm --prefix webui/frontend run test:browser -- multiselect.spec.ts -g <上列名称>`。本票共 11 项浏览器测试。前七切片完成后的全套回归 **40/40 passed**（2.2 分钟）；HTTP **21/21 OK**（6.079 秒）、全部 WebUI Python 编译通过。最终同步集成后的复验另记下方。
+
+### 完成与集成基线复验
+
+- 实现提交 `7acce02`（`feat(webui): add multiselection and atomic batch editing`）。提交后在 `ticket-07` / `feat/webui-07` 执行 **`git merge feat/webui`**，返回 `Already up to date.`；merge-base / 集成 HEAD 仍为 `fcc327354c747a33e7467b9b0e62af6758c5e8f1`。只读确认 `D:\whisper-diarization` 的 `feat/webui` 工作树干净。未合入集成、未推送，保留任务工作树。
+- 同步检查后在任务工作树执行以下完整验证，全部通过：
+
+```powershell
+npm --prefix webui/frontend run typecheck
+# tsc --noEmit 通过。
+npm --prefix webui/frontend run build
+# tsc / Vite 构建通过，35 modules。
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm --prefix webui/frontend run test:browser
+# 44/44 passed，2.5 分钟；本票 11 项以及全部既有 33 项，无跳过。
+& 'D:\whisper-diarization\env\python.exe' -m unittest webui.tests.test_http -v
+# 21/21 OK，6.262 秒，无跳过。
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& 'D:\whisper-diarization\env\python.exe' -m py_compile $Files.FullName
+# 11 个 Python 文件编译通过。
+git diff --check
+# 通过。
+```
+
+- 已读取 `webui/frontend/test-results/.last-run.json`，`status: passed` / `failedTests: []`。已核看成功截图 `webui/tests/evidence/ticket-07-batch-editing.jpg`：选中两条，右侧不同值，1500–2500 ms 的第一句在乙轨、3000–4500 ms 的第二人在丙轨，播放头保留原 1 秒，工程已保存；未选重叠和第三人仍存在。README 已记录多选/批量语义、复验入口及新回调契约。
+- 自行审查已提交实现、测试、新文件和文档，范围仅 `webui/` 与本票；没有其他代理。05/06 回归自动刷新的旧截图恢复原版本，本票只提交 07 证据。生产模块、配置与素材未修改。
+- `Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -in 18761,18762 } | Select-Object LocalAddress,LocalPort,OwningProcess` 只返回 `127.0.0.1:18762` / PID `36112`：**18761 已释放，18762 演示保留**。
