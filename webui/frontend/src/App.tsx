@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, ordered, timeLabel, type Entry, type ExportFormat, type ImportPreview, type ImportFormat, type Project, type ProjectSummary } from './api';
 import { useProjectSession } from './useProjectSession';
+import { SourceTimeline } from './SourceTimeline';
 
 interface Draft { text: string; start: string; end: string; speaker: string }
 const draftFor = (entry: Entry, project: Project): Draft => ({ text: entry.text, start: String(entry.start_ms), end: String(entry.end_ms), speaker: project.speakers.find(s => s.id === entry.speaker_id)!.label });
@@ -122,18 +123,47 @@ export function App() {
 
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      const input = event.target instanceof HTMLElement && event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])');
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
         event.preventDefault(); void persist();
       } else if (!dialog && !busy && event.key === 'Escape') {
-        event.preventDefault(); cancelDraft();
-      } else if (!dialog && !busy && !(event.target instanceof HTMLElement && event.target.closest('input, textarea, select, [contenteditable="true"]'))
-        && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
+        event.preventDefault();
+        if (input || draftChanged) cancelDraft();
+        else { setSelected(null); setDraft(null); setFieldError(null); }
+      } else if (!dialog && !busy && !input && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') {
         event.preventDefault(); history(event.shiftKey);
+      } else if (!dialog && !busy && !input && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        if (['ArrowUp', 'ArrowDown'].includes(event.key)) {
+          event.preventDefault(); moveSpeaker(event.key === 'ArrowUp' ? -1 : 1);
+        } else if (['ArrowLeft', 'ArrowRight'].includes(event.key)) {
+          event.preventDefault();
+          const snapshot = commitDraft();
+          if (!snapshot) return;
+          const items = ordered(snapshot.entries);
+          const index = items.findIndex(e => e.id === selected);
+          const next = items[index < 0 ? (event.key === 'ArrowLeft' ? items.length - 1 : 0) : index + (event.key === 'ArrowLeft' ? -1 : 1)];
+          if (next) choose(next);
+        } else if (event.code === 'Space') {
+          event.preventDefault(); if (!event.repeat) void togglePlayback();
+        }
       }
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
   });
+
+  function moveSpeaker(offset: number) {
+    const snapshot = commitDraft();
+    const entry = snapshot?.entries.find(e => e.id === selected);
+    if (!snapshot || !entry) return;
+    const speakers = [...snapshot.speakers].sort((a, b) => a.order - b.order);
+    const target = speakers[speakers.findIndex(s => s.id === entry.speaker_id) + offset];
+    if (!target) return;
+    const changed = { ...entry, speaker_id: target.id };
+    const next = { ...snapshot, entries: snapshot.entries.map(e => e.id === entry.id ? changed : e) };
+    session.commit(next); setDraft(draftFor(changed, next));
+  }
 
   function history(redo: boolean) {
     if (!commitDraft()) return;
@@ -198,28 +228,9 @@ export function App() {
     return label === '?' ? '未标注 ?' : label === 'NONSPEECH' ? '非对白 NONSPEECH' : label;
   };
 
-  function track(label: string, items: Entry[], locked = false) {
-    const ends: number[] = [];
-    const blocks = ordered(items).map(entry => {
-      let lane = ends.findIndex(end => end <= entry.start_ms);
-      if (lane < 0) lane = ends.length;
-      ends[lane] = entry.end_ms;
-      return { entry, lane };
-    });
-    return <div className="track" key={label}>
-      <div className="track-label">{label}</div>
-      <div className={`track-body ${locked ? 'locked' : ''}`} style={{ height: Math.max(46, ends.length * 35 + 8) }}>
-        {locked && <span>原片 · {timeLabel(duration)}</span>}
-        {blocks.map(({ entry, lane }) => <button key={entry.id} disabled={busy}
-          className={`clip ${selected === entry.id ? 'selected' : ''}`}
-          aria-label={`${label}：${entry.text}`} title={entry.text} onClick={() => choose(entry)}
-          style={{ left: `${entry.start_ms / duration * 100}%`, width: `${(entry.end_ms - entry.start_ms) / duration * 100}%`, top: lane * 35 + 4,
-            backgroundColor: project?.speakers.find(s => s.id === entry.speaker_id)?.color }}>
-          {entry.text}
-        </button>)}
-        <div className="playhead" style={{ left: `${position / duration * 100}%` }} />
-      </div>
-    </div>;
+  function seek(milliseconds: number) {
+    if (video.current) { video.current.pause(); video.current.currentTime = milliseconds / 1000; }
+    setPosition(milliseconds);
   }
 
   return <div className="app">
@@ -277,7 +288,7 @@ export function App() {
         <div className="video-stage">
           {project ? <>
             <video key={project.id} ref={video} src={`/api/projects/${project.id}/media`} controls preload="auto"
-              onTimeUpdate={event => setPosition(event.currentTarget.currentTime * 1000)}
+              onTimeUpdate={event => setPosition(Math.round(event.currentTarget.currentTime * 1000))}
               onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
               onError={() => setError('视频读取或解码失败，请检查源路径与浏览器编码兼容性（建议 H.264/AAC MP4）')} />
             {showSubtitles && <div className="subtitle-overlay" aria-label="播放字幕">{activeEntries.map(entry => <div key={entry.id}>{entry.text}</div>)}</div>}
@@ -298,7 +309,7 @@ export function App() {
             onClick={() => choose(entry)}>
             <span className="row-time">{index + 1} · {timeLabel(entry.start_ms)} → {timeLabel(entry.end_ms)}</span>
             <span className="row-text">{entry.text}</span>
-            <span className="speaker-label">{speakerName(entry.speaker_id)}</span>
+            <span className="speaker-label" style={{ color: project?.speakers.find(s => s.id === entry.speaker_id)?.color }}>{speakerName(entry.speaker_id)}</span>
           </button>)}
           {!entries.length && <p className="muted">导入后在此选择字幕进行校对</p>}
         </div>
@@ -331,14 +342,8 @@ export function App() {
         <button disabled={busy || (!session.canUndo && !draftChanged)} onClick={() => history(false)}>撤销</button>
         <button disabled={busy || !session.canRedo || draftChanged} onClick={() => history(true)}>重做</button>
         <span className="muted">视频轨锁定 · 合法重叠保留</span></div>
-      {project ? <>
-        <div className="ruler"><span>00:00</span><span>{timeLabel(duration / 2)}</span><span>{timeLabel(duration)}</span></div>
-        <div className="tracks">
-          {track('🔒 视频轨', [], true)}
-          {track('字幕总览', entries)}
-          {project.speakers.map(speaker => track(speakerName(speaker.id), entries.filter(entry => entry.speaker_id === speaker.id)))}
-        </div>
-      </> : <div className="timeline-empty">工程打开后将在此显示原片与工作字幕</div>}
+      {project ? <SourceTimeline key={project.id} project={project} selected={selected} position={position} busy={busy}
+        onChoose={choose} onSeek={seek} /> : <div className="timeline-empty">工程打开后将在此显示原片与工作字幕</div>}
     </section>
     {dialog && <div className="modal-backdrop"><section role="dialog" aria-modal="true" aria-labelledby="dialog-title" className="dialog">
       <header><h2 id="dialog-title">{dialog === 'new' ? '新建编辑工程' : dialog === 'replace' ? '整体替换工作字幕' : dialog === 'open' ? '打开工程' : '使用帮助'}</h2>
