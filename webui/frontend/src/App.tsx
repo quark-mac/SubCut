@@ -32,6 +32,8 @@ export function App() {
   const [editorTab, setEditorTab] = useState<'subtitles' | 'speakers'>('subtitles');
   const [speakerDraft, setSpeakerDraft] = useState<SpeakerDraft | null>(null);
   const [speakerError, setSpeakerError] = useState('');
+  const [timingPreview, setTimingPreview] = useState<Entry | null>(null);
+  const timing = useRef(false);
   const video = useRef<HTMLVideoElement>(null);
   const textInput = useRef<HTMLTextAreaElement>(null);
   const startInput = useRef<HTMLInputElement>(null);
@@ -178,6 +180,29 @@ export function App() {
     setError(''); setPosition(0); setPlaying(false); setDialog(null);
   }
 
+  function beginTiming(id: string): Entry | null {
+    const snapshot = commitDraft();
+    const entry = snapshot?.entries.find(e => e.id === id);
+    if (!snapshot || !entry) return null;
+    video.current?.pause();
+    timing.current = true;
+    setSelected(id); setDraft(draftFor(entry, snapshot)); setEditorTab('subtitles');
+    return entry;
+  }
+
+  function previewTiming(entry: Entry | null) {
+    setTimingPreview(entry);
+    if (!entry) timing.current = false;
+  }
+
+  function commitTiming(entry: Entry) {
+    const snapshot = session.getProject();
+    if (!snapshot) return;
+    const next = { ...snapshot, entries: snapshot.entries.map(e => e.id === entry.id
+      ? { ...e, start_ms: entry.start_ms, end_ms: entry.end_ms, speaker_id: entry.speaker_id } : e) };
+    session.commit(next); setDraft(draftFor(entry, next)); setFieldError(null); setError('');
+  }
+
   async function persist(exporting = false) {
     if (busy || dialog) return;
     const snapshot = commitDraft();
@@ -188,7 +213,7 @@ export function App() {
 
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
-      if (event.defaultPrevented) return;
+      if (event.defaultPrevented || timing.current) return;
       const input = event.target instanceof HTMLElement && event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])');
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
         event.preventDefault(); void persist();
@@ -285,7 +310,8 @@ export function App() {
     } else video.current.pause();
   }
 
-  const entries = ordered(project?.entries ?? []);
+  const entries = ordered((project?.entries ?? []).map(e => e.id === timingPreview?.id ? timingPreview : e));
+  const shownDraft = timingPreview && project ? draftFor(timingPreview, project) : draft;
   const duration = project?.media.duration_ms ?? 1;
   const activeEntries = entries.filter(entry => entry.start_ms <= position && entry.end_ms > position);
   const speakerName = (id: string) => {
@@ -395,19 +421,19 @@ export function App() {
         {draft ? <div className="entry-editor" onBlur={event => {
           if (!event.currentTarget.contains(event.relatedTarget as Node | null)) commitDraft();
         }}>
-          <label>字幕正文<textarea ref={textInput} {...fieldProps('text')} value={draft.text} disabled={busy}
+          <label>字幕正文<textarea ref={textInput} {...fieldProps('text')} value={shownDraft!.text} disabled={busy || !!timingPreview}
             onChange={event => setDraft({ ...draft, text: event.target.value })} /></label>
           <div className="time-fields">
-            <label>开始时间（毫秒）<input ref={startInput} {...fieldProps('start')} type="number" step="1" value={draft.start} disabled={busy}
+            <label>开始时间（毫秒）<input ref={startInput} {...fieldProps('start')} type="number" step="1" value={shownDraft!.start} disabled={busy || !!timingPreview}
               onChange={event => setDraft({ ...draft, start: event.target.value })} /></label>
-            <label>结束时间（毫秒）<input ref={endInput} {...fieldProps('end')} type="number" step="1" value={draft.end} disabled={busy}
+            <label>结束时间（毫秒）<input ref={endInput} {...fieldProps('end')} type="number" step="1" value={shownDraft!.end} disabled={busy || !!timingPreview}
               onChange={event => setDraft({ ...draft, end: event.target.value })} /></label>
           </div>
-          <label>说话人归属<select aria-label="说话人归属" value={project?.speakers.some(s => s.label === draft.speaker) ? draft.speaker : ''} disabled={busy} onChange={event => setDraft({ ...draft, speaker: event.target.value })}>
+          <label>说话人归属<select aria-label="说话人归属" value={project?.speakers.some(s => s.label === shownDraft!.speaker) ? shownDraft!.speaker : ''} disabled={busy || !!timingPreview} onChange={event => setDraft({ ...draft, speaker: event.target.value })}>
             <option value="" disabled>输入新的说话人名称</option>
             {project?.speakers.map(s => <option value={s.label} key={s.id}>{speakerName(s.id)}</option>)}
           </select></label>
-          <label>说话人名称<input ref={speakerInput} {...fieldProps('speaker')} value={draft.speaker} disabled={busy}
+          <label>说话人名称<input ref={speakerInput} {...fieldProps('speaker')} value={shownDraft!.speaker} disabled={busy || !!timingPreview}
             onChange={event => setDraft({ ...draft, speaker: event.target.value })} /></label>
           <button disabled={busy || !draftChanged} onClick={() => commitDraft()}>应用修改</button>
           <button disabled={busy || !draftChanged} onClick={cancelDraft}>取消修改</button>
@@ -423,7 +449,7 @@ export function App() {
         <button disabled={busy || !session.canRedo || draftChanged || speakerChanged} onClick={() => history(true)}>重做</button>
         <span className="muted">视频轨锁定 · 合法重叠保留</span></div>
       {project ? <SourceTimeline key={project.id} project={project} selected={selected} position={position} busy={busy}
-        onChoose={choose} onSeek={seek} /> : <div className="timeline-empty">工程打开后将在此显示原片与工作字幕</div>}
+        onChoose={choose} onSeek={seek} onBeginEdit={beginTiming} onPreview={previewTiming} onCommitEdit={commitTiming} /> : <div className="timeline-empty">工程打开后将在此显示原片与工作字幕</div>}
     </section>
     {dialog && <div className="modal-backdrop"><section role="dialog" aria-modal="true" aria-labelledby="dialog-title" className="dialog">
       <header><h2 id="dialog-title">{dialog === 'new' ? '新建编辑工程' : dialog === 'replace' ? '整体替换工作字幕' : dialog === 'open' ? '打开工程' : '使用帮助'}</h2>

@@ -87,6 +87,7 @@ video { width: 100%; height: 100%; max-height: 100%; object-fit: contain; }
 .timeline-navigation input { width: 130px; padding: 0; }
 .timeline-navigation output { min-width: 42px; }
 .timeline-navigation button { padding: 3px 8px; }
+.timeline-navigation button[aria-pressed=true] { background: #355275; border-color: #7cbbff; }
 .tracks { overflow: auto; min-height: 0; flex: 1; overscroll-behavior: contain; }
 .timeline-content { position: relative; min-width: 100%; }
 .ruler-row { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: 150px 1fr; height: 30px; background: #1b2330; }
@@ -100,10 +101,20 @@ video { width: 100%; height: 100%; max-height: 100%; object-fit: contain; }
 .track-body { position: relative; overflow: clip; background: repeating-linear-gradient(90deg, transparent, transparent calc(10% - 1px), #2d3544 calc(10% - 1px), #2d3544 10%); }
 .locked { background-color: #262c37; color: #8696ae; padding: 13px; font-size: 11px; }
 .clip { position: absolute; height: 28px; text-align: left; padding: 3px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid #b1c6de66; color: #101925; font-size: 11px; border-radius: 4px; min-width: 4px; }
+.clip { touch-action: none; user-select: none; cursor: grab; }
 .clip > span { padding: 0 8px; }
+.clip > .resize-handle { position: absolute; top: 0; bottom: 0; width: min(7px, 25%); padding: 0; cursor: ew-resize; background: #ffffff30; }
+.resize-handle.start { left: 0; }
+.resize-handle.end { right: 0; }
+.clip:hover > .resize-handle, .clip.selected > .resize-handle { background: #ffffff70; }
+/* Tiny click areas still need a body hit target distinct from both resize handles. */
+.clip.narrow > .resize-handle { width: 100%; height: 7px; left: 0; right: 0; }
+.clip.narrow > .resize-handle.start { top: 0; bottom: auto; }
+.clip.narrow > .resize-handle.end { top: auto; bottom: 0; }
 .clip.selected { outline: 2px solid #e0efff; outline-offset: -2px; }
 .clip.active { box-shadow: inset 0 -4px #164d3d; }
 .playhead { position: absolute; top: 0; bottom: 0; width: 1px; background: #f5a15c; pointer-events: none; }
+.snap-guide { position: absolute; top: 0; bottom: 0; border-left: 2px dashed #80e0e8; pointer-events: none; }
 .error { padding: 10px 18px; background: #542c36; border: 1px solid #b36272; color: #ffe4e7; z-index: 30; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 .error button { padding: 0 8px; margin-left: 12px; }
 .modal-backdrop { position: fixed; inset: 0; background: #050810bb; z-index: 20; display: flex; justify-content: center; align-items: center; padding: 20px; }
