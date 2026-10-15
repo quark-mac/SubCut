@@ -74,3 +74,30 @@ git diff --check
 - 已读取 `webui/frontend/test-results/.last-run.json`，`status: passed` / `failedTests: []`。已核看成功截图 `webui/tests/evidence/ticket-07-batch-editing.jpg`：选中两条，右侧不同值，1500–2500 ms 的第一句在乙轨、3000–4500 ms 的第二人在丙轨，播放头保留原 1 秒，工程已保存；未选重叠和第三人仍存在。README 已记录多选/批量语义、复验入口及新回调契约。
 - 自行审查已提交实现、测试、新文件和文档，范围仅 `webui/` 与本票；没有其他代理。05/06 回归自动刷新的旧截图恢复原版本，本票只提交 07 证据。生产模块、配置与素材未修改。
 - `Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -in 18761,18762 } | Select-Object LocalAddress,LocalPort,OwningProcess` 只返回 `127.0.0.1:18762` / PID `36112`：**18761 已释放，18762 演示保留**。
+
+### 2026-10-16 集成验收
+
+- 合并前确认集成目录 `D:\whisper-diarization` 的 `feat/webui` 为 `fcc327354c747a33e7467b9b0e62af6758c5e8f1`；任务工作树 `C:\Users\machi\AppData\Local\Temp\opencode\webui-worktrees\ticket-07` 的 `feat/webui-07` 为 `fa02b8949d3867329acf231b6cc458b2c323d42c`，包含实现 `7acce024f87b8360c57962656e58c0bba39c4d49` 及验收记录提交。两个工作树均干净，票为 done，差异仅涉及 WebUI 前端、测试、文档和本票；`git diff --check fcc3273 fa02b89` 通过。
+- 实际读取 Comments、已提交批量编辑截图和任务工作树 `.last-run.json`（passed）。在集成目录执行 `git merge --ff-only feat/webui-07`，成功从 `fcc3273` 快进至 `fa02b89`。依赖清单与锁文件未变，复用已安装前端依赖及指定现有 Python 环境。
+- 以下命令均在 `D:\whisper-diarization` 实际执行，全部通过：
+
+```powershell
+& 'D:\whisper-diarization\env\python.exe' -m unittest webui.tests.test_http -v
+# Ran 21 tests in 6.192s — OK，无跳过。
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& 'D:\whisper-diarization\env\python.exe' -m py_compile $Files.FullName
+# 11 个 Python 文件编译通过；本票无 Python 源码改动。
+npm --prefix webui/frontend run typecheck
+# tsc --noEmit 通过。
+npm --prefix webui/frontend run build
+# Vite 7.3.7；35 modules；JS 229.18 kB / gzip 73.34 kB。
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm --prefix webui/frontend run test:browser
+# 44 passed (2.5m)，无跳过：multiselect 11 + 既有 33 项。
+# 真实 Edge + 集成目录生产构建 + 本地 FastAPI。
+```
+
+- 多选十一项覆盖 Ctrl/Shift/框选及双视图去重、播放头稳定、共同/混合属性、批量归属、当前轨序和越界全拒绝、Delete/输入焦点、整体时间夹取与边缘调整、吸附、取消与完整历史、自动保存重开，以及撤销整体替换后的失效 ID 清理。既有浏览器三十三项和 HTTP 二十一项全部通过。
+- 实际核看本次批量编辑截图：选中两条、右侧不同值、乙/丙轨分别显示第一句/第二人，播放头保留原 1 秒、工程已保存，未选条目仍存在。回归重写的 05/06/07 三张截图已复制至被忽略的 `webui/frontend/test-results/`，分别为 `ticket-07-integration-speaker-management.jpg`、`ticket-07-integration-drag-timing.jpg`、`ticket-07-integration-batch-editing.jpg`，随后仅恢复这三张已跟踪截图到合并提交版本。集成 `.last-run.json` 为 passed，测试工程保留于 `.test-workspace/`。
+- 测试前确认 18761 空闲，测试后确认该服务退出；原有 18762 / PID 36112 演示服务保持运行。恢复测试产物后工作树干净，再仅追加本段并独立提交。未启动其他代理，未推送，保留全部工作树。
