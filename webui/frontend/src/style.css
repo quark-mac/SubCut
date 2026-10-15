@@ -32,14 +32,17 @@ h3 { font-size: 12px; color: #acb9cf; margin: 23px 0 8px; }
 .actions button { white-space: nowrap; }
 .projectbar h1 { min-width: 80px; }
 .primary { background: #397bc0; border-color: #5a99de; color: white; }
-.workspace { display: grid; grid-template-columns: minmax(180px, 18%) minmax(350px, 1fr) minmax(320px, 29%); gap: 7px; padding: 7px; flex: 1; min-height: 420px; overflow: hidden; }
+.workspace { display: grid; grid-template-rows: minmax(0, 1fr); padding: 7px 7px 0; flex: 1; min-height: 360px; overflow: hidden; }
+.workspace-splitter { cursor: col-resize; touch-action: none; background: #11141b; outline-offset: -2px; }
+.workspace-splitter:hover, .workspace-splitter:focus { background: #5684ab; }
+.workspace-splitter.horizontal { height: 7px; flex-shrink: 0; margin: 0 7px; cursor: row-resize; }
 .panel { background: #1b202b; border: 1px solid #2d3544; border-radius: 5px; }
 .resources { padding: 16px; overflow: auto; }
 .path { overflow-wrap: anywhere; font-size: 12px; line-height: 1.6; }
 .muted { color: #94a2b8; line-height: 1.7; }
 .resources > .muted { margin-top: 14px; }
 .export { margin: 12px 0; }
-.preview-panel { display: flex; flex-direction: column; padding: 14px; min-width: 0; }
+.preview-panel { display: flex; flex-direction: column; padding: 14px; min-width: 0; min-height: 0; }
 h2 span { color: #8495af; font-size: 11px; font-weight: 400; margin-left: 10px; }
 .video-stage { position: relative; flex: 1; min-height: 0; margin-top: 14px; background: #080b10; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 video { width: 100%; height: 100%; max-height: 100%; object-fit: contain; }
@@ -48,10 +51,17 @@ video { width: 100%; height: 100%; max-height: 100%; object-fit: contain; }
 .subtitle-overlay { position: absolute; bottom: 58px; width: 100%; text-align: center; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .subtitle-overlay > div { background: #05080bd9; color: white; padding: 3px 10px; white-space: pre-wrap; max-width: 95%; font-size: 16px; }
 .transport { display: flex; align-items: center; gap: 14px; padding-top: 15px; }
+.transport { flex-wrap: wrap; }
+.review-transport { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 8px; }
+.review-transport label { flex-direction: row; align-items: center; }
+.review-transport select { width: 72px; }
+.review-transport form { display: flex; gap: 6px; }
+.review-transport input { width: 135px; }
+.review-transport [role=status] { color: #94a2b8; font-size: 11px; }
 .transport output { font-variant-numeric: tabular-nums; color: #b6c5db; font-size: 12px; }
 .transport label { flex-direction: row; margin-left: auto; align-items: center; }
 .hint { font-size: 11px; color: #8496af; margin-top: 12px; line-height: 1.6; }
-.editor { display: flex; flex-direction: column; overflow: hidden; }
+.editor { display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
 .editor > h2 { padding: 14px; border-bottom: 1px solid #303846; }
 .editor-tabs { display: flex; gap: 8px; padding: 8px 12px; border-bottom: 1px solid #303846; }
 .editor-tabs [aria-selected=true] { background: #355275; border-color: #7cbbff; }
@@ -63,7 +73,10 @@ video { width: 100%; height: 100%; max-height: 100%; object-fit: contain; }
 .speaker-card { display: flex; flex-direction: column; gap: 7px; padding: 12px; margin-top: 8px; background: #222a37; border: 1px solid #384254; border-radius: 5px; overflow-wrap: anywhere; }
 .speaker-card.drop-target { border-color: #7cbbff; box-shadow: inset 0 3px #7cbbff; }
 .speaker-drag { cursor: grab; }
-.subtitle-list { flex: 1; min-height: 110px; overflow: auto; padding: 8px; }
+.subtitle-list { flex: 1; min-height: 80px; overflow: auto; padding: 8px; }
+.subtitle-filters { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; }
+.subtitle-filters input { flex: 1 1 100%; min-width: 0; }
+.subtitle-filters select { flex: 1; width: 0; min-width: 100px; }
 .subtitle-row { text-align: left; display: flex; flex-direction: column; width: 100%; gap: 6px; background: #222a37; margin-bottom: 6px; padding: 10px; border-color: transparent; }
 .subtitle-row.selected { border-color: #7cbbff; background: #2c405b; }
 .subtitle-row.active .row-time { color: #93d6c5; }
@@ -142,3 +155,7 @@ video { width: 100%; height: 100%; max-height: 100%; object-fit: contain; }
 .project-list button { text-align: left; }
 .project-list small { color: #96a8c2; }
 .help p { line-height: 1.9; margin-top: 10px; }
+.help table { border-collapse: collapse; width: 100%; margin-top: 16px; text-align: left; }
+.help caption { text-align: left; margin-bottom: 8px; font-weight: 600; }
+.help th, .help td { padding: 8px; border: 1px solid #465064; }
+.help th { white-space: nowrap; }

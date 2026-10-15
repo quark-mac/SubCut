@@ -11,6 +11,7 @@ interface Props {
   onTrack: (id: string) => void;
   onChoose: (entry: Entry, modifiers?: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) => void;
   onSeek: (milliseconds: number) => void;
+  onListen: (entry: Entry) => void;
   onBeginEdit: (id: string) => Entry[] | null;
   onPreview: (entries: Entry[] | null) => void;
   onCommitEdit: (entries: Entry[]) => void;
@@ -37,7 +38,7 @@ interface EditGesture {
   targets: number[];
 }
 
-export function SourceTimeline({ project, selected, position, busy, currentTrack, onTrack, onChoose, onSeek, onBeginEdit, onPreview, onCommitEdit, onBeginSelect, onSelect, onEndSelect }: Props) {
+export function SourceTimeline({ project, selected, position, busy, currentTrack, onTrack, onChoose, onListen, onSeek, onBeginEdit, onPreview, onCommitEdit, onBeginSelect, onSelect, onEndSelect }: Props) {
   const viewport = useRef<HTMLDivElement>(null);
   const ruler = useRef<HTMLDivElement>(null);
   const gesture = useRef<{ pointer: number; start: number } | null>(null);
@@ -50,6 +51,7 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
   const [snapTime, setSnapTime] = useState<number | null>(null);
   const [invalidTrack, setInvalidTrack] = useState(false);
   const suppressClick = useRef(false);
+  const clickedEntry = useRef<string | null>(null);
   const zoomAnchor = useRef<number | null>(null);
   const [fitWidth, setFitWidth] = useState(1000);
   const [zoom, setZoom] = useState(0);
@@ -207,6 +209,7 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
     const current = edit.current;
     if (!current) return;
     edit.current = null;
+    clickedEntry.current = !cancel && !current.moved ? current.entry.id : null;
     if (!cancel && current.moved) onCommitEdit(current.next);
     setPreview(null); setSnapTime(null); setInvalidTrack(false); onPreview(null);
     if (!cancel && !current.moved) onChoose(current.entry);
@@ -279,6 +282,12 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
       }}
       onPointerCancel={() => { finishEdit(true); finishBox(true); }} onLostPointerCapture={() => { finishEdit(true); finishBox(true); }}
       onClickCapture={event => { if (suppressClick.current) { event.stopPropagation(); suppressClick.current = false; } }}
+      onDoubleClick={event => {
+        // Pointer capture retargets native double-clicks to the viewport.
+        const id = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-entry-id]')?.dataset.entryId;
+        const entry = project.entries.find(e => e.id === id && e.id === clickedEntry.current);
+        if (entry && !busy && !event.ctrlKey && !event.metaKey && !event.shiftKey) onListen(entry);
+      }}
       onKeyDown={event => {
         if (edit.current) { event.preventDefault(); event.stopPropagation(); if (event.key === 'Escape') finishEdit(true); }
         if (box.current) { event.preventDefault(); event.stopPropagation(); if (event.key === 'Escape') finishBox(true); }
