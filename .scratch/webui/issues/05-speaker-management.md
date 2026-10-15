@@ -73,3 +73,30 @@ git diff --check
 - 结果：typecheck、build 通过；WebUI 全部 **11 个 Python 文件编译通过**；**21 个 HTTP 测试通过（6.213s）**；**26 个 Edge 浏览器测试通过（53.6s）**，含原有编辑/格式/时间轴全套及本票六个闭环；`git diff --check` 无空白错误。执行了未提交/新增文件范围自查，没有调用其他代理。
 - 附加手动浏览器检查：独立 18761 服务打开自建“05 说话人管理验收”，实际从说话人卡片改名“甲 · 校对”，看到轨名同步、修订 1→2 和“已保存”；公开媒体请求返回 206、保存 PUT 返回 200。真实 Edge 的重开与配色截图：[ticket-05-speaker-management.jpg](../../../webui/tests/evidence/ticket-05-speaker-management.jpg)，1440×1000，已查看。
 - 手动服务 PID 9888 已停止；最终 Playwright 服务自动退出，18761 无监听。原 18762 演示仍监听于 PID 36112，未停止或改写。任务 worktree 保留；提交仅在 `feat/webui-05`，不合入集成、不推送。改动仅限 `webui/`、其 README 与本票。
+
+### 2026-10-16 集成验收
+
+- 合并前确认集成目录 `D:\whisper-diarization` 的 `feat/webui` 为 `3e1d73b42ec6652697fc2b82863eb8e0a28325b9`；任务工作树 `C:\Users\machi\AppData\Local\Temp\opencode\webui-worktrees\ticket-05` 的 `feat/webui-05` 为 `c71b6bc857257077dcae223da7ddb55feb22ab36`。两个工作树均干净，票为 done，差异仅涉及 `webui/` 与本票，`git diff --check 3e1d73b c71b6bc` 通过。
+- 实际核对 Comments、已提交的说话人管理截图及任务工作树 `.last-run.json`（passed）。在集成目录执行 `git merge --ff-only feat/webui-05`，成功从 `3e1d73b` 快进至 `c71b6bc`。依赖清单与锁文件未变，复用已安装前端依赖与指定现有 Python 环境。
+- 以下命令均在 `D:\whisper-diarization` 实际执行，全部通过：
+
+```powershell
+& 'D:\whisper-diarization\env\python.exe' -m unittest webui.tests.test_http -v
+# Ran 21 tests in 6.079s — OK，无跳过。
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& 'D:\whisper-diarization\env\python.exe' -m py_compile $Files.FullName
+# 11 个 Python 文件编译通过。
+npm --prefix webui/frontend run typecheck
+# tsc --noEmit 通过。
+npm --prefix webui/frontend run build
+# Vite 7.3.7；33 modules；JS 219.10 kB / gzip 70.26 kB。
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm --prefix webui/frontend run test:browser
+# 26 passed (53.4s)：editing 11 + exchange 4 + timeline 5 + speakers 6。
+# 真实 Edge + 集成目录生产构建 + 本地 FastAPI。
+```
+
+- HTTP 全套包含人物名称冲突/特殊轨/引用保护和原子保存恢复，以及既有格式、来源、并发修订、真实文件锁失败恢复、媒体接口。浏览器人物六项覆盖创建、改名配色、真实拖放排序、显式合并、删除有字幕/空轨、草稿校验与历史/自动保存/重开；前票二十项全通过。
+- 本次浏览器测试会重写已跟踪截图。已实际读取本次截图，确认人物页签、改名配色、已保存状态与时间轴一致；将其复制保留为被忽略的 `webui/frontend/test-results/ticket-05-integration-speaker-management.jpg`，随后仅恢复该测试改写的已跟踪截图到合并提交版本。集成 `.last-run.json` 为 passed，测试素材与工程保留于 `.test-workspace/`。
+- 测试前确认 18761 空闲，测试后确认该服务已退出；原有 18762 / PID 36112 演示服务保持运行。恢复测试产物后工作树干净，再仅追加本段并单独提交。未启动其他代理，未推送，保留全部既有工作树。
