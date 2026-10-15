@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { api, ordered, timeLabel, type Entry, type ExportFormat, type ImportPreview, type ImportFormat, type Project, type ProjectSummary } from './api';
 import { useProjectSession } from './useProjectSession';
 import { SourceTimeline } from './SourceTimeline';
+import { BatchEditor } from './BatchEditor';
+import { offsetSpeakers } from './selectionEditing';
 import { SpeakerManager, specialSpeaker, type SpeakerDraft } from './SpeakerManager';
 
 interface Draft { text: string; start: string; end: string; speaker: string }
@@ -11,7 +13,10 @@ const exportLabels: Record<ExportFormat, string> = { 'speaker-srt': '说话人 S
 export function App() {
   const session = useProjectSession();
   const { project, dirty } = session;
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const anchor = useRef<string | null>(null);
+  const selected = selectedIds.size === 1 ? [...selectedIds][0] : null;
+  function setSelected(id: string | null) { setSelectedIds(new Set(id ? [id] : [])); anchor.current = id; }
   const [draft, setDraft] = useState<Draft | null>(null);
   const [fieldError, setFieldError] = useState<{ field: keyof Draft; message: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -32,7 +37,7 @@ export function App() {
   const [editorTab, setEditorTab] = useState<'subtitles' | 'speakers'>('subtitles');
   const [speakerDraft, setSpeakerDraft] = useState<SpeakerDraft | null>(null);
   const [speakerError, setSpeakerError] = useState('');
-  const [timingPreview, setTimingPreview] = useState<Entry | null>(null);
+  const [timingPreview, setTimingPreview] = useState<Entry[] | null>(null);
   const timing = useRef(false);
   const video = useRef<HTMLVideoElement>(null);
   const textInput = useRef<HTMLTextAreaElement>(null);
@@ -162,11 +167,29 @@ export function App() {
     });
   }
 
-  function choose(entry: Entry) {
+  function choose(entry: Entry, modifiers?: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) {
     if (busy) return;
     const snapshot = commitDraft();
     if (!snapshot) return;
     const committed = snapshot.entries.find(item => item.id === entry.id)!;
+    if (modifiers?.ctrlKey || modifiers?.metaKey || modifiers?.shiftKey) {
+      const ids = new Set(selectedIds);
+      if (modifiers.shiftKey) {
+        const items = ordered(snapshot.entries);
+        const from = items.findIndex(e => e.id === anchor.current), to = items.findIndex(e => e.id === entry.id);
+        if (!modifiers.ctrlKey && !modifiers.metaKey) ids.clear();
+        for (const item of items.slice(Math.min(from < 0 ? to : from, to), Math.max(from, to) + 1)) ids.add(item.id);
+        if (from < 0) anchor.current = entry.id;
+      } else {
+        if (ids.has(entry.id)) ids.delete(entry.id); else ids.add(entry.id);
+        anchor.current = entry.id;
+      }
+      setSelectedIds(ids);
+      const single = ids.size === 1 ? snapshot.entries.find(e => ids.has(e.id)) : null;
+      setDraft(single ? draftFor(single, snapshot) : null);
+      setEditorTab('subtitles');
+      return;
+    }
     setSelected(committed.id); setDraft(draftFor(committed, snapshot));
     setEditorTab('subtitles');
     if (video.current) { video.current.pause(); video.current.currentTime = committed.start_ms / 1000; }
@@ -180,27 +203,37 @@ export function App() {
     setError(''); setPosition(0); setPlaying(false); setDialog(null);
   }
 
-  function beginTiming(id: string): Entry | null {
+  function selectIds(ids: Set<string>) {
+    const snapshot = session.getProject();
+    setSelectedIds(ids);
+    const single = ids.size === 1 ? snapshot?.entries.find(e => ids.has(e.id)) : null;
+    setDraft(single && snapshot ? draftFor(single, snapshot) : null);
+    setEditorTab('subtitles'); setFieldError(null);
+  }
+
+  function beginTiming(id: string): Entry[] | null {
     const snapshot = commitDraft();
     const entry = snapshot?.entries.find(e => e.id === id);
     if (!snapshot || !entry) return null;
     video.current?.pause();
     timing.current = true;
-    setSelected(id); setDraft(draftFor(entry, snapshot)); setEditorTab('subtitles');
-    return entry;
+    const entries = selectedIds.has(id) ? snapshot.entries.filter(e => selectedIds.has(e.id)) : [entry];
+    if (!selectedIds.has(id)) setSelected(id);
+    setDraft(entries.length === 1 ? draftFor(entry, snapshot) : null); setEditorTab('subtitles');
+    return entries;
   }
 
-  function previewTiming(entry: Entry | null) {
-    setTimingPreview(entry);
-    if (!entry) timing.current = false;
+  function previewTiming(entries: Entry[] | null) {
+    setTimingPreview(entries);
+    if (!entries) timing.current = false;
   }
 
-  function commitTiming(entry: Entry) {
+  function commitTiming(entries: Entry[]) {
     const snapshot = session.getProject();
     if (!snapshot) return;
-    const next = { ...snapshot, entries: snapshot.entries.map(e => e.id === entry.id
-      ? { ...e, start_ms: entry.start_ms, end_ms: entry.end_ms, speaker_id: entry.speaker_id } : e) };
-    session.commit(next); setDraft(draftFor(entry, next)); setFieldError(null); setError('');
+    const byId = new Map(entries.map(e => [e.id, e]));
+    const next = { ...snapshot, entries: snapshot.entries.map(e => byId.get(e.id) ?? e) };
+    session.commit(next); setDraft(entries.length === 1 ? draftFor(entries[0], next) : null); setFieldError(null); setError('');
   }
 
   async function persist(exporting = false) {
@@ -236,6 +269,8 @@ export function App() {
           if (next) choose(next);
         } else if (event.code === 'Space') {
           event.preventDefault(); if (!event.repeat) void togglePlayback();
+        } else if (event.key === 'Delete') {
+          event.preventDefault(); deleteSelected();
         }
       }
     };
@@ -245,20 +280,34 @@ export function App() {
 
   function moveSpeaker(offset: number) {
     const snapshot = commitDraft();
-    const entry = snapshot?.entries.find(e => e.id === selected);
-    if (!snapshot || !entry) return;
-    const speakers = [...snapshot.speakers].sort((a, b) => a.order - b.order);
-    const target = speakers[speakers.findIndex(s => s.id === entry.speaker_id) + offset];
-    if (!target) return;
-    const changed = { ...entry, speaker_id: target.id };
-    const next = { ...snapshot, entries: snapshot.entries.map(e => e.id === entry.id ? changed : e) };
-    session.commit(next); setDraft(draftFor(changed, next));
+    if (!snapshot) return;
+    const changes = offsetSpeakers(snapshot.entries.filter(e => selectedIds.has(e.id)), snapshot.speakers, offset);
+    if (!changes?.length) return;
+    const byId = new Map(changes.map(e => [e.id, e]));
+    const next = { ...snapshot, entries: snapshot.entries.map(e => byId.get(e.id) ?? e) };
+    session.commit(next); setDraft(changes.length === 1 ? draftFor(changes[0], next) : null);
+  }
+
+  function assignSelected(speakerId: string) {
+    const snapshot = commitDraft();
+    if (!snapshot || !snapshot.speakers.some(s => s.id === speakerId)) return;
+    session.commit({ ...snapshot, entries: snapshot.entries.map(e => selectedIds.has(e.id) ? { ...e, speaker_id: speakerId } : e) });
+  }
+
+  function deleteSelected() {
+    const snapshot = commitDraft();
+    if (!snapshot || !snapshot.entries.some(e => selectedIds.has(e.id))) return;
+    session.commit({ ...snapshot, entries: snapshot.entries.filter(e => !selectedIds.has(e.id)) });
+    setSelected(null); setDraft(null); setFieldError(null);
   }
 
   function history(redo: boolean) {
     if (!commitDraft()) return;
     const next = session.travel(redo);
-    const entry = next?.entries.find(e => e.id === selected);
+    const ids = new Set(next?.entries.filter(e => selectedIds.has(e.id)).map(e => e.id));
+    setSelectedIds(ids);
+    if (!next?.entries.some(e => e.id === anchor.current)) anchor.current = null;
+    const entry = ids.size === 1 ? next?.entries.find(e => ids.has(e.id)) : null;
     setDraft(entry && next ? draftFor(entry, next) : null); setFieldError(null); setError('');
   }
 
@@ -310,8 +359,9 @@ export function App() {
     } else video.current.pause();
   }
 
-  const entries = ordered((project?.entries ?? []).map(e => e.id === timingPreview?.id ? timingPreview : e));
-  const shownDraft = timingPreview && project ? draftFor(timingPreview, project) : draft;
+  const previewById = new Map(timingPreview?.map(e => [e.id, e]));
+  const entries = ordered((project?.entries ?? []).map(e => previewById.get(e.id) ?? e));
+  const shownDraft = timingPreview?.length === 1 && project ? draftFor(timingPreview[0], project) : draft;
   const duration = project?.media.duration_ms ?? 1;
   const activeEntries = entries.filter(entry => entry.start_ms <= position && entry.end_ms > position);
   const speakerName = (id: string) => {
@@ -410,15 +460,16 @@ export function App() {
         <h2>字幕 <span>{entries.length} 条</span></h2>
         <div className="subtitle-list" aria-label="字幕列表">
           {entries.map((entry, index) => <button key={entry.id} aria-label={`列表字幕 ${index + 1}`} disabled={busy}
-            className={`subtitle-row ${selected === entry.id ? 'selected' : ''} ${activeEntries.some(active => active.id === entry.id) ? 'active' : ''}`}
-            onClick={() => choose(entry)}>
+            className={`subtitle-row ${selectedIds.has(entry.id) ? 'selected' : ''} ${activeEntries.some(active => active.id === entry.id) ? 'active' : ''}`}
+            aria-pressed={selectedIds.has(entry.id)} onClick={event => choose(entry, event)}>
             <span className="row-time">{index + 1} · {timeLabel(entry.start_ms)} → {timeLabel(entry.end_ms)}</span>
             <span className="row-text">{entry.text}</span>
             <span className="speaker-label" style={{ color: project?.speakers.find(s => s.id === entry.speaker_id)?.color }}>{speakerName(entry.speaker_id)}</span>
           </button>)}
           {!entries.length && <p className="muted">导入后在此选择字幕进行校对</p>}
         </div>
-        {draft ? <div className="entry-editor" onBlur={event => {
+        {selectedIds.size > 1 && project ? <BatchEditor key={[...selectedIds].sort().join(',')} project={project}
+          entries={entries.filter(e => selectedIds.has(e.id))} busy={busy || timing.current} onAssign={assignSelected} /> : draft ? <div className="entry-editor" onBlur={event => {
           if (!event.currentTarget.contains(event.relatedTarget as Node | null)) commitDraft();
         }}>
           <label>字幕正文<textarea ref={textInput} {...fieldProps('text')} value={shownDraft!.text} disabled={busy || !!timingPreview}
@@ -447,8 +498,11 @@ export function App() {
       <div className="timeline-toolbar"><h2>时间轴</h2>
         <button disabled={busy || (!session.canUndo && !draftChanged && !speakerChanged)} onClick={() => history(false)}>撤销</button>
         <button disabled={busy || !session.canRedo || draftChanged || speakerChanged} onClick={() => history(true)}>重做</button>
+        <button disabled={busy || !selectedIds.size || timing.current} onClick={deleteSelected}>删除选中字幕</button>
         <span className="muted">视频轨锁定 · 合法重叠保留</span></div>
-      {project ? <SourceTimeline key={project.id} project={project} selected={selected} position={position} busy={busy}
+      {project ? <SourceTimeline key={project.id} project={project} selected={selectedIds} position={position} busy={busy}
+        onBeginSelect={() => { if (!commitDraft()) return false; timing.current = true; return true; }}
+        onSelect={selectIds} onEndSelect={() => { timing.current = false; }}
         onChoose={choose} onSeek={seek} onBeginEdit={beginTiming} onPreview={previewTiming} onCommitEdit={commitTiming} /> : <div className="timeline-empty">工程打开后将在此显示原片与工作字幕</div>}
     </section>
     {dialog && <div className="modal-backdrop"><section role="dialog" aria-modal="true" aria-labelledby="dialog-title" className="dialog">

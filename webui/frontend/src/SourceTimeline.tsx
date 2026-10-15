@@ -1,16 +1,20 @@
 import { useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { ordered, timeLabel, type Entry, type Project } from './api';
+import { offsetSpeakers } from './selectionEditing';
 
 interface Props {
   project: Project;
-  selected: string | null;
+  selected: Set<string>;
   position: number;
   busy: boolean;
-  onChoose: (entry: Entry) => void;
+  onChoose: (entry: Entry, modifiers?: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) => void;
   onSeek: (milliseconds: number) => void;
-  onBeginEdit: (id: string) => Entry | null;
-  onPreview: (entry: Entry | null) => void;
-  onCommitEdit: (entry: Entry) => void;
+  onBeginEdit: (id: string) => Entry[] | null;
+  onPreview: (entries: Entry[] | null) => void;
+  onCommitEdit: (entries: Entry[]) => void;
+  onBeginSelect: () => boolean;
+  onSelect: (ids: Set<string>) => void;
+  onEndSelect: () => void;
 }
 
 const labelWidth = 150;
@@ -21,23 +25,28 @@ interface EditGesture {
   clientX: number;
   clientY: number;
   entry: Entry;
+  entries: Entry[];
   origin: number;
   y: number;
   mode: 'move' | 'start' | 'end';
   moved: boolean;
   horizontal: boolean;
-  next: Entry;
+  next: Entry[];
   targets: number[];
 }
 
-export function SourceTimeline({ project, selected, position, busy, onChoose, onSeek, onBeginEdit, onPreview, onCommitEdit }: Props) {
+export function SourceTimeline({ project, selected, position, busy, onChoose, onSeek, onBeginEdit, onPreview, onCommitEdit, onBeginSelect, onSelect, onEndSelect }: Props) {
   const viewport = useRef<HTMLDivElement>(null);
   const ruler = useRef<HTMLDivElement>(null);
   const gesture = useRef<{ pointer: number; start: number } | null>(null);
   const edit = useRef<EditGesture | null>(null);
-  const [preview, setPreview] = useState<Entry | null>(null);
+  const box = useRef<{ pointer: number; x: number; y: number; clientX: number; clientY: number; original: Set<string>; additive: boolean } | null>(null);
+  const [marquee, setMarquee] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  const [preview, setPreview] = useState<Entry[] | null>(null);
+  const previewById = new Map(preview?.map(e => [e.id, e]));
   const [snapping, setSnapping] = useState(true);
   const [snapTime, setSnapTime] = useState<number | null>(null);
+  const [invalidTrack, setInvalidTrack] = useState(false);
   const suppressClick = useRef(false);
   const zoomAnchor = useRef<number | null>(null);
   const [fitWidth, setFitWidth] = useState(1000);
@@ -127,14 +136,20 @@ export function SourceTimeline({ project, selected, position, busy, onChoose, on
     if (busy || event.button !== 0 || edit.current || gesture.current) return;
     event.preventDefault();
     suppressClick.current = true;
-    const original = onBeginEdit(entry.id);
-    if (!original) return;
+    if (event.ctrlKey || event.metaKey || event.shiftKey) {
+      onChoose(entry, event);
+      viewport.current!.focus({ preventScroll: true });
+      return;
+    }
+    const originals = onBeginEdit(entry.id);
+    const original = originals?.find(e => e.id === entry.id);
+    if (!originals || !original) return;
     viewport.current!.focus({ preventScroll: true });
     const edge = (event.target as HTMLElement).closest<HTMLElement>('[data-edge]')?.dataset.edge;
     edit.current = { pointer: event.pointerId, clientX: event.clientX, clientY: event.clientY,
-      entry: original, next: original, origin: pointerTime(event.clientX), y: event.clientY,
+      entry: original, entries: originals, next: originals, origin: pointerTime(event.clientX), y: event.clientY,
       mode: edge === 'start' || edge === 'end' ? edge : 'move', moved: false, horizontal: false,
-      targets: [...new Set([position, ...project.entries.filter(e => e.id !== entry.id).flatMap(e => [e.start_ms, e.end_ms])])] };
+      targets: [...new Set([position, ...project.entries.filter(e => !originals.some(item => item.id === e.id)).flatMap(e => [e.start_ms, e.end_ms])])] };
     viewport.current!.setPointerCapture(event.pointerId);
   }
 
@@ -149,11 +164,11 @@ export function SourceTimeline({ project, selected, position, busy, onChoose, on
     let delta = current.horizontal ? Math.round(rawDelta) : 0;
     if (!current.moved && delta === 0 && Math.abs(event.clientY - current.y) < 3) return;
     current.moved = true;
-    const min = current.mode === 'end' ? current.entry.start_ms + 1 - current.entry.end_ms : -current.entry.start_ms;
-    const max = current.mode === 'start' ? current.entry.end_ms - 1 - current.entry.start_ms : duration - current.entry.end_ms;
+    const min = Math.max(...current.entries.map(e => current.mode === 'end' ? e.start_ms + 1 - e.end_ms : -e.start_ms));
+    const max = Math.min(...current.entries.map(e => current.mode === 'start' ? e.end_ms - 1 - e.start_ms : duration - e.end_ms));
     let snapped: number | null = null;
     if (snapping && current.horizontal) {
-      const edges = current.mode === 'start' ? [current.entry.start_ms] : current.mode === 'end' ? [current.entry.end_ms] : [current.entry.start_ms, current.entry.end_ms];
+      const edges = current.entries.flatMap(e => current.mode === 'start' ? [e.start_ms] : current.mode === 'end' ? [e.end_ms] : [e.start_ms, e.end_ms]);
       let distance = Infinity, correction = 0;
       for (const target of current.targets) for (const edge of edges) {
         const offset = target - (edge + delta);
@@ -164,15 +179,25 @@ export function SourceTimeline({ project, selected, position, busy, onChoose, on
       delta += correction;
     }
     setSnapTime(snapped);
-    const shift = Math.max(-current.entry.start_ms, Math.min(duration - current.entry.end_ms, delta));
+    const shift = Math.max(min, Math.min(max, delta));
     const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-speaker-id]')?.dataset.speakerId;
     const speaker = project.speakers.find(s => s.id === target);
-    current.next = current.mode === 'start'
-      ? { ...current.entry, start_ms: Math.max(0, Math.min(current.entry.end_ms - 1, current.entry.start_ms + delta)) }
+    current.next = current.entries.map(e => current.mode === 'start'
+      ? { ...e, start_ms: e.start_ms + shift }
       : current.mode === 'end'
-        ? { ...current.entry, end_ms: Math.max(current.entry.start_ms + 1, Math.min(duration, current.entry.end_ms + delta)) }
-        : { ...current.entry, start_ms: current.entry.start_ms + shift, end_ms: current.entry.end_ms + shift,
-          speaker_id: speaker?.id ?? current.entry.speaker_id };
+        ? { ...e, end_ms: e.end_ms + shift }
+        : { ...e, start_ms: e.start_ms + shift, end_ms: e.end_ms + shift,
+          speaker_id: current.entries.length === 1 ? speaker?.id ?? e.speaker_id : e.speaker_id });
+    let rejected = false;
+    if (current.mode === 'move' && speaker && current.entries.length > 1) {
+      const tracks = [...project.speakers].sort((a, b) => a.order - b.order);
+      const offset = tracks.findIndex(s => s.id === speaker.id) - tracks.findIndex(s => s.id === current.entry.speaker_id);
+      const shifted = offsetSpeakers(current.next, tracks, offset);
+      rejected = !shifted;
+      current.next = shifted ?? current.entries;
+    }
+    setInvalidTrack(rejected);
+    if (rejected) setSnapTime(null);
     setPreview(current.next); onPreview(current.next);
   }
 
@@ -181,8 +206,55 @@ export function SourceTimeline({ project, selected, position, busy, onChoose, on
     if (!current) return;
     edit.current = null;
     if (!cancel && current.moved) onCommitEdit(current.next);
-    setPreview(null); setSnapTime(null); onPreview(null);
+    setPreview(null); setSnapTime(null); setInvalidTrack(false); onPreview(null);
     if (!cancel && !current.moved) onChoose(current.entry);
+    if (viewport.current?.hasPointerCapture(current.pointer)) viewport.current.releasePointerCapture(current.pointer);
+  }
+
+  function contentPoint(clientX: number, clientY: number) {
+    const element = viewport.current!;
+    const rect = element.getBoundingClientRect();
+    return { x: clientX - rect.left + element.scrollLeft, y: clientY - rect.top + element.scrollTop };
+  }
+
+  function beginBox(event: PointerEvent<HTMLDivElement>) {
+    if (busy || event.button !== 0 || edit.current || gesture.current || box.current ||
+      !(event.target as HTMLElement).closest('.track-body:not(.locked)') || (event.target as HTMLElement).closest('.clip')) return;
+    if (!onBeginSelect()) return;
+    event.preventDefault();
+    viewport.current!.focus({ preventScroll: true });
+    const point = contentPoint(event.clientX, event.clientY);
+    box.current = { pointer: event.pointerId, ...point, clientX: event.clientX, clientY: event.clientY,
+      original: new Set(selected), additive: event.ctrlKey || event.metaKey || event.shiftKey };
+    suppressClick.current = true;
+    viewport.current!.setPointerCapture(event.pointerId);
+    moveBox(event);
+  }
+
+  function moveBox(event: Pick<PointerEvent, 'pointerId' | 'clientX' | 'clientY'>) {
+    const current = box.current;
+    if (!current || current.pointer !== event.pointerId) return;
+    current.clientX = event.clientX; current.clientY = event.clientY;
+    const point = contentPoint(event.clientX, event.clientY);
+    const left = Math.min(current.x, point.x), top = Math.min(current.y, point.y);
+    const right = Math.max(current.x, point.x), bottom = Math.max(current.y, point.y);
+    setMarquee({ left, top, width: right - left, height: bottom - top });
+    const ids = new Set(current.additive ? current.original : []);
+    if (right - left >= 3 || bottom - top >= 3) {
+      for (const clip of viewport.current!.querySelectorAll<HTMLElement>('[data-entry-id]')) {
+        const rect = clip.getBoundingClientRect(), origin = contentPoint(rect.left, rect.top);
+        if (origin.x <= right && origin.x + rect.width >= left && origin.y <= bottom && origin.y + rect.height >= top) ids.add(clip.dataset.entryId!);
+      }
+    }
+    onSelect(ids);
+  }
+
+  function finishBox(cancel: boolean) {
+    const current = box.current;
+    if (!current) return;
+    box.current = null;
+    if (cancel) onSelect(current.original);
+    setMarquee(null); onEndSelect();
     if (viewport.current?.hasPointerCapture(current.pointer)) viewport.current.releasePointerCapture(current.pointer);
   }
 
@@ -194,19 +266,25 @@ export function SourceTimeline({ project, selected, position, busy, onChoose, on
         onChange={event => changeZoom(Number(event.target.value))} /></label>
       <output aria-label="缩放倍率">{2 ** zoom}×</output>
       <button onClick={() => changeZoom(0)} disabled={!!preview}>适合全片</button>
-      <span>{preview ? `预览 ${timeLabel(preview.start_ms)} → ${timeLabel(preview.end_ms)}${snapTime !== null ? ' · 已吸附' : ''} · 松开提交 / Esc 取消` : '拖动字幕或两端调整 · 拖动刻度定位 · Shift+滚轮横移'}</span>
+      <span>{invalidTrack ? '轨道越界 · 整次移动不执行' : preview ? `预览 ${preview.length} 条 · ${timeLabel(preview[0].start_ms)} → ${timeLabel(preview[0].end_ms)}${snapTime !== null ? ' · 已吸附' : ''} · 松开提交 / Esc 取消` : '拖动字幕或两端调整 · 空白框选 · Ctrl/Shift 多选 · 拖动刻度定位'}</span>
     </div>
     <div className="tracks" ref={viewport} role="region" aria-label="时间轴轨道滚动区" tabIndex={0}
-      onPointerMove={moveEdit}
-      onPointerUp={event => { if (edit.current?.pointer === event.pointerId) { moveEdit(event); finishEdit(false); } }}
-      onPointerCancel={() => finishEdit(true)} onLostPointerCapture={() => finishEdit(true)}
+      onPointerDown={beginBox}
+      onPointerMove={event => { moveEdit(event); moveBox(event); }}
+      onPointerUp={event => {
+        if (edit.current?.pointer === event.pointerId) { moveEdit(event); finishEdit(false); }
+        if (box.current?.pointer === event.pointerId) { moveBox(event); finishBox(false); }
+      }}
+      onPointerCancel={() => { finishEdit(true); finishBox(true); }} onLostPointerCapture={() => { finishEdit(true); finishBox(true); }}
       onClickCapture={event => { if (suppressClick.current) { event.stopPropagation(); suppressClick.current = false; } }}
       onKeyDown={event => {
         if (edit.current) { event.preventDefault(); event.stopPropagation(); if (event.key === 'Escape') finishEdit(true); }
+        if (box.current) { event.preventDefault(); event.stopPropagation(); if (event.key === 'Escape') finishBox(true); }
       }}
       onScroll={event => {
         setScrollLeft(event.currentTarget.scrollLeft);
         if (edit.current) moveEdit({ pointerId: edit.current.pointer, clientX: edit.current.clientX, clientY: edit.current.clientY });
+        if (box.current) moveBox({ pointerId: box.current.pointer, clientX: box.current.clientX, clientY: box.current.clientY });
       }}>
       <div className="timeline-content" style={{ width: width + labelWidth }}>
         <div className="ruler-row">
@@ -235,17 +313,17 @@ export function SourceTimeline({ project, selected, position, busy, onChoose, on
           <div className="track-label" style={{ color: track.color }}>{track.label}</div>
           <div className={`track-body ${track.id === 'video' ? 'locked' : ''}`} style={{ height: track.height }}>
             {track.id === 'video' && <span>原片 · {timeLabel(duration)} · 锁定</span>}
-            {[...track.blocks.filter(b => !preview || b.entry.id !== preview.id || track.id === 'overview' || track.id === preview.speaker_id),
-              ...(preview && track.id === preview.speaker_id && !track.blocks.some(b => b.entry.id === preview.id)
-                ? [{ entry: preview, lane: 0, left: Math.min(preview.start_ms / duration * width, width - 4), width: Math.max(4, (preview.end_ms - preview.start_ms) / duration * width) }] : []),
+            {[...track.blocks.filter(b => !previewById.has(b.entry.id) || track.id === 'overview' || track.id === previewById.get(b.entry.id)!.speaker_id),
+              ...(preview ?? []).filter(e => track.id === e.speaker_id && !track.blocks.some(b => b.entry.id === e.id))
+                .map((entry, lane) => ({ entry, lane, left: Math.min(entry.start_ms / duration * width, width - 4), width: Math.max(4, (entry.end_ms - entry.start_ms) / duration * width) })),
             ].map(({ entry: original, lane, left, width: blockWidth }) => {
-              const entry = preview?.id === original.id ? preview : original;
+              const entry = previewById.get(original.id) ?? original;
               const previewLeft = Math.min(entry.start_ms / duration * width, width - 4);
               const displayWidth = entry === original ? blockWidth : Math.max(4, entry.end_ms / duration * width - previewLeft);
-              return <button key={entry.id} disabled={busy}
-              className={`clip ${displayWidth < 12 ? 'narrow' : ''} ${selected === entry.id ? 'selected' : ''} ${entry.start_ms <= position && entry.end_ms > position ? 'active' : ''}`}
-              aria-pressed={selected === entry.id} aria-label={`${track.label}：${entry.text}`} title={`${timeLabel(entry.start_ms)} → ${timeLabel(entry.end_ms)}\n${entry.text}`}
-              onPointerDown={event => beginEdit(event, entry)} onClick={() => onChoose(entry)}
+              return <button key={entry.id} disabled={busy} data-entry-id={entry.id}
+              className={`clip ${displayWidth < 12 ? 'narrow' : ''} ${selected.has(entry.id) ? 'selected' : ''} ${entry.start_ms <= position && entry.end_ms > position ? 'active' : ''}`}
+              aria-pressed={selected.has(entry.id)} aria-label={`${track.label}：${entry.text}`} title={`${timeLabel(entry.start_ms)} → ${timeLabel(entry.end_ms)}\n${entry.text}`}
+              onPointerDown={event => beginEdit(event, entry)} onClick={event => onChoose(entry, event)}
               style={{ left: entry === original ? left : previewLeft,
                 width: displayWidth,
                 top: lane * 35 + 4, backgroundColor: colors.get(entry.speaker_id) }}>
@@ -258,6 +336,7 @@ export function SourceTimeline({ project, selected, position, busy, onChoose, on
             {snapTime !== null && <div className="snap-guide" style={{ left: `${snapTime / duration * 100}%` }} />}
           </div>
         </div>)}
+        {marquee && <div className="selection-marquee" aria-label="框选范围" style={marquee} />}
       </div>
     </div>
   </>;
