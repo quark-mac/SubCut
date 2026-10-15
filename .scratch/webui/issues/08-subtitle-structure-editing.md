@@ -71,3 +71,31 @@ git diff --check
 - 已实际查看 `webui/tests/evidence/ticket-08-structure-editing.jpg`：工程已保存、共 5 条；总览显示片头新增、两段完整长句与未选同时间条目；选中跨人合并结果为 `4000–7000 ms`、`?`、两行“间隙之后 / 后句”，预览在原片 4 秒显示同一正文。
 - 最终四格式闭环工程：`f7f5cb49-99c1-431c-9582-f1422d1af781`，保留在 `webui/frontend/.test-workspace/projects/`。实际输出清单 `webui/frontend/.test-workspace/ticket-08-artifacts.json` 已读取，并逐个读取其五份文件（四格式 + 显式元标签 SRT）：SRT / JSONL 连续编号 1–5；两段拆分均为全文、各自保留 `[9,9,2]`；新增来源 `[]`；合并来源 `[8,0,70]` 且元标签 `MULTI/CUSTOM/MERGED`；MOSS 五字段、五个独立 UUID，来源输入文件保持原文。浏览器还验证公开下载与实际文件逐字一致。
 - 端口检查：`Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -in 18761,18762 } | Select-Object LocalAddress,LocalPort,OwningProcess` 只返回 **127.0.0.1:18762 / PID 36112**。**18761 测试服务已退出，18762 原演示保留**。任务 worktree 保留。
+
+### 2026-10-16 集成验收
+
+- 合并前确认集成目录 `D:\whisper-diarization` 的 `feat/webui` 为 `3bfd0267554a343b00606b561ed16741b543677d`；任务工作树 `C:\Users\machi\AppData\Local\Temp\opencode\webui-worktrees\ticket-08` 的 `feat/webui-08` 为 `91b73ce329687afd5766a8edc53ee8448a845294`，包含实现 `3465e59ee3cd43c9af0c0a4a9494006a82f6b86b` 及验收记录提交。两个工作树均干净，票为 done，差异仅涉及 WebUI 前端、测试、文档与本票；`git diff --check 3bfd026 91b73ce` 通过。
+- 实际读取 Comments、已提交结构编辑截图、任务工作树 `.last-run.json`（passed）、产物清单与实际 JSONL，确认拆分全文/重复来源、合并标签/来源及新增空来源。集成目录执行 `git merge --ff-only feat/webui-08`，成功从 `3bfd026` 快进至 `91b73ce`。依赖清单及锁文件未变，复用已有前端依赖和指定 Python 环境。
+- 以下命令均在 `D:\whisper-diarization` 实际执行，全部通过：
+
+```powershell
+& 'D:\whisper-diarization\env\python.exe' -m unittest webui.tests.test_http -v
+# Ran 21 tests in 6.243s — OK，无跳过。
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& 'D:\whisper-diarization\env\python.exe' -m py_compile $Files.FullName
+# 11 个 Python 文件编译通过；本票无 Python 源码改动。
+npm --prefix webui/frontend run typecheck
+# tsc --noEmit 通过。
+npm --prefix webui/frontend run build
+# Vite 7.3.7；38 modules；JS 234.54 kB / gzip 74.76 kB。
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm --prefix webui/frontend run test:browser
+# 53 passed (3.0m)，无跳过：structure 9 + 既有 44 项。
+# 真实 Edge + 集成目录生产构建 + 本地 FastAPI。
+```
+
+- 结构编辑九项覆盖新增片头/普通位置/片尾/终点、明确空轨目标、内部单选拆分复制全文、全体工作集连续性、重叠/间隙/跨人合并、取消与一步历史、完整来源/身份、保存重开及四格式实际文件。既有浏览器四十四项和 HTTP 二十一项全部通过。
+- 本次闭环工程为 `fca16f7e-c91b-4357-b420-94007ba428f9`，产物清单保留于集成目录 `webui/frontend/.test-workspace/ticket-08-artifacts.json`。已实际核看截图及 JSONL：共五条、两段完整长句各保留 `[9,9,2]`，新增来源 `[]`，合并结果 4000–7000 ms / `?` / 两行正文、来源 `[8,0,70]` 与 `MULTI/CUSTOM/MERGED`。
+- 回归重写的 05/06/07/08 四张截图已复制至被忽略的 `webui/frontend/test-results/`，名称为 `ticket-08-integration-speaker-management.jpg`、`ticket-08-integration-drag-timing.jpg`、`ticket-08-integration-batch-editing.jpg`、`ticket-08-integration-structure-editing.jpg`；随后仅恢复这四张已跟踪截图到合并提交版本。集成 `.last-run.json` 为 passed，测试工程与实际产物保留。
+- 测试前确认 18761 空闲，测试后确认该服务退出；原有 18762 / PID 36112 演示服务保持运行。恢复测试产物后工作树干净，再仅追加本段并独立提交。未启动其他代理，未推送，保留全部工作树。
