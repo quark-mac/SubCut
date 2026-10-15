@@ -1,6 +1,6 @@
 # 06: 字幕拖动、边界调整与吸附
 
-Status: in-progress
+Status: done
 Blocked by: 04
 Spec: [WebUI 字幕与说话人编辑器](../spec.md)
 
@@ -14,14 +14,14 @@ Spec: [WebUI 字幕与说话人编辑器](../spec.md)
 
 ## Acceptance criteria
 
-- [ ] 横向拖动改变起止时间并保持时长；边缘拖动改变开始或结束，保持媒体范围内的正时长。
-- [ ] 纵向拖动改变说话人且时间不变；斜向拖动同时改变时间和归属，作为一次提交和一步历史。
-- [ ] 从总览与说话人视图操作的是同一条目，释放后右侧、另一视图及保存结果一致；拖向总览不清空归属。
-- [ ] 时间边界限制在媒体范围内；合法重叠保留，其他条目不被自动移动、裁剪或删除。
-- [ ] 吸附按钮可开关，目标为播放头及字幕边界；关闭后可自由微调并在时间字段看到毫秒结果。
-- [ ] 在不同缩放和滚动位置，拖动结果与刻度一致；未命中有效归属目标不能写入无效说话人引用。
-- [ ] 一次完整拖动仅产生一步撤销，拖动预览不反复持久保存中间状态；Esc 取消回到手势前状态且不增加历史。
-- [ ] 有效提交触发已有自动保存，撤销/重做和重开工程保持一致。
+- [x] 横向拖动改变起止时间并保持时长；边缘拖动改变开始或结束，保持媒体范围内的正时长。
+- [x] 纵向拖动改变说话人且时间不变；斜向拖动同时改变时间和归属，作为一次提交和一步历史。
+- [x] 从总览与说话人视图操作的是同一条目，释放后右侧、另一视图及保存结果一致；拖向总览不清空归属。
+- [x] 时间边界限制在媒体范围内；合法重叠保留，其他条目不被自动移动、裁剪或删除。
+- [x] 吸附按钮可开关，目标为播放头及字幕边界；关闭后可自由微调并在时间字段看到毫秒结果。
+- [x] 在不同缩放和滚动位置，拖动结果与刻度一致；未命中有效归属目标不能写入无效说话人引用。
+- [x] 一次完整拖动仅产生一步撤销，拖动预览不反复持久保存中间状态；Esc 取消回到手势前状态且不增加历史。
+- [x] 有效提交触发已有自动保存，撤销/重做和重开工程保持一致。
 
 ## Verification
 
@@ -45,3 +45,15 @@ Spec: [WebUI 字幕与说话人编辑器](../spec.md)
   5. `-g 'Esc|缩放横纵'`：Esc 取消与重做分支测试直接通过已有取消实现；缩放测试先修正测试定位（真实 hover 避开 sticky 刻度），随后实际暴露按住滚轮后预览仍停在 5100 ms。增加 scroll 时重新计算手势后转绿；2×/8×、横纵滚动与固定 pointer 下滚轮预览通过。
   6. `-g 高倍率`：8× 屏幕阈值和 1 ms 调整通过，但 4 px 极短块中部实际命中了结束手柄，整体移动仍停在 7999 ms。根据浏览器实际 hit target 修正极窄块的手柄排布（开始在顶部、结束在底部，中部保留移动），完整测试转绿；极短块及两端均保持真实毫秒，并可保存重开。
 - 上述每轮实际命令统一使用 `$env:WEBUI_PYTHON='D:\whisper-diarization\env\python.exe'; $env:WEBUI_BROWSER='msedge'`，`npm --prefix webui/frontend run build` 后运行 `npm --prefix webui/frontend run test:browser -- drag-timing.spec.ts` 或所列 `-g`。前 6 项完成时已有全量浏览器 32/32、HTTP 21/21 通过；最终集成同步和完整复验见下方完成记录。
+
+### 完成与集成基线复验
+
+- 实现提交：`48036e4`（`feat(webui): add atomic subtitle drag resize and snapping`）。在 `ticket-06` / `feat/webui-06` 执行 `git merge feat/webui`，输出 `Already up to date.`；集成分支与 merge-base 均为 `9d9266706eaeee3ebf7a3529f3ef597d36adc4a0`。随后执行以下最终验证，未将任务合入集成、未推送。
+- `npm --prefix webui/frontend run typecheck`：通过。
+- `npm --prefix webui/frontend run build`：通过，Vite 33 modules。
+- `$env:WEBUI_PYTHON='D:\whisper-diarization\env\python.exe'; $env:WEBUI_BROWSER='msedge'; npm --prefix webui/frontend run test:browser`：**33/33 passed**（约 1.6 分钟）；其中本票 7 项真实 pointer 测试全部通过，既有 editing / exchange / speakers / timeline 全部通过。
+- `& 'D:\whisper-diarization\env\python.exe' -m unittest webui.tests.test_http -v`：**21/21 OK**（6.203 秒）。
+- `$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }; & 'D:\whisper-diarization\env\python.exe' -m py_compile $Files.FullName`：通过；本票未改 Python。
+- `git diff --check`：通过。自行检查本票完整已提交实现及测试、文档，确认只修改 `webui/` 与本票；既有 speaker 截图被回归自动生成，恢复为原版本，不纳入本票提交。
+- 成功截图 `webui/tests/evidence/ticket-06-drag-timing.jpg` 已读取核看：原片 2 秒、右侧 2000–3000 ms、总览与甲轨同条目、重叠保留、重开后无历史，保存状态一致。README 记录拖动、极窄手柄、吸附阈值及公共回调契约。
+- 服务检查：`Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -in 18761,18762 } | Select-Object LocalAddress,LocalPort,OwningProcess` 仅返回 `127.0.0.1:18762` / PID `36112`；**18761 已释放，18762 演示保留**。任务工作树保留。
