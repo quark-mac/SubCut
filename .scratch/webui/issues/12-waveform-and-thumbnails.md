@@ -174,3 +174,32 @@ exit $LASTEXITCODE
 - 全量及部分诊断运行仍打印 Windows asyncio `WinError 10054`（浏览器取消/关闭连接时），没有造成断言失败。PowerShell 将 npm 转发的服务 stderr 标成 `NativeCommandError`，实际 npm / Playwright 退出码为 0；未隐藏这些输出，也未据此误报失败或重试。
 - 本轮测试前没有用户未提交改动。全量重写的票 05–11 证据仅恢复本轮生成变化，本提交保留票 12 更新/新增证据，不修改其他票和生产模块。未改变测试超时、生产最短时长或 FFmpeg 时间基准；修复范围限于 WebUI、README、本票。
 - 最后核查 18761/18762/18763/18764 均无监听，无属于本工作树的 WebUI Python / ffmpeg / ffprobe 残留。恢复 done 表示本修复工作树针对 `f0426cf` 的规定验收全绿；**不声称修复已经合入集成**。唯一写入者，未派生代理、未合入 `feat/webui`、未推送，保留工作树供集成人复验。
+
+### 2026-10-16 修复集成复验：通过，解除票 13 前置阻塞
+
+- 合并前集成目录 `D:\whisper-diarization` / `feat/webui` 为 `f0426cf6a6512f7ac28100a819cd10a8b31b2aa9`，任务工作树 `ticket-12` / `feat/webui-12` 为指定 `ac96e1ea2503647352ffd25798dfd4172bec51c9`；两者干净，票为 done。祖先检查与 `git diff --check f0426cf ac96e1e` 通过，改动限于 WebUI、README、本票及证据。已核对 Comments、diagnosis/progress/fast JSON、真实进度截图和任务工作树 passed JSON/最终日志。
+- 根因证据与代码一致：原 54 秒纯色源实际约 0.17 秒完成，可能只读到 running/0 和 succeeded/1；image2 在保留 `-copyts -start_at_zero` 时 out_time_us 还不能准确表示采样完成度。改用真实 `frame × interval_ms / duration_ms`，成功发布前最多 99%。旧算法在真实长素材上返回 48/240 帧对应 0.175、而应为 0.2 的反证已读取。没有修改时间基准、采样/编码参数、250ms 轮询或增加人为最短时长。短任务可以直接完成，持续进度由真实 240 秒移动画面素材验收。
+- 等待保存期间丢意图的独立根因及红绿记录已核对：同工程刷新推进 epoch，原代码因此在 POST 前返回；修复先比较工程/源/选项 key，保存成功后再捕获当前 epoch 保护新回执，POST 前仍作废旧 GET。新回归使用真实 PUT，仅延迟保存回执；不把换工程/换源/换参数当作同一意图。票 11 hook、旧 GET 回归及 Playwright 配置均未改，没有加 timeout。
+- 在集成目录执行 `git merge --ff-only feat/webui-12`，成功从 `f0426cf` 快进到 `ac96e1e`。依赖未变，复用已有前端依赖和指定 Python。所有 shell 显式使用集成目录为 workdir，实际执行：
+
+```powershell
+npm --prefix webui/frontend run typecheck
+# 通过。
+npm --prefix webui/frontend run build
+# 通过；Vite 7.3.7，47 modules；JS 258.59 kB / gzip 83.02 kB。
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& 'D:\whisper-diarization\env\python.exe' -m py_compile $Files.FullName
+# 16 个 Python 文件通过。
+& 'D:\whisper-diarization\env\python.exe' -m unittest discover -s webui/tests -p 'test_*.py' -v
+# 38/38 通过，32.523s，无跳过；HTTP 26 + preview/启动入口 7 + timeline-media 5。
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm --prefix webui/frontend run test:browser
+# 76/76 通过（4.6m），无跳过、无重跑，退出码 0。
+# 后端/浏览器命令实际使用 2>&1 | Tee-Object 保存日志并透传原退出码。
+```
+
+- 本轮持续进度工程 `9a4ead20-3e8d-4309-bec7-30051c674d13` / 任务 `28e24a3c-e91f-4f9b-a323-57f32606938e`：真实回执 18/240（7.5%）→ 51/240（21.25%）→ 118/240 → 144/240 → 182/240 → 221/240，240 帧后 99%，发布后 succeeded/100%。独立核对所有 running 比例、完成任务的 sampled_frames/240 帧及 ZIP 完整 SHA-256 均一致；已核看 UI“运行中 · 21%”且视频轨未挂载未完成缩略图。原 54 秒快速任务工程 `b8c79e76-6050-43a4-9462-cdb795598b25` 只有 succeeded/1 回执仍正常完成。等待保存期间刷新用例通过，字幕文本和产物归属正确。
+- 波形/缩略图原片时间对齐、+5 秒 PTS / +500ms 延迟音轨、预览前后一致、无音轨、缓存重启复用/参数/源/产物失效、失败重试和工程切换隔离继续通过。票 11 完整音画及旧 GET / 新 small 回归继续通过。没有用旧工作树全绿或重跑代替本轮集成结果；原 73/1 失败归档未覆盖。
+- 本轮日志位于 `webui/frontend/.test-workspace/ticket-12-fix-integration-{backend,browser}.log`。PowerShell 对普通原生命令 stderr 的 NativeCommandError 包装包含 unittest/Uvicorn 日志，实际测试退出码均为 0。passed JSON、进度/竞态附件、完成任务和 20 个回归重写证据已归档至被忽略的 `webui/frontend/.test-workspace/ticket-12-fix-integration-verified/`。仅恢复本轮改写的已跟踪证据到合并版本，实际媒体/工程保留；恢复后工作树干净，再仅追加本段并独立提交。
+- 最后检查 18761/18762/18763/18764 均无监听，无 WebUI Python / ffmpeg / ffprobe 残留；未重启演示服务。保留全部工作树、未推送、未启动代理。**票 12 修复集成验收通过，原进度阻塞解除，票 13 前置验收门槛满足；本会话未启动或实现票 13。**
