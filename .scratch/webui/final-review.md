@@ -98,3 +98,34 @@ npm --prefix webui/frontend run test:browser
 - 测试改写的旧票证据 **27 份** 另存 [regressions](../../webui/tests/evidence/final-review/regressions/) 及 [SHA-256 manifest](../../webui/tests/evidence/final-review/regression-manifest.json)，再仅恢复这些本轮生成文件到初始 HEAD，旧失败/通过证据保持原样。针对性初次运行与红灯也各自保留，非覆盖式重跑。
 - [verification.json](../../webui/tests/evidence/final-review/verification.json) 记录初始/规划/合并基线、最终受测 WebUI 源/测试/配置原始与 LF 归一化 SHA-256、实际构建产物及四种长片导出摘要。提交前独立核对 **67 个源/测试/配置摘要、3 个构建产物摘要、27 份归档摘要**全部匹配；旧证据与 HEAD（按 LF 归一化）一致，spec/生产路径无改动，集成 ref 未变。`final-browser-results/.last-run.json` 是完整 84 项全绿记录；新两项完整 JSON 报告另存，不覆盖全套记录。
 - 本报告是对提供的两个独立审查轴的修复与实际验收记录，**不是独立复审结论**。Spec 保持非 done，后续由主会话安排独立复审及集成；本任务不再启动代理。
+
+## 2026-10-16 独立集成验证：全套通过，等待独立两轴复审
+
+本节仅记录集成工作树的实际合并与重新验证，**不是独立 Standards / Spec 复审结论**。Spec 仍为 `ready-for-agent`，不标 `done`，本次不启动代理或复审会话。
+
+- 合并前 `D:\whisper-diarization` / `feat/webui` 为 `5586f22214f82e02d5bf85ffd7e59cdb7b2176c2`；`review-fixes` / `feat/webui-review-fixes` 为指定 `08a75301223c334bf49079b4493b482c3e343ccc`。两个工作树均干净，祖先与差异检查通过；已读本报告及票13 Comments。范围仅为 WebUI、审查记录和票13，无生产字幕路径/保护数据/依赖变更，Spec 无差异。
+- 核对共享媒体任务生命周期、人物/结构纯变换提取及坏 SRT 导出拒绝的代码和红绿证据。预览红灯明确等不到 POST，绿灯生成真实副本；七种空段正文旧路径返回201并登记坏导出，修复后两个 SRT 均422、定位text且不登记文件，JSONL保留原串。保留不可达质量切换测试及命令编码错误的历史说明，没有以删除既有回归或增加超时换绿。工作树证据中67个源/测试/配置摘要、3个构建产物摘要、27份归档摘要独立核验全部匹配。
+- 执行 `git merge --ff-only feat/webui-review-fixes`，成功从 `5586f22` 快进至 `08a7530`。所有 shell 显式使用集成目录为 workdir，依赖未变，复用已装前端依赖与指定Python。实际执行入口及结果：
+
+```powershell
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm --prefix webui/frontend run typecheck
+# 通过，退出0。
+npm --prefix webui/frontend run build
+# 通过，51 modules；JS 260.40 kB / gzip 83.76 kB。
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& $env:WEBUI_PYTHON -m py_compile $Files.FullName
+# 17个Python文件通过。
+& $env:WEBUI_PYTHON -m unittest discover -s webui/tests -p 'test_*.py' -v
+# 42/42通过，34.159s，无跳过，退出0。
+npm --prefix webui/frontend run test:browser
+# 真实Edge单worker，84/84通过（6.2m），无跳过/重跑，退出0。
+```
+
+- 后端/浏览器通过Python subprocess按上述原参数执行，原始stdout/stderr字节直接保存为 `webui/frontend/.test-workspace/final-review-integration-{backend,browser}.log` 并透传退出码。浏览器 `.last-run.json` 为passed/空failedTests。集成实际源码67个LF归一化摘要及3个新构建产物摘要均与受测verification一致，不以修复工作树的84全绿替代本轮结果。
+- 新预览保存等待期间同上下文刷新、原片重定位后旧POST回执隔离均通过；票11旧GET/new small、跨工程草稿、票12密度/保存刷新/帧数进度、并发任务读写和缓存继续通过。后端七种空段正文在两个SRT输出均拒绝、工程/资源不变、JSONL原串保留，原普通多行与四格式兼容通过；人物/结构/替换/历史全套通过。
+- 独立核对本轮缩略图17/240、49/240等进度比例、240帧发布前99%及成功100%，ZIP完整SHA-256一致。Explorer本轮工程 `f2f99e47-9845-46ce-802e-f1b5ca1f7441` 的真实HWND399376、目标目录与实际导出一致；真实start.cmd从独立目录自动开Edge，服务54150/DevTools54151，日志PID31180并请求本轮新JS/CSS。退出清理的shell status128为目标进程已退出，最终端口检查另行完成。
+- 长片与组合链通过，7200秒/4000条/26人，四种实际导出各4000条且存在；本轮打开1388ms、热重开1370ms、搜索96ms、播放输入44ms、显式保存485ms，适合全片挂载列表6行/字幕块1232，已核看本轮长片截图。仍限160×90/1fps合成片、仅清浏览器HTTP缓存而未清OS缓存，不声称高码率电影或两小时连续耐久基准，没有重做或冒充人工音画鉴定。
+- 本轮日志保留3次Windows Proactor ConnectionResetError/WinError10054；相关断言均通过，不描述为零异常日志。原修复红绿和旧失败归档未覆盖。本轮passed JSON、完整日志、票11竞态附件和27个测试改写证据归档在被忽略的 `webui/frontend/.test-workspace/final-review-integration-verified/`，证据保留原相对路径于其evidence/下，实际工程/素材/产物均保留。仅恢复本轮自动改写的已跟踪证据到合并版本，恢复后干净，再仅追加本节并独立提交。
+- 最后检查18761/18762/18763/18764/54150/54151无监听，无WebUI Python/ffmpeg/ffprobe或本轮独立Edge残留；测试工程Explorer窗口0。所有worktree保留、未推送、未启动代理。**集成验证通过，可安排独立两轴复审；Spec暂不done。**
