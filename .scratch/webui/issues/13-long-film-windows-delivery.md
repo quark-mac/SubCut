@@ -83,3 +83,34 @@ npm --prefix webui/frontend run test:browser
 - 票11/12晚到GET、质量/密度、等待保存刷新、晚任务/保存回执与工程切换、240秒1080p真实帧数中间进度、54秒快速完成均在最终全套复验。28份本轮跨票证据独立保存在 `webui/tests/evidence/ticket-13-integration-fix/regressions/`，清单带SHA-256；已提交前票与首轮证据恢复原样。
 - 十组验收、完整组合链、三个长片与真实Windows自动开窗全部再次执行。实际7200秒/4000条/26人物；本轮打开1399ms、热重开1452ms、搜索103ms、播放到填字45ms、保存497ms。仅清浏览器HTTP缓存，未清OS缓存，仍非高码率电影或连续两小时耐久基准。补充OpenChamber真实页面布局/解码画面检查与截图，不冒充音频鉴定或Edge自动化结果。
 - 本轮独立启动62183/DevTools62184已关闭；补充手动服务PID19504停止。清理JSON确认18761/18762/18763/18764/62183/62184/56581/56582无监听，无ticket-13 Python/ffmpeg/独立Edge残留；保留素材/输出/工作树，不关闭用户预存Explorer或共享浏览器面板。全部标准重新勾选，票恢复done；**spec仍ready-for-agent，等待主代理最终code-review与集成闭环**。
+
+### 2026-10-16 修复集成复验：通过，放行最终 review
+
+- 合并前集成 `D:\whisper-diarization` / `feat/webui` 为 `8613300a33a11e2fe9e3a2835a8649febe0a8721`，任务工作树 `ticket-13` / `feat/webui-13` 为指定 `da6ad6704df23dc9110eb4b98c2023b15026b1a1`；两者均干净，票为 done，祖先及 `git diff --check 8613300 da6ad67` 通过。已读取 integration-fix/acceptance、修订十组报告、verification、原红灯与绿灯证据、最终日志/passed JSON，任务工作树 63 个源/测试/配置原始 SHA-256 全部匹配。改动仅为 WebUI、本票/证据，没有改依赖或生产字幕路径。
+- 根因核对：Explorer 红灯包括 null/空路径及过滤后真实目录未导航；同机 OS 对照显示默认 Folder verb 空地址/busy，显式系统 explorer.exe /n 指向正确目录。修复保留真实 HWND/路径/文件断言，未以 opened:true 替代。pointer 红灯记录媒体回执到达使按钮纵移 20.390625px、down 在 BUTTON、up 在 SELECT、零 POST；绿灯按钮矩形不变、完整原生 click 和一次 5ms 波形 POST。布局保留可聚焦/滚动详情区，未改 pointerdown 提交或延长超时。任务 JSON 并发红灯为 HTTP500/storage_error 与 WinError5；所有 write/get 共用原 RLock，包含之前无锁进度写入，新增六路实际公共 HTTP 轮询回归。未修改队列、时间基准或帧数算法。
+- 执行 `git merge --ff-only feat/webui-13`，成功从 `8613300` 快进至 `da6ad67`。所有 shell 显式使用集成目录为 workdir，依赖未变，复用已有依赖与指定 Python。实际验证如下：
+
+```powershell
+npm --prefix webui/frontend run typecheck
+# 通过。
+npm --prefix webui/frontend run build
+# 通过；Vite 7.3.7，49 modules；JS 260.97 kB / gzip 83.97 kB。
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& 'D:\whisper-diarization\env\python.exe' -m py_compile $Files.FullName
+# 17 个 Python 文件通过。
+& 'D:\whisper-diarization\env\python.exe' -m unittest discover -s webui/tests -p 'test_*.py' -v
+# 41/41 通过，33.509s；HTTP26 + preview7 + timeline-media6 + launcher2，无跳过。
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm --prefix webui/frontend run test:browser
+# 82/82 通过（6.1m），无跳过、无重跑，退出码 0。
+```
+
+- 后端/浏览器命令通过 Python subprocess 按原参数运行，stdout/stderr 原始字节写入 `.test-workspace/ticket-13-fix-integration-{backend,browser}.log`，再输出并透传原退出码。最初日志包装器的 `python -c` 因 PowerShell 引号传递报 SyntaxError，发生在测试启动之前；改为 stdin here-string 后正式运行，无测试失败重跑。构建后独立校验集成目录 63 个 LF 归一化源文件摘要和 3 个实际构建产物摘要均与 verification 一致。
+- 原 Explorer 用例本轮通过：工程 `586aa609-bf61-40e5-b63f-5fb0051038e3`，导出 `a200e209-5d7c-4078-bf43-60883ea42d11`，实际 HWND **132042** 指向其 exports 目录，与回执/资源/真实 SRT 一致；独立读取文件含 `[甲&乙] 完整来源`。空/非文件系统窗口不会冒充目标。测试后该目录 Explorer 窗口数为 0。
+- 原晚密度 GET/保存/换工程回归及新增真实鼠标用例均通过。本轮 pointer 工程 `51387df3-ae72-45c9-bc4c-b8232a83b74e`，按钮前后同为 x24/y534/104×33，down/up/click 均在生成按钮、恰好一次 waveform POST，产物 step_ms5/SVG/字幕和修订断言通过。六路真实轮询同时观察 waveform/thumbnails 全部 200 且任务成功，原缓存/重启测试继续通过。
+- 票 11 旧 GET/new small、票 12 密度回执/等待保存刷新/真实帧数持续进度/快速完成、原片时间/+5秒PTS/+500ms音轨延迟、缓存失效、完整组合链、三个长片用例及真实 Windows 自动开窗均通过。本轮启动端口55108/DevTools55109、服务日志PID15924，实际请求新 JS/CSS。cleanup shell status128 为目标进程已退出，不代替最后端口核验。
+- 长片仍为7200秒/4000条/26人，四格式各4000条且文件存在；本轮打开1399ms、reload热重开1385ms、搜索93ms、播放到填字52ms、显式保存481ms。只清浏览器HTTP缓存、未清OS缓存，160×90/1fps合成片限制仍有效，不扩大成高码率电影或两小时耐久播放基准。没有重复执行工作树手动面板验收或冒充人工听感鉴定。
+- 全量日志有6次 Windows Proactor ConnectionResetError/WinError10054（Range取消等期间），所有断言通过，未隐藏或延长验收超时。旧79/2失败归档保留，本轮没有用旧工作树全绿替代集成结果。
+- 本轮 passed JSON、完整日志、票11竞态附件及27个自动重写证据归档于被忽略目录 `webui/frontend/.test-workspace/ticket-13-fix-integration-verified/`，证据按原相对路径保存在其 evidence/ 下。实际工程/原片/产物保留，旧失败归档与已提交修复红绿证据未覆盖；仅恢复本轮测试改写的已跟踪证据到合并版本。恢复后工作树干净，再仅追加本段并独立提交。
+- 最后检查18761/18762/18763/18764及55108/55109均无监听，无WebUI Python/ffmpeg/ffprobe或本轮独立Edge残留；测试Explorer窗口0。保留全部工作树、未推送、未启动代理。**票13修复集成验收通过，解除原两项阻塞，可进入最终双轴code-review；本会话未执行最终review，Spec仍ready-for-agent、暂不done。**
