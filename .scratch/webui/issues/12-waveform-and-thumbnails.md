@@ -91,3 +91,34 @@ npm run test:browser
 - 仅修改 `webui/`、README 与本票；旧票自动化截图由回归重写的内容不纳入本票提交。真实自建素材/缓存保留在忽略的 `.test-workspace` 便于检查，不触碰生产数据。
 - 最终 `Get-NetTCPConnection` 确认 **18761 / 18762 / 18763 / 18764 全部离线**，没有本工作树的 Python WebUI/uvicorn 遗留进程。工作树保留，未推送、未合入集成；`feat/webui` 仍为 `64daae84be8aa982cb0c931559422816fd73ba47`。
 - 完成范围含已跟踪 WIP 和本票全部新增文件的自审：共享预览编码参数及 `usePreviewCopy` 竞态保护未变；API 范围与序号校验、源/产物身份、任务发布锁、旧响应隔离、无编辑历史入口、生成文件清理均核对。最终 `git diff --check` 通过。
+
+### 2026-10-16 集成复验：已快进合并，长媒体进度用例未通过
+
+- 合并前核对集成目录 `D:\whisper-diarization` / `feat/webui` 为 `64daae84be8aa982cb0c931559422816fd73ba47`，任务工作树 `ticket-12` / `feat/webui-12` 为 `b522d89ef2083e35c605ca72b84d4b6033c0404b`；两个工作树均干净，票为 done。Comments、README、passed JSON、实际对齐/进度证据及延迟预览截图已读取，差异仅为 WebUI 与本票，祖先检查和 `git diff --check 64daae8 b522d89` 通过。
+- 核对实现及验收：波形/JPEG 使用共同原片起点，保留 +5 秒 PTS 素材的原片时间和 +500ms 音轨延迟；源身份、参数/密度及完整产物摘要控制缓存，失败不发布；资源发布在 PUT 锁内重读工程，不增加编辑修订。票 11 的 `usePreviewCopy.ts` 和 `preview.spec.ts` 与集成基线无差异，独立请求代次保护未回退，依赖清单/锁文件未变。
+- 执行 `git merge --ff-only feat/webui-12`，成功从 `64daae8` 快进至 `b522d89`。复用已有前端依赖及指定 Python 环境；没有修改实现或启动其他任务。以下命令均显式使用 `D:\whisper-diarization` 为工作目录：
+
+```powershell
+npm --prefix webui/frontend run typecheck
+# 通过。
+npm --prefix webui/frontend run build
+# 通过；Vite 7.3.7，47 modules；JS 258.58 kB / gzip 83.01 kB。
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& 'D:\whisper-diarization\env\python.exe' -m py_compile $Files.FullName
+# 16 个 Python 文件通过。
+& 'D:\whisper-diarization\env\python.exe' -m unittest discover -s webui/tests -p 'test_*.py' -v
+# 38/38 通过，33.932s，无跳过：HTTP 26 + preview/启动入口 7 + timeline-media 5。
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm --prefix webui/frontend run test:browser
+# 73 passed / 1 failed（4.9m），退出码 1，无跳过、无重跑；不能报告 74/74 通过。
+# 后端及浏览器命令实际使用 2>&1 | Tee-Object 留存日志，并透传原退出码。
+```
+
+- **失败位置**：`webui/frontend/tests/timeline-media.spec.ts:262`，用例“真实较长媒体显示中间进度、活动任务去重，未完成产物不供给时间轴”。在已通过活动任务去重、未完成产物 409、“运行中”和当时无图断言之后，5 秒内未观察到 `observations` 含 `state === running && 0 < progress < 1`，expect.poll 返回 false；报告另含 30000ms test timeout。快照最终显示成功 100% 且缩略图可见，实际持久任务也为 succeeded/1。尚不能据此确定是生成进度还是采样时序问题，不将其擅自认定为无害或已修复；没有重跑覆盖失败。
+- 失败工程 `c90bf1f6-4046-4e7f-98ca-f330072112b7`，任务 `79eb9312-4bf5-4b49-adec-f21412e45793`，原片为 `.test-workspace/timeline-media/1792116920783/large.mkv`（54 秒）。原片、完整工程、任务命令/日志、ZIP 与失败上下文/trace 均保留。该用例未执行到最终写 `ticket-12-progress.json`，因此该已提交文件仍是任务工作树旧证据，不可冒充本轮进度通过记录。
+- 本票另四项 Edge 与五项后端真实媒体测试均通过：脉冲/帧原片时间、1×/2×/8× 和横滚/窗口变化、延迟音轨/预览前后一致、无音轨空波形、重开/重启缓存、参数/源/产物变化失效、失败重试与保存回执隔离。本轮对齐工程 `304ded95-cb6e-4d39-815c-b393ef7e4529` 的最大屏幕坐标误差小于 0.014px；1×/2×/8× 图片节点分别为 9/6/2，峰值节点 900/451/114，SVG 宽 1274px、不超过 1424px 视口。已读取对齐 JSON 并核看本轮时间轴截图。
+- 票 11 完整音画及确定性旧 GET 回归继续通过：本轮工程 `fc9563ed-5d19-41cb-aed3-c12f25d44aee` 的新 small 任务 `187b5988-bc23-456f-bed2-88fb0380eee0` 最终为播放器实际 src、宽度 320、有 loadedmetadata/loadeddata。既有 69 项全部通过，未将新失败误归因于旧竞态。
+- 服务日志记录两次 Windows asyncio Proactor `ConnectionResetError / WinError 10054`，发生在预览交错和媒体移动附近，对应用例均通过；如实保留，不描述为无错误日志运行。PowerShell 对普通 stderr 的 NativeCommandError 包装不代表 unittest/Uvicorn 自身失败，以原退出码及测试结果为准。
+- 原始失败 `.last-run.json`、error-context、trace、后端/浏览器日志、票 11 本轮竞态 JSON、失败工程/任务快照及 17 个本轮自动重写的已跟踪证据，已归档至被忽略的 `webui/frontend/.test-workspace/ticket-12-integration-failure/`。日志原件为 `.test-workspace/ticket-12-integration-{backend,browser}.log`。仅恢复本轮自动改写的已跟踪证据到合并版本；恢复后工作树干净，再仅追加本段并独立提交。旧票 11 失败/通过归档未覆盖。
+- 最后核查 18761/18762/18763/18764 均无监听，无 WebUI Python、ffmpeg/ffprobe 残留；未重启演示服务。保留全部工作树、未推送、未启动其他代理。**票 12 已合入但集成验收未通过，被上述进度回归阻塞；顶部 done 是原任务工作树验收状态，不代表本轮集成全绿。**
