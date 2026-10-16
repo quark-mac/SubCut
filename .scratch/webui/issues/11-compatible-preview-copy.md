@@ -121,3 +121,32 @@ npm --prefix webui/frontend run test:browser
 - GREEN 实测：`webui/tests/evidence/ticket-11-quality-race-green.json` 保留旧 GET、新 POST、真实完成任务与媒体事件，播放器最终指向新 small 任务的 MP4，出现宽度 320 的 loadedmetadata/loadeddata；与 `ticket-11-quality-race-red.json` 中仅原 MKV/宽度 0 的事件对照。没有修改集成失败原始文件。
 - 本轮命令（工作树根目录/前端目录分别执行）：`python -m unittest discover -s webui/tests -p 'test_*.py' -v`；`npm run typecheck`；`npm run build`；`npm run test:browser -- preview.spec.ts --grep '旧播放查询' --repeat-each=2`（修复前 RED 2/2、修复后 GREEN 2/2）；`npm run test:browser -- preview.spec.ts --grep '真实不兼容原片|旧播放查询'`（2/2）；最后 `npm run test:browser`（69/69）。Python 固定 `D:\whisper-diarization\env\python.exe`，浏览器固定 `WEBUI_BROWSER=msedge`，断言超时维持原 5000ms。最终全量日志位于 `webui/frontend/.test-workspace/ticket-11-final-fixed-browser.log`。
 - 服务检查：18761/18762/18763 均未监听，诊断用独立临时 HTTP 服务与 Edge 均已关闭；未重启 18762。保留 `ticket-11` 工作树，不合回 `feat/webui`、不推送，无新增代理及生产模块改动。
+
+### 2026-10-16 竞态修复集成复验：通过，解除票 12 前置阻塞
+
+- 恢复会话后先核对实际状态：集成目录 `D:\whisper-diarization` / `feat/webui` 仍为 `9401c1a290627398ce337e0c07586067152c0566`，尚未合入修复；任务工作树 `ticket-11` / `feat/webui-11` 为 `4fdd4ae37c845a8acd400154eaaba195688316b4`，包含修复 `e66755cd83716c84a665962b223924abc0aab051`。两个工作树均干净，票为 done，差异仅为预览 hook、浏览器回归及本票/证据；`git diff --check 9401c1a 4fdd4ae` 与祖先检查通过。
+- 已对照确定性 RED/GREEN JSON、任务工作树最终全套日志和实现 diff：延后真实旧 `GET playback?quality=small`，先确认新 POST small 任务，再交付旧 GET。RED 中后台 small 已成功但播放器仍为原 MKV、宽度 0；GREEN 指向新 small 任务副本且宽度 320。独立原失败产物证据显示 standard/small 均可被 Edge 解码。根因是同一 session 内旧 GET 回执覆盖新 POST 任务，而非编码问题或等待不足；修复以独立 `playbackRead` 代次使提交前旧查询的成功/失败回执失效，保留原 session 防护。未延长超时，新增断言核对 small 参数、新任务副本 ID 与真实视频宽度。
+- 在集成目录执行 `git merge --ff-only feat/webui-11`，成功从 `9401c1a` 快进到 `4fdd4ae`；依赖未变，复用已有依赖与 Python。本轮没有修改实现、没有重复执行此前合并或覆盖原失败归档。以下命令均显式使用集成目录作为工作目录：
+
+```powershell
+npm --prefix webui/frontend run typecheck
+# 通过。
+npm --prefix webui/frontend run build
+# 通过；Vite 7.3.7，44 modules；JS 253.16 kB / gzip 81.36 kB。
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& 'D:\whisper-diarization\env\python.exe' -m py_compile $Files.FullName
+# 14 个 Python 文件通过。
+& 'D:\whisper-diarization\env\python.exe' -m unittest discover -s webui/tests -p 'test_*.py' -v
+# 33/33 通过，21.018s，无跳过；HTTP 26 + 真实媒体/启动入口 7。
+$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_BROWSER = 'msedge'
+npm --prefix webui/frontend run test:browser
+# 69/69 通过（4.0m），无跳过，无重跑；退出码 0。
+# 上述后端及浏览器命令实际以 2>&1 | Tee-Object 保存日志，并透传原退出码。
+```
+
+- 本轮确定性竞态工程 `f14a293a-b827-4b8f-b578-fab40251d978`，新 small 任务 `a4517eee-8eeb-4d25-ac4d-7ce820ae7f14`；实际 JSON 确认旧响应仍为 standard/空 preview、新 POST 为 small、任务成功、视频 src 指向该新任务、宽度 320，且有该副本的 loadedmetadata/loadeddata。原完整预览用例也完成 small 生成/切回缓存及证据写出，已消除上一轮相同验收位置的阻塞。
+- 真实音画与时间基准继续通过：+5 秒起始 PTS、+500ms 音轨相对延迟、黑场/静音保留、无音轨、Range 定位、工具缺失/真实失败重试与启动入口均通过。本轮完整音画工程 `bac1f825-6c92-44fc-a380-4d73bce237e1` 在 1/5/8.5 秒为红/绿/蓝、约 430/870/1320Hz、时长均 9 秒；已读取新 playback JSON 并核看 5 秒绿色画面和字幕。
+- 浏览器服务日志在预览用例间记录两次 Windows asyncio Proactor `ConnectionResetError / WinError 10054`；所有断言通过、服务正常退出，未将本轮描述为无错误日志运行。PowerShell 对原生命令 stderr 的 NativeCommandError 包装还包含普通 unittest/Uvicorn 日志，不等于测试失败；以原退出码、33/33、69/69 与 passed JSON 为准。
+- 本轮日志、passed `.last-run.json`、竞态附件/独立 JSON 及 13 个自动重写证据文件均归档于被忽略目录 `webui/frontend/.test-workspace/ticket-11-race-fix-integration-verified/`；日志原件为 `.test-workspace/ticket-11-race-fix-integration-{backend,browser}.log`。本轮实际工程/媒体保留；上一轮 `ticket-11-integration-failure/` 未覆盖。仅将本轮测试改写的已跟踪证据恢复为合并提交版本，恢复后工作树干净，再仅追加本段并独立提交。
+- 最后检查 18761/18762/18763 均无监听，无 WebUI Python、ffmpeg/ffprobe 残留；未重启旧演示服务。保留全部工作树，未推送，未启动其他代理。**票 11 修复集成验收通过，原 Edge 阻塞解除，票 12 前置验收门槛已满足；本会话未启动或实现票 12。**
