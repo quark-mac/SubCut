@@ -1,0 +1,32 @@
+{
+  "project": "527e9dde-047b-4ec4-90e7-2d53c246600c",
+  "before": {
+    "x": 24,
+    "y": 534,
+    "width": 104,
+    "height": 33
+  },
+  "after": {
+    "x": 24,
+    "y": 534,
+    "width": 104,
+    "height": 33
+  },
+  "requests": [
+    "http://127.0.0.1:18761/api/projects/527e9dde-047b-4ec4-90e7-2d53c246600c/timeline-media/waveform"
+  ],
+  "events": [
+    {
+      "type": "pointerdown",
+      "target": "BUTTON:生成音频波形"
+    },
+    {
+      "type": "pointerup",
+      "target": "BUTTON:生成音频波形"
+    },
+    {
+      "type": "click",
+      "target": "BUTTON:生成音频波形"
+    }
+  ]
+}

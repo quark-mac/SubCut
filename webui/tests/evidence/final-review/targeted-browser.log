@@ -1,0 +1,140 @@
+
+> subtitle-editing-webui@0.1.0 test:browser
+> playwright test preview.spec.ts timeline-media.spec.ts speakers.spec.ts structure.spec.ts exchange.spec.ts
+
+[2m[WebServer] [22mINFO:     Started server process [26456]
+[2m[WebServer] [22mINFO:     Waiting for application startup.
+[2m[WebServer] [22mINFO:     Application startup complete.
+[2m[WebServer] [22mINFO:     Uvicorn running on http://127.0.0.1:18761 (Press CTRL+C to quit)
+
+Running 35 tests using 1 worker
+
+  ok  1 tests\exchange.spec.ts:66:1 › 完整预览后替换一步撤销与重做，身份来源标签及人物完整恢复并保存重开 (1.6s)
+  ok  2 tests\exchange.spec.ts:133:1 › UI 新建 JSONL 工程并触发四种实际导出，默认干净人物 SRT 与元标签显式开关 (917ms)
+  ok  3 tests\exchange.spec.ts:212:1 › 三种 SRT 显式预览、失败和取消不改变工程，MOSS 来源 ID 保留且导出不伪造 ASS 索引 (1.6s)
+  ok  4 tests\exchange.spec.ts:348:1 › 新建时来源在预览后变化需重新预览，失败不创建工程 (806ms)
+
+  ok  5 tests\preview.spec.ts:39:1 › 真实不兼容原片从 UI 转换，Edge 解码并在开头中部结尾保持音画字幕及缓存 (5.7s)
+
+  ok  6 tests\preview.spec.ts:157:1 › 质量切换的旧播放查询晚于生成回执时，仍跟踪当前任务并解码新副本 (2.6s)
+
+  ok  7 tests\preview.spec.ts:256:1 › 等待保存时同上下文刷新预览仍提交已点击的生成并播放真实副本 (1.9s)
+
+  x   8 tests\preview.spec.ts:317:40 › 等待保存时质量上下文切换取消旧生成意图 (30.1s)
+
+  x   9 tests\preview.spec.ts:317:40 › 等待保存时质量上下文切走再切回取消旧生成意图 (30.1s)
+
+  ok 10 tests\preview.spec.ts:382:1 › 同工程原片重新定位后，晚到生成回执不能替换当前源的播放状态 (1.8s)
+
+  ok 11 tests\preview.spec.ts:458:1 › 后台完成与自动保存回执交错，切换后旧任务回执不覆盖新工程或草稿 (4.3s)
+
+  ok 12 tests\preview.spec.ts:579:1 › 真实缺工具及 FFmpeg 失败显示原因，补齐工具后从 UI 重试成功且已保存字幕保留 (3.9s)
+  ok 13 tests\speakers.spec.ts:91:1 › 创建开放标签进入一步历史和自动保存，重开保留稳定人物身份且不改变字幕 (3.5s)
+  ok 14 tests\speakers.spec.ts:139:1 › 重命名及配色同步所有视图，冲突和取消不产生历史，保存提交有效人物草稿 (4.8s)
+  ok 15 tests\speakers.spec.ts:267:1 › 真实拖动重排后换轨使用新顺序，撤销恢复目标，特殊轨固定且取消拖动无历史 (4.6s)
+  ok 16 tests\speakers.spec.ts:336:1 › 明确选择普通目标合并，重叠字幕和来源身份完整保留，一步撤销重做且自动保存 (3.7s)
+  ok 17 tests\speakers.spec.ts:417:1 › 删除有字幕人物转入未标注，空轨也能一步恢复，删除后新编辑清除重做分支 (7.2s)
+  ok 18 tests\speakers.spec.ts:506:1 › 再次编辑当前人物沿用刚提交的草稿，空名和保留名阻止保存导出，取消不写历史 (3.5s)
+  ok 19 tests\structure.spec.ts:90:1 › 新增片头默认两秒和未知归属，空白及取消不落盘，提交一步历史且无虚构来源 (4.1s)
+  ok 20 tests\structure.spec.ts:133:1 › 明确轨道新增普通位置两秒、片尾缩短，媒体终点拒绝零时长，重开保持 (2.7s)
+  ok 21 tests\structure.spec.ts:169:1 › 拆分严格内部单选，快捷键复制两段全文与来源元标签，一步撤销恢复原身份 (3.4s)
+  ok 22 tests\structure.spec.ts:220:1 › 合并必须在全体工作字幕中连续，同人重叠和间隙按稳定顺序合并且保留来源 (3.3s)
+  ok 23 tests\structure.spec.ts:259:1 › 跨人快捷键合并须明确选择目标，选择与取消不改工程历史，确认完整一步撤销 (4.2s)
+  ok 24 tests\structure.spec.ts:308:1 › 新增拆分合并保存重开后四格式实际文件排序、重新编号、元标签与来源保持一致 (2.2s)
+  ok 25 tests\structure.spec.ts:439:1 › 同人物轨中看似相邻仍按全体排序校验，嵌套重叠合并取最晚结束 (2.6s)
+  ok 26 tests\structure.spec.ts:483:1 › 明确点击人物轨标题可在空轨新增，选择总览清除归属目标，不以字幕选择猜测人物 (608ms)
+  ok 27 tests\structure.spec.ts:499:1 › MOSS 重复来源 ID 经拆分合并仍保留，输出身份唯一且不伪造原来源索引 (5.2s)
+
+  ok 28 tests\timeline-media.spec.ts:75:1 › 真实原片生成、缓存与视频轨可见范围在多个缩放滚动位置按原片时间对齐 (3.9s)
+
+  ok 29 tests\timeline-media.spec.ts:201:1 › 非零 PTS 与延迟音轨使用原片零点，预览切换不移动波形缩略图；无音轨为空 (4.8s)
+
+  ok 30 tests\timeline-media.spec.ts:272:1 › 按下生成波形到松开之间返回真实媒体信息，不丢失点击或新密度生成意图 (1.2s)
+
+  ok 31 tests\timeline-media.spec.ts:376:1 › 晚到旧 GET 不能覆盖新密度任务，晚到完成与自动保存回执不能覆盖其他工程草稿 (2.9s)
+
+  ok 32 tests\timeline-media.spec.ts:502:1 › 真实缺工具和错误工具失败仍可编辑，修复工具后 UI 重试成功 (3.9s)
+
+  ok 33 tests\timeline-media.spec.ts:590:1 › 同工程生成等待真实保存回执时刷新状态，不丢弃已经点击的生成意图 (1.6s)
+
+  ok 34 tests\timeline-media.spec.ts:636:1 › 54秒原片快速完成可以只回执成功，不要求已经错过的中间状态 (2.2s)
+
+  ok 35 tests\timeline-media.spec.ts:677:1 › 真实较长媒体显示中间进度、活动任务去重，未完成产物不供给时间轴 (12.1s)
+
+
+  1) tests\preview.spec.ts:317:40 › 等待保存时质量上下文切换取消旧生成意图 ────────────────────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.selectOption: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByLabel('预览质量', { exact: true })[22m
+    [2m    - locator resolved to <select disabled aria-label="预览质量">…</select>[22m
+    [2m  - attempting select option action[22m
+    [2m    2 × waiting for element to be visible and enabled[22m
+    [2m      - element is not enabled[22m
+    [2m    - retrying select option action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible and enabled[22m
+    [2m      - element is not enabled[22m
+    [2m    - retrying select option action[22m
+    [2m      - waiting 100ms[22m
+    [2m    57 × waiting for element to be visible and enabled[22m
+    [2m       - element is not enabled[22m
+    [2m     - retrying select option action[22m
+    [2m       - waiting 500ms[22m
+
+
+      196 |     await page.getByRole('textbox', { name: '字幕正文', exact: true }).fill('切换质量时仍保存字幕');
+      197 |     await button(page, '生成预览副本').click(); await persisted;
+    > 198 |     await page.getByLabel('预览质量', { exact: true }).selectOption('small');
+          |                                                    ^
+      199 |     if (roundtrip) await page.getByLabel('预览质量', { exact: true }).selectOption('standard');
+      200 |     release();
+      201 |     await expect(page.getByRole('status', { name: '保存状态' })).toHaveText('已保存');
+        at C:\Users\machi\AppData\Local\Temp\opencode\webui-worktrees\review-fixes\webui\frontend\tests\preview.spec.ts:198:52
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error Context: test-results\preview-等待保存时质量上下文切换取消旧生成意图\error-context.md
+
+  2) tests\preview.spec.ts:317:40 › 等待保存时质量上下文切走再切回取消旧生成意图 ─────────────────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.selectOption: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByLabel('预览质量', { exact: true })[22m
+    [2m    - locator resolved to <select disabled aria-label="预览质量">…</select>[22m
+    [2m  - attempting select option action[22m
+    [2m    2 × waiting for element to be visible and enabled[22m
+    [2m      - element is not enabled[22m
+    [2m    - retrying select option action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible and enabled[22m
+    [2m      - element is not enabled[22m
+    [2m    - retrying select option action[22m
+    [2m      - waiting 100ms[22m
+    [2m    56 × waiting for element to be visible and enabled[22m
+    [2m       - element is not enabled[22m
+    [2m     - retrying select option action[22m
+    [2m       - waiting 500ms[22m
+
+
+      196 |     await page.getByRole('textbox', { name: '字幕正文', exact: true }).fill('切换质量时仍保存字幕');
+      197 |     await button(page, '生成预览副本').click(); await persisted;
+    > 198 |     await page.getByLabel('预览质量', { exact: true }).selectOption('small');
+          |                                                    ^
+      199 |     if (roundtrip) await page.getByLabel('预览质量', { exact: true }).selectOption('standard');
+      200 |     release();
+      201 |     await expect(page.getByRole('status', { name: '保存状态' })).toHaveText('已保存');
+        at C:\Users\machi\AppData\Local\Temp\opencode\webui-worktrees\review-fixes\webui\frontend\tests\preview.spec.ts:198:52
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error Context: test-results\preview-等待保存时质量上下文切走再切回取消旧生成意图\error-context.md
+
+  2 failed
+    tests\preview.spec.ts:317:40 › 等待保存时质量上下文切换取消旧生成意图 ─────────────────────────────────────────────
+    tests\preview.spec.ts:317:40 › 等待保存时质量上下文切走再切回取消旧生成意图 ──────────────────────────────────────────
+  33 passed (4.0m)

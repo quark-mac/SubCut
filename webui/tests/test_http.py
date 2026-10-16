@@ -243,6 +243,32 @@ class ProjectHTTPTests(unittest.TestCase):
         self.assertEqual(self.client.post(url + "/exports", json={"revision": project["revision"]}).status_code, 409)
         self.assertEqual(Path(project["exports"][0]["path"]).read_text(encoding="utf-8"), before)
 
+    def test_srt_rejects_ambiguous_body_separators_without_changing_saved_text_or_registering_export(self):
+        for text in ("上句\n\n下句", "上句\n \t\n下句", "上句\n\u3000\n下句",
+                     "上句\r\n\r\n下句", "上句\r\r下句", "\n上句", "上句\n"):
+            with self.subTest(text=repr(text)):
+                project = self.create()
+                url = f'/api/projects/{project["id"]}'
+                project['entries'][0]['text'] = text
+                saved = self.client.put(url, json={k: project[k] for k in ('revision', 'name', 'entries')})
+                self.assertEqual(saved.status_code, 200, saved.text)
+                project = saved.json()
+                for format in ('plain-srt', 'speaker-srt'):
+                    rejected = self.client.post(url + '/exports', json={'revision': project['revision'], 'format': format})
+                    self.assertEqual(rejected.status_code, 422, rejected.text)
+                    error = rejected.json()['error']
+                    self.assertEqual((error['entry'], error['field']), (3, 'text'))
+                    self.assertIn('空白行', error['message'])
+                    self.assertIn('JSONL', error['message'])
+                    self.assertEqual(self.client.get(url).json(), project)
+                    self.assertEqual(self.client.get(url + '/resources').json()['exports'], [])
+                    self.assertEqual(list((self.workspace / project['id'] / 'exports').glob('*')), [])
+                output = self.client.post(url + '/exports', json={'revision': project['revision'], 'format': 'normalized-jsonl'})
+                self.assertEqual(output.status_code, 201, output.text)
+                rows = [json.loads(line) for line in self.client.get(output.json()['url']).text.splitlines()]
+                self.assertEqual(rows[2]['text'], text)
+                self.assertEqual(self.client.get(url).json()['entries'][0]['text'], text)
+
     def test_preview_applies_complete_replacement_atomically_and_can_restore_previous_sources(self):
         project = self.create()
         url = f'/api/projects/{project["id"]}'

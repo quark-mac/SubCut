@@ -1,0 +1,71 @@
+[
+  {
+    "name": "typecheck",
+    "command": [
+      "cmd",
+      "/d",
+      "/c",
+      "npm",
+      "--prefix",
+      "webui/frontend",
+      "run",
+      "typecheck"
+    ],
+    "exit_code": 0
+  },
+  {
+    "name": "build",
+    "command": [
+      "cmd",
+      "/d",
+      "/c",
+      "npm",
+      "--prefix",
+      "webui/frontend",
+      "run",
+      "build"
+    ],
+    "exit_code": 0
+  },
+  {
+    "name": "compile",
+    "command": [
+      "D:\\whisper-diarization\\env\\python.exe",
+      "-m",
+      "py_compile",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\__main__.py",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\backend\\app.py",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\backend\\errors.py",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\backend\\formats.py",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\backend\\media.py",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\backend\\models.py",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\backend\\preview.py",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\backend\\resources.py",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\backend\\speakers.py",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\backend\\storage.py",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\backend\\timeline_media.py",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\tests\\fixtures.py",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\tests\\serve.py",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\tests\\test_http.py",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\tests\\test_launcher.py",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\tests\\test_preview.py",
+      "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\tests\\test_timeline_media.py"
+    ],
+    "exit_code": 0
+  },
+  {
+    "name": "backend",
+    "command": [
+      "D:\\whisper-diarization\\env\\python.exe",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "webui/tests",
+      "-p",
+      "test_*.py",
+      "-v"
+    ],
+    "exit_code": 0
+  }
+]

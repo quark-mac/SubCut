@@ -1,84 +1,31 @@
-import { useEffect, useRef, useState } from 'react';
-import { api, type Project } from './api';
+import { useEffect, useState } from 'react';
+import { type Project } from './api';
+import { useMediaTask, type MediaTask } from './useMediaTask';
 
-interface PreviewTask {
-  id: string; project_id: string; state: 'queued' | 'running' | 'succeeded' | 'failed';
-  progress: number; cached: boolean; artifact_id: string | null; error: { message: string } | null;
-}
 interface Playback {
-  project_id: string; url: string; preview: { id: string; path: string } | null; task: PreviewTask | null;
+  project_id: string; url: string; preview: { id: string; path: string } | null; task: MediaTask | null;
   source: { format_name: string; video_codec: string; audio_codec: string | null; suggest_preview: boolean; start_time_ms: number };
 }
 
 export function usePreviewCopy(project: Project | null) {
   const [quality, setQuality] = useState('standard');
-  const [playback, setPlayback] = useState<Playback | null>(null);
-  const [loadedKey, setLoadedKey] = useState('');
-  const [task, setTask] = useState<PreviewTask | null>(null);
-  const [error, setError] = useState('');
   const [decoding, setDecoding] = useState('等待浏览器解码');
-  const [submitting, setSubmitting] = useState(false);
-  const [refresh, setRefresh] = useState(0);
-  const epoch = useRef(0);
-  const playbackRead = useRef(0);
   const id = project?.id, path = project?.media.path;
-  const playbackKey = `${id}:${path}:${quality}`;
-  const currentId = useRef(id); currentId.current = id;
-
-  useEffect(() => {
-    const session = ++epoch.current;
-    const read = ++playbackRead.current;
-    setTask(null); setError(''); setSubmitting(false);
-    if (!id) return;
-    void api<Playback>(`/projects/${id}/playback?quality=${quality}`).then(value => {
-      if (session === epoch.current && read === playbackRead.current) { setPlayback(value); setLoadedKey(`${id}:${path}:${quality}`); setTask(value.task); }
-    }).catch(reason => { if (session === epoch.current && read === playbackRead.current) { setPlayback(null); setError(String(reason)); } });
-    return () => { epoch.current++; };
-  }, [id, path, quality, refresh]);
-
-  const loaded = playback?.project_id === id && loadedKey === playbackKey ? playback : null;
+  const key = `${id}:${project?.media.identity}:${path}:${quality}`;
+  const lifecycle = useMediaTask<Playback>(key, id, `/projects/${id}/playback?quality=${quality}`, `/projects/${id}/preview`, { quality });
+  const loaded = lifecycle.snapshot;
   const url = loaded ? loaded.url : id ? `/api/projects/${id}/media` : undefined;
   const src = url ? `${url}?identity=${project?.media.identity ?? ''}&path=${encodeURIComponent(path ?? '')}` : undefined;
   useEffect(() => { setDecoding('等待浏览器解码'); }, [src]);
 
-  useEffect(() => {
-    if (!task || task.project_id !== id || !['queued', 'running'].includes(task.state)) return;
-    let active = true;
-    const timer = setTimeout(() => {
-      void api<PreviewTask>(`/projects/${id}/tasks/${task.id}`).then(next => {
-        if (!active) return;
-        setTask(next); setError('');
-        if (next.state === 'succeeded') setRefresh(value => value + 1);
-      }).catch(reason => { if (active) setError(`任务查询失败：${String(reason)}；可刷新重试`); });
-    }, 250);
-    return () => { active = false; clearTimeout(timer); };
-  }, [id, task]);
-
-  async function generate(before: () => Promise<boolean>) {
-    const session = epoch.current, owner = id;
-    if (!owner) return;
-    setSubmitting(true); setError('');
-    try {
-      if (!await before() || currentId.current !== owner || session !== epoch.current) return;
-      // A pre-submission playback snapshot must not replace the acknowledged task,
-      // even when it belongs to the same project/quality epoch. Completion re-reads it.
-      playbackRead.current++;
-      const next = await api<PreviewTask>(`/projects/${owner}/preview`, 'POST', { quality });
-      if (session !== epoch.current || currentId.current !== owner) return;
-      setTask(next);
-      if (next.state === 'succeeded') setRefresh(value => value + 1);
-    } catch (reason) { if (session === epoch.current) setError(String(reason)); }
-    finally { if (session === epoch.current) setSubmitting(false); }
-  }
-
   function decoded(video: HTMLVideoElement) {
     setDecoding(video.videoWidth > 0 ? '浏览器已解码画面' : '浏览器视频解码失败（仅识别到音轨），请生成预览副本');
   }
-  return { quality, setQuality, playback: loaded, task: task?.project_id === id ? task : null, error, decoding, src, generate, decoded,
+  return { quality, setQuality, playback: loaded, task: lifecycle.task, error: lifecycle.error, decoding, src, generate: lifecycle.generate, decoded,
     failed: () => setDecoding('浏览器解码失败或媒体读取失败，请生成预览副本或检查原片'),
-    refresh: () => setRefresh(value => value + 1),
-    resourceVersion: `${id}:${playback?.preview?.id ?? ''}:${refresh}`,
-    busy: submitting || !!task && ['queued', 'running'].includes(task.state) };
+    refresh: lifecycle.refresh,
+    resourceVersion: `${lifecycle.version}:${loaded?.preview?.id ?? ''}`,
+    busy: lifecycle.busy };
 }
 
 export type PreviewCopy = ReturnType<typeof usePreviewCopy>;

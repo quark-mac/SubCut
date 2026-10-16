@@ -1,0 +1,137 @@
+{
+  "task": {
+    "id": "20de47e3-2274-418e-8d02-9b3863640372",
+    "project_id": "f5400f5c-8902-48b5-9bef-e13fc1583955",
+    "state": "queued",
+    "progress": 0,
+    "kind": "preview",
+    "parameters": {
+      "version": 1,
+      "quality": "standard",
+      "container": "mp4",
+      "video": "libx264",
+      "pixel_format": "yuv420p",
+      "audio": "aac",
+      "audio_bitrate": "160k",
+      "sample_rate": 48000,
+      "preset": "fast",
+      "crf": 23,
+      "max_width": 1920,
+      "timebase": "common-source-origin",
+      "gop": 50
+    },
+    "media_identity": "sha256:9e735a065c57929b0fe663e0d562b2278d9e101ef72a235ce29181afa910774c",
+    "artifact_id": null,
+    "cached": false,
+    "error": null,
+    "tools": {}
+  },
+  "disk": {
+    "format_version": 1,
+    "id": "f5400f5c-8902-48b5-9bef-e13fc1583955",
+    "name": "兼容预览-1792128514442",
+    "revision": 2,
+    "media": {
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\frontend\\.test-workspace\\preview\\1792128513879\\markers-offset-5-silent-False.mkv",
+      "duration_ms": 9000,
+      "identity": "sha256:9e735a065c57929b0fe663e0d562b2278d9e101ef72a235ce29181afa910774c",
+      "size_bytes": 946994
+    },
+    "subtitle_sources": [
+      {
+        "id": "c3ad1c09-8646-4eb7-95f5-4c1cce9d63bd",
+        "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\frontend\\.test-workspace\\preview\\1792128513879\\markers.srt",
+        "format": "plain-srt"
+      }
+    ],
+    "entries": [
+      {
+        "id": "b7495afe-1e1e-4d18-ad04-a11d5543bca2",
+        "start_ms": 200,
+        "end_ms": 1800,
+        "text": "刷新不取消预览生成",
+        "speaker_id": "71a48efa-7799-47b5-a7b7-3064b1275615",
+        "tags": [],
+        "sources": [
+          {
+            "subtitle_id": "c3ad1c09-8646-4eb7-95f5-4c1cce9d63bd",
+            "index": 1,
+            "source_entries": [],
+            "moss_id": null
+          }
+        ]
+      },
+      {
+        "id": "9ec43df9-5a14-44ef-be0e-31a84d4a14ae",
+        "start_ms": 4200,
+        "end_ms": 5800,
+        "text": "绿色 880Hz 中部",
+        "speaker_id": "71a48efa-7799-47b5-a7b7-3064b1275615",
+        "tags": [],
+        "sources": [
+          {
+            "subtitle_id": "c3ad1c09-8646-4eb7-95f5-4c1cce9d63bd",
+            "index": 2,
+            "source_entries": [],
+            "moss_id": null
+          }
+        ]
+      },
+      {
+        "id": "2ee2f5a5-1209-410f-aff4-647c1f7ecc5d",
+        "start_ms": 8100,
+        "end_ms": 8900,
+        "text": "蓝色 1320Hz 结尾",
+        "speaker_id": "71a48efa-7799-47b5-a7b7-3064b1275615",
+        "tags": [],
+        "sources": [
+          {
+            "subtitle_id": "c3ad1c09-8646-4eb7-95f5-4c1cce9d63bd",
+            "index": 3,
+            "source_entries": [],
+            "moss_id": null
+          }
+        ]
+      }
+    ],
+    "speakers": [
+      {
+        "id": "71a48efa-7799-47b5-a7b7-3064b1275615",
+        "label": "?",
+        "color": "#71a8cc",
+        "order": 0
+      },
+      {
+        "id": "9632ed24-06da-4482-ad06-607bcc12b5b0",
+        "label": "NONSPEECH",
+        "color": "#a695ce",
+        "order": 1
+      }
+    ],
+    "exports": [],
+    "media_artifacts": [
+      {
+        "id": "20de47e3-2274-418e-8d02-9b3863640372",
+        "kind": "preview",
+        "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\frontend\\.test-workspace\\projects\\f5400f5c-8902-48b5-9bef-e13fc1583955\\previews\\20de47e3-2274-418e-8d02-9b3863640372.mp4",
+        "media_identity": "sha256:9e735a065c57929b0fe663e0d562b2278d9e101ef72a235ce29181afa910774c",
+        "parameters": {
+          "version": 1,
+          "quality": "standard",
+          "container": "mp4",
+          "video": "libx264",
+          "pixel_format": "yuv420p",
+          "audio": "aac",
+          "audio_bitrate": "160k",
+          "sample_rate": 48000,
+          "preset": "fast",
+          "crf": 23,
+          "max_width": 1920,
+          "timebase": "common-source-origin",
+          "gop": 50
+        },
+        "output_identity": "sha256:e28db040abf6636f90a5d19781358efea19932c9d07c9a9938c01dd3d8c68637"
+      }
+    ]
+  }
+}

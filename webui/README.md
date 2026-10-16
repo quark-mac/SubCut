@@ -143,6 +143,7 @@ $env:WEBUI_FFPROBE = 'D:\whisper-diarization\MOSS-Transcribe-Diarize\ffmpeg\ffmp
 - 工程 `Entry.id` 为独立 UUID；`sources[]` 每项为 `{subtitle_id, index, source_entries, moss_id}`。`index` 保存 SRT cue number / JSONL idx，MOSS 为 null；`source_entries` 保存 JSONL 的原 0-based 关联数组，**不重排、不去重、不从当前序号推导**；`moss_id` 保存导入段 ID，其余格式为 null。来源记录 `subtitle_sources` 保存路径、格式和稳定 ID。
 - JSONL 导出按参与来源关联顺序拼接已有 `source_entries`；缺失来源、SRT 与 MOSS 来源导出此字段为 `[]`。MOSS 重复输入段 ID 可作为来源保留，工程条目仍独立，输出使用当前条目 UUID 保证唯一。拆分两段各继承完整来源；合并按时间顺序拼接关联、不去重（包括同一来源拆分再合并的重复关联）；新增条目使用 `sources: []`。
 - 所有输出按 `(start_ms, end_ms)` 稳定排序；SRT / JSONL 从 1 连续编号，不改动输入序号或原来源索引。JSONL 始终保留 tags。SRT 无来源字段，MOSS 无 tags/原来源索引；它们不保证完整工程往返。SRT 人物前缀或元标签遇无法表达的分隔/换行字符时明确报错，不生成损坏文件。
+- 正文中的真实换行在工程和 JSONL 内原样保存。普通/说话人 SRT 允许普通多行，但空行、纯空白行（含首尾空行、CR/LF 分隔）会成为条目分隔或丢失，导出会返回具体条目的 `text` 错误并提示改用 JSONL；不会静默删行，也不会登记坏导出。可继续保存此类合法工程正文。
 - 生产兼容性依据为 `sub/_srt_io.py` 的七字段 JSONL / SRT writer，以及 MOSS `subtitle/models.py`、`export.py` 的五字段数组 / ASCII 冒号约定；WebUI 独立落实严格校验。测试还使用真实生产 `parse_jsonl` / `parse_srt` 读取输出文件。
 
 ## 可重复验证

@@ -145,6 +145,81 @@ test('质量切换的旧播放查询晚于生成回执时，仍跟踪当前任�
   } finally { release(); }
 });
 
+test('等待保存时同上下文刷新预览仍提交已点击的生成并播放真实副本', async ({ page }, testInfo) => {
+  const project = await fixture(page);
+  await expect(page.getByText(/matroska.*ffv1.*pcm_s16le/)).toBeVisible();
+  let release!: () => void, saved!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const persisted = new Promise<void>(resolve => { saved = resolve; });
+  await page.route(`**/api/projects/${project.id}`, async route => {
+    if (route.request().method() !== 'PUT') { await route.continue(); return; }
+    const response = await route.fetch(); saved(); await gate; await route.fulfill({ response });
+  });
+  await button(page, '列表字幕 1').click();
+  await page.getByRole('textbox', { name: '字幕正文', exact: true }).fill('刷新不取消预览生成');
+  const submitted = page.waitForResponse(r => r.url().endsWith(`/projects/${project.id}/preview`) && r.request().method() === 'POST');
+  try {
+    await button(page, '生成预览副本').click();
+    await persisted;
+    const refreshed = page.waitForResponse(r => r.url().endsWith(`/projects/${project.id}/playback?quality=standard`));
+    await button(page, '刷新预览状态').click();
+    await refreshed;
+    await expect(page.getByText(/matroska.*ffv1.*pcm_s16le/)).toBeVisible();
+    await expect(page.getByLabel('预览质量', { exact: true })).toBeDisabled();
+    await expect(button(page, '生成预览副本')).toBeDisabled();
+    release();
+    const task = await (await submitted).json();
+    await expect(page.getByRole('status', { name: '预览任务状态' })).toContainText('成功');
+    await expect(page.getByRole('status', { name: '浏览器解码状态' })).toContainText('已解码');
+    await expect(page.locator('video')).toHaveAttribute('src', new RegExp(`/previews/${task.id}`));
+    const disk = await (await page.request.get(`/api/projects/${project.id}`)).json();
+    expect(disk.entries[0].text).toBe('刷新不取消预览生成');
+    expect(disk.media_artifacts).toHaveLength(1);
+    await testInfo.attach('preview-refresh-save.json', { contentType: 'application/json', body: JSON.stringify({ task, disk }, null, 2) });
+  } finally { release(); await submitted.catch(() => {}); }
+});
+
+test('同工程原片重新定位后，晚到生成回执不能替换当前源的播放状态', async ({ page }, testInfo) => {
+  const project = await fixture(page);
+  const relocated = path.join(path.dirname(project.media.path), '移动后原片.mkv');
+  await fs.copyFile(project.media.path, relocated);
+  let release!: () => void, captured!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const pending = new Promise<void>(resolve => { captured = resolve; });
+  let task: { id: string } | undefined;
+  await page.route(`**/api/projects/${project.id}/preview`, async route => {
+    const response = await route.fetch(); task = await response.json(); captured();
+    await gate; await route.fulfill({ response });
+  });
+  try {
+    await button(page, '生成预览副本').click(); await pending;
+    const complete = async () => (await (await page.request.get(`/api/projects/${project.id}/tasks/${task!.id}`)).json()).state;
+    await expect.poll(complete).toBe('succeeded');
+    // Hold the new-source GET so a stale POST would be the only route to old playback.
+    let releaseRead!: () => void, readCaptured!: () => void;
+    const readGate = new Promise<void>(resolve => { releaseRead = resolve; });
+    const readPending = new Promise<void>(resolve => { readCaptured = resolve; });
+    await page.route(`**/api/projects/${project.id}/playback?*`, async route => {
+      const response = await route.fetch(); readCaptured(); await readGate; await route.fulfill({ response });
+    });
+    try {
+      await button(page, '重新定位原片').click();
+      await page.getByLabel('新视频绝对路径', { exact: true }).fill(relocated);
+      await button(page, '验证并重新定位').click();
+      await readPending;
+      const late = page.waitForResponse(r => r.url().endsWith(`/projects/${project.id}/preview`) && r.request().method() === 'POST');
+      release();
+      await (await late).json();
+      await expect(button(page, '生成预览副本')).toBeEnabled();
+      expect(await page.locator('video').getAttribute('src')).toContain(encodeURIComponent(relocated));
+      expect(await page.locator('video').getAttribute('src')).not.toContain('/previews/');
+      await expect(page.getByRole('status', { name: '预览任务状态' })).toHaveCount(0);
+    } finally { releaseRead(); }
+    await expect(page.getByRole('status', { name: '浏览器解码状态' })).toContainText('已解码');
+    await testInfo.attach('relocated-source.json', { contentType: 'application/json', body: JSON.stringify({ task, relocated, src: await page.locator('video').getAttribute('src') }) });
+  } finally { release(); }
+});
+
 test('后台完成与自动保存回执交错，切换后旧任务回执不覆盖新工程或草稿', async ({ page }) => {
   test.setTimeout(60000);
   const project = await fixture(page, true);

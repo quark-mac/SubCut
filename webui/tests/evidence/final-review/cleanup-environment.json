@@ -1,0 +1,30 @@
+﻿{
+    "portsChecked":  [
+                         18761,
+                         18762,
+                         18763,
+                         18764,
+                         51849,
+                         51850
+                     ],
+    "listening":  [
+
+                  ],
+    "ownedProcesses":  [
+
+                       ],
+    "ownedExplorerWindows":  [
+
+                             ],
+    "cpu":  {
+                "Name":  "Intel(R) Core(TM) Ultra 7 251HX",
+                "NumberOfCores":  18,
+                "NumberOfLogicalProcessors":  18
+            },
+    "os":  {
+               "Caption":  "Microsoft Windows 11 家庭版 中文版",
+               "Version":  "10.0.26200",
+               "BuildNumber":  "26200",
+               "TotalVisibleMemorySize":  16427760
+           }
+}

@@ -211,6 +211,13 @@ def write_subtitles(project, format, keep_tags=False) -> str:
                        tags=entry.tags, text=entry.text, source_entries=[i for source in entry.sources for i in source.source_entries])
             rows.append(json.dumps(row, ensure_ascii=False))
         else:
+            # Blank/whitespace-only lines delimit SRT cues (including after CR/LF
+            # normalization). Inspect without rewriting the project's real body.
+            # Edge blank lines also disappear or become cue separators on import.
+            lines = entry.text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+            if any(not line.strip() for line in lines):
+                raise Problem("正文含空白行（包括首尾空行），SRT 会将其视为条目分隔或丢失换行；请使用 JSONL 保留完整正文",
+                              entry=index, field="text")
             if format == "speaker-srt" and any(c in label for c in "]\r\n"):
                 raise Problem("此人物标签含 SRT 前缀无法表达的字符，请使用 JSONL 或 MOSS JSON", entry=index, field="speaker")
             prefix = f"[{label}] " if format == "speaker-srt" else ""

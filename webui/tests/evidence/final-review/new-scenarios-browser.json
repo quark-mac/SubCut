@@ -1,0 +1,171 @@
+{
+  "config": {
+    "configFile": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\frontend\\playwright.config.ts",
+    "rootDir": "C:/Users/machi/AppData/Local/Temp/opencode/webui-worktrees/review-fixes/webui/frontend/tests",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "C:/Users/machi/AppData/Local/Temp/opencode/webui-worktrees/review-fixes/webui/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "C:/Users/machi/AppData/Local/Temp/opencode/webui-worktrees/review-fixes/webui/frontend/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.55.1",
+    "workers": 1,
+    "webServer": {
+      "command": "\"D:\\whisper-diarization\\env\\python.exe\" -m webui.tests.serve --port 18761 --root \"C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\frontend\\.test-workspace\"",
+      "cwd": "../..",
+      "url": "http://127.0.0.1:18761/api/health",
+      "reuseExistingServer": false,
+      "timeout": 30000
+    }
+  },
+  "suites": [
+    {
+      "title": "preview.spec.ts",
+      "file": "preview.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "等待保存时同上下文刷新预览仍提交已点击的生成并播放真实副本",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2392,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [
+                    {
+                      "buffer": ""
+                    }
+                  ],
+                  "retry": 0,
+                  "startTime": "2026-10-16T05:28:33.467Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "preview-refresh-save.json",
+                      "contentType": "application/json",
+                      "body": "ewogICJ0YXNrIjogewogICAgImlkIjogIjIwZGU0N2UzLTIyNzQtNDE4ZS04ZDAyLTliMzg2MzY0MDM3MiIsCiAgICAicHJvamVjdF9pZCI6ICJmNTQwMGY1Yy04OTAyLTQ4YjUtOWJlZi1lMTNmYzE1ODM5NTUiLAogICAgInN0YXRlIjogInF1ZXVlZCIsCiAgICAicHJvZ3Jlc3MiOiAwLAogICAgImtpbmQiOiAicHJldmlldyIsCiAgICAicGFyYW1ldGVycyI6IHsKICAgICAgInZlcnNpb24iOiAxLAogICAgICAicXVhbGl0eSI6ICJzdGFuZGFyZCIsCiAgICAgICJjb250YWluZXIiOiAibXA0IiwKICAgICAgInZpZGVvIjogImxpYngyNjQiLAogICAgICAicGl4ZWxfZm9ybWF0IjogInl1djQyMHAiLAogICAgICAiYXVkaW8iOiAiYWFjIiwKICAgICAgImF1ZGlvX2JpdHJhdGUiOiAiMTYwayIsCiAgICAgICJzYW1wbGVfcmF0ZSI6IDQ4MDAwLAogICAgICAicHJlc2V0IjogImZhc3QiLAogICAgICAiY3JmIjogMjMsCiAgICAgICJtYXhfd2lkdGgiOiAxOTIwLAogICAgICAidGltZWJhc2UiOiAiY29tbW9uLXNvdXJjZS1vcmlnaW4iLAogICAgICAiZ29wIjogNTAKICAgIH0sCiAgICAibWVkaWFfaWRlbnRpdHkiOiAic2hhMjU2OjllNzM1YTA2NWM1NzkyOWIwZmU2NjNlMGQ1NjJiMjI3OGQ5ZTEwMWVmNzJhMjM1Y2UyOTE4MWFmYTkxMDc3NGMiLAogICAgImFydGlmYWN0X2lkIjogbnVsbCwKICAgICJjYWNoZWQiOiBmYWxzZSwKICAgICJlcnJvciI6IG51bGwsCiAgICAidG9vbHMiOiB7fQogIH0sCiAgImRpc2siOiB7CiAgICAiZm9ybWF0X3ZlcnNpb24iOiAxLAogICAgImlkIjogImY1NDAwZjVjLTg5MDItNDhiNS05YmVmLWUxM2ZjMTU4Mzk1NSIsCiAgICAibmFtZSI6ICLlhbzlrrnpooTop4gtMTc5MjEyODUxNDQ0MiIsCiAgICAicmV2aXNpb24iOiAyLAogICAgIm1lZGlhIjogewogICAgICAicGF0aCI6ICJDOlxcVXNlcnNcXG1hY2hpXFxBcHBEYXRhXFxMb2NhbFxcVGVtcFxcb3BlbmNvZGVcXHdlYnVpLXdvcmt0cmVlc1xccmV2aWV3LWZpeGVzXFx3ZWJ1aVxcZnJvbnRlbmRcXC50ZXN0LXdvcmtzcGFjZVxccHJldmlld1xcMTc5MjEyODUxMzg3OVxcbWFya2Vycy1vZmZzZXQtNS1zaWxlbnQtRmFsc2UubWt2IiwKICAgICAgImR1cmF0aW9uX21zIjogOTAwMCwKICAgICAgImlkZW50aXR5IjogInNoYTI1Njo5ZTczNWEwNjVjNTc5MjliMGZlNjYzZTBkNTYyYjIyNzhkOWUxMDFlZjcyYTIzNWNlMjkxODFhZmE5MTA3NzRjIiwKICAgICAgInNpemVfYnl0ZXMiOiA5NDY5OTQKICAgIH0sCiAgICAic3VidGl0bGVfc291cmNlcyI6IFsKICAgICAgewogICAgICAgICJpZCI6ICJjM2FkMWMwOS04NjQ2LTRlYjctOTVmNS00YzFjY2U5ZDYzYmQiLAogICAgICAgICJwYXRoIjogIkM6XFxVc2Vyc1xcbWFjaGlcXEFwcERhdGFcXExvY2FsXFxUZW1wXFxvcGVuY29kZVxcd2VidWktd29ya3RyZWVzXFxyZXZpZXctZml4ZXNcXHdlYnVpXFxmcm9udGVuZFxcLnRlc3Qtd29ya3NwYWNlXFxwcmV2aWV3XFwxNzkyMTI4NTEzODc5XFxtYXJrZXJzLnNydCIsCiAgICAgICAgImZvcm1hdCI6ICJwbGFpbi1zcnQiCiAgICAgIH0KICAgIF0sCiAgICAiZW50cmllcyI6IFsKICAgICAgewogICAgICAgICJpZCI6ICJiNzQ5NWFmZS0xZTFlLTRkMTgtYWQwNC1hMTFkNTU0M2JjYTIiLAogICAgICAgICJzdGFydF9tcyI6IDIwMCwKICAgICAgICAiZW5kX21zIjogMTgwMCwKICAgICAgICAidGV4dCI6ICLliLfmlrDkuI3lj5bmtojpooTop4jnlJ/miJAiLAogICAgICAgICJzcGVha2VyX2lkIjogIjcxYTQ4ZWZhLTc3OTktNDdiNS1hN2I3LTMwNjRiMTI3NTYxNSIsCiAgICAgICAgInRhZ3MiOiBbXSwKICAgICAgICAic291cmNlcyI6IFsKICAgICAgICAgIHsKICAgICAgICAgICAgInN1YnRpdGxlX2lkIjogImMzYWQxYzA5LTg2NDYtNGViNy05NWY1LTRjMWNjZTlkNjNiZCIsCiAgICAgICAgICAgICJpbmRleCI6IDEsCiAgICAgICAgICAgICJzb3VyY2VfZW50cmllcyI6IFtdLAogICAgICAgICAgICAibW9zc19pZCI6IG51bGwKICAgICAgICAgIH0KICAgICAgICBdCiAgICAgIH0sCiAgICAgIHsKICAgICAgICAiaWQiOiAiOWVjNDNkZjktNWExNC00NGVmLWJlMGUtMzFhODRkNGExNGFlIiwKICAgICAgICAic3RhcnRfbXMiOiA0MjAwLAogICAgICAgICJlbmRfbXMiOiA1ODAwLAogICAgICAgICJ0ZXh0IjogIue7v+iJsiA4ODBIeiDkuK3pg6giLAogICAgICAgICJzcGVha2VyX2lkIjogIjcxYTQ4ZWZhLTc3OTktNDdiNS1hN2I3LTMwNjRiMTI3NTYxNSIsCiAgICAgICAgInRhZ3MiOiBbXSwKICAgICAgICAic291cmNlcyI6IFsKICAgICAgICAgIHsKICAgICAgICAgICAgInN1YnRpdGxlX2lkIjogImMzYWQxYzA5LTg2NDYtNGViNy05NWY1LTRjMWNjZTlkNjNiZCIsCiAgICAgICAgICAgICJpbmRleCI6IDIsCiAgICAgICAgICAgICJzb3VyY2VfZW50cmllcyI6IFtdLAogICAgICAgICAgICAibW9zc19pZCI6IG51bGwKICAgICAgICAgIH0KICAgICAgICBdCiAgICAgIH0sCiAgICAgIHsKICAgICAgICAiaWQiOiAiMmVlMmY1YTUtMTIwOS00MTBmLWFmZjQtNjQ3YzFmN2VjYzVkIiwKICAgICAgICAic3RhcnRfbXMiOiA4MTAwLAogICAgICAgICJlbmRfbXMiOiA4OTAwLAogICAgICAgICJ0ZXh0IjogIuiTneiJsiAxMzIwSHog57uT5bC+IiwKICAgICAgICAic3BlYWtlcl9pZCI6ICI3MWE0OGVmYS03Nzk5LTQ3YjUtYTdiNy0zMDY0YjEyNzU2MTUiLAogICAgICAgICJ0YWdzIjogW10sCiAgICAgICAgInNvdXJjZXMiOiBbCiAgICAgICAgICB7CiAgICAgICAgICAgICJzdWJ0aXRsZV9pZCI6ICJjM2FkMWMwOS04NjQ2LTRlYjctOTVmNS00YzFjY2U5ZDYzYmQiLAogICAgICAgICAgICAiaW5kZXgiOiAzLAogICAgICAgICAgICAic291cmNlX2VudHJpZXMiOiBbXSwKICAgICAgICAgICAgIm1vc3NfaWQiOiBudWxsCiAgICAgICAgICB9CiAgICAgICAgXQogICAgICB9CiAgICBdLAogICAgInNwZWFrZXJzIjogWwogICAgICB7CiAgICAgICAgImlkIjogIjcxYTQ4ZWZhLTc3OTktNDdiNS1hN2I3LTMwNjRiMTI3NTYxNSIsCiAgICAgICAgImxhYmVsIjogIj8iLAogICAgICAgICJjb2xvciI6ICIjNzFhOGNjIiwKICAgICAgICAib3JkZXIiOiAwCiAgICAgIH0sCiAgICAgIHsKICAgICAgICAiaWQiOiAiOTYzMmVkMjQtMDZkYS00NDgyLWFkMDYtNjA3YmNjMTJiNWIwIiwKICAgICAgICAibGFiZWwiOiAiTk9OU1BFRUNIIiwKICAgICAgICAiY29sb3IiOiAiI2E2OTVjZSIsCiAgICAgICAgIm9yZGVyIjogMQogICAgICB9CiAgICBdLAogICAgImV4cG9ydHMiOiBbXSwKICAgICJtZWRpYV9hcnRpZmFjdHMiOiBbCiAgICAgIHsKICAgICAgICAiaWQiOiAiMjBkZTQ3ZTMtMjI3NC00MThlLThkMDItOWIzODYzNjQwMzcyIiwKICAgICAgICAia2luZCI6ICJwcmV2aWV3IiwKICAgICAgICAicGF0aCI6ICJDOlxcVXNlcnNcXG1hY2hpXFxBcHBEYXRhXFxMb2NhbFxcVGVtcFxcb3BlbmNvZGVcXHdlYnVpLXdvcmt0cmVlc1xccmV2aWV3LWZpeGVzXFx3ZWJ1aVxcZnJvbnRlbmRcXC50ZXN0LXdvcmtzcGFjZVxccHJvamVjdHNcXGY1NDAwZjVjLTg5MDItNDhiNS05YmVmLWUxM2ZjMTU4Mzk1NVxccHJldmlld3NcXDIwZGU0N2UzLTIyNzQtNDE4ZS04ZDAyLTliMzg2MzY0MDM3Mi5tcDQiLAogICAgICAgICJtZWRpYV9pZGVudGl0eSI6ICJzaGEyNTY6OWU3MzVhMDY1YzU3OTI5YjBmZTY2M2UwZDU2MmIyMjc4ZDllMTAxZWY3MmEyMzVjZTI5MTgxYWZhOTEwNzc0YyIsCiAgICAgICAgInBhcmFtZXRlcnMiOiB7CiAgICAgICAgICAidmVyc2lvbiI6IDEsCiAgICAgICAgICAicXVhbGl0eSI6ICJzdGFuZGFyZCIsCiAgICAgICAgICAiY29udGFpbmVyIjogIm1wNCIsCiAgICAgICAgICAidmlkZW8iOiAibGlieDI2NCIsCiAgICAgICAgICAicGl4ZWxfZm9ybWF0IjogInl1djQyMHAiLAogICAgICAgICAgImF1ZGlvIjogImFhYyIsCiAgICAgICAgICAiYXVkaW9fYml0cmF0ZSI6ICIxNjBrIiwKICAgICAgICAgICJzYW1wbGVfcmF0ZSI6IDQ4MDAwLAogICAgICAgICAgInByZXNldCI6ICJmYXN0IiwKICAgICAgICAgICJjcmYiOiAyMywKICAgICAgICAgICJtYXhfd2lkdGgiOiAxOTIwLAogICAgICAgICAgInRpbWViYXNlIjogImNvbW1vbi1zb3VyY2Utb3JpZ2luIiwKICAgICAgICAgICJnb3AiOiA1MAogICAgICAgIH0sCiAgICAgICAgIm91dHB1dF9pZGVudGl0eSI6ICJzaGEyNTY6ZTI4ZGIwNDBhYmY2NjM2ZjkwYTVkMTk3ODEzNThlZmVhMTk5MzJjOWQwN2M5YTk5MzhjMDFkZDNkOGM2ODYzNyIKICAgICAgfQogICAgXQogIH0KfQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f7191c1356a09079afd8-ca662bf147248974fd7d",
+          "file": "preview.spec.ts",
+          "line": 256,
+          "column": 1
+        },
+        {
+          "title": "同工程原片重新定位后，晚到生成回执不能替换当前源的播放状态",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1527,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [
+                    {
+                      "buffer": ""
+                    }
+                  ],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "Expect \"poll toBe\"",
+                      "duration": 391
+                    }
+                  ],
+                  "startTime": "2026-10-16T05:28:36.083Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "relocated-source.json",
+                      "contentType": "application/json",
+                      "body": "eyJ0YXNrIjp7ImlkIjoiM2Y1ZDU0NDctNDNlNy00NGFjLTlmNzktODM3OGEzZTFjOGQ4IiwicHJvamVjdF9pZCI6ImI3YTM1YWFiLWI2NTItNDdjMi1hY2FjLTAxOTVhNTRkOWVkMiIsInN0YXRlIjoicXVldWVkIiwicHJvZ3Jlc3MiOjAsImtpbmQiOiJwcmV2aWV3IiwicGFyYW1ldGVycyI6eyJ2ZXJzaW9uIjoxLCJxdWFsaXR5Ijoic3RhbmRhcmQiLCJjb250YWluZXIiOiJtcDQiLCJ2aWRlbyI6ImxpYngyNjQiLCJwaXhlbF9mb3JtYXQiOiJ5dXY0MjBwIiwiYXVkaW8iOiJhYWMiLCJhdWRpb19iaXRyYXRlIjoiMTYwayIsInNhbXBsZV9yYXRlIjo0ODAwMCwicHJlc2V0IjoiZmFzdCIsImNyZiI6MjMsIm1heF93aWR0aCI6MTkyMCwidGltZWJhc2UiOiJjb21tb24tc291cmNlLW9yaWdpbiIsImdvcCI6NTB9LCJtZWRpYV9pZGVudGl0eSI6InNoYTI1NjplZWVhNDc2NTQ5NjdjYTY3NmNhODNjMzAxYzhiYjkyZTU0OWY0YjVkMTNlMjlhYjA0YWJiNGY0ODE2YjZlNGEyIiwiYXJ0aWZhY3RfaWQiOm51bGwsImNhY2hlZCI6ZmFsc2UsImVycm9yIjpudWxsLCJ0b29scyI6e319LCJyZWxvY2F0ZWQiOiJDOlxcVXNlcnNcXG1hY2hpXFxBcHBEYXRhXFxMb2NhbFxcVGVtcFxcb3BlbmNvZGVcXHdlYnVpLXdvcmt0cmVlc1xccmV2aWV3LWZpeGVzXFx3ZWJ1aVxcZnJvbnRlbmRcXC50ZXN0LXdvcmtzcGFjZVxccHJldmlld1xcMTc5MjEyODUxNjE4OFxc56e75Yqo5ZCO5Y6f54mHLm1rdiIsInNyYyI6Ii9hcGkvcHJvamVjdHMvYjdhMzVhYWItYjY1Mi00N2MyLWFjYWMtMDE5NWE1NGQ5ZWQyL3ByZXZpZXdzLzNmNWQ1NDQ3LTQzZTctNDRhYy05Zjc5LTgzNzhhM2UxYzhkOD9pZGVudGl0eT1zaGEyNTY6ZWVlYTQ3NjU0OTY3Y2E2NzZjYTgzYzMwMWM4YmI5MmU1NDlmNGI1ZDEzZTI5YWIwNGFiYjRmNDgxNmI2ZTRhMiZwYXRoPUMlM0ElNUNVc2VycyU1Q21hY2hpJTVDQXBwRGF0YSU1Q0xvY2FsJTVDVGVtcCU1Q29wZW5jb2RlJTVDd2VidWktd29ya3RyZWVzJTVDcmV2aWV3LWZpeGVzJTVDd2VidWklNUNmcm9udGVuZCU1Qy50ZXN0LXdvcmtzcGFjZSU1Q3ByZXZpZXclNUMxNzkyMTI4NTE2MTg4JTVDJUU3JUE3JUJCJUU1JThBJUE4JUU1JTkwJThFJUU1JThFJTlGJUU3JTg5JTg3Lm1rdiJ9"
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f7191c1356a09079afd8-cd19470a6b69ca01c124",
+          "file": "preview.spec.ts",
+          "line": 321,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-16T05:28:32.036Z",
+    "duration": 6098.326999999999,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

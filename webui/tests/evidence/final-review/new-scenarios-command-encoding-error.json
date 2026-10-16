@@ -1,0 +1,69 @@
+{
+  "config": {
+    "configFile": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\frontend\\playwright.config.ts",
+    "rootDir": "C:/Users/machi/AppData/Local/Temp/opencode/webui-worktrees/review-fixes/webui/frontend/tests",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "C:/Users/machi/AppData/Local/Temp/opencode/webui-worktrees/review-fixes/webui/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "",
+        "name": "",
+        "testDir": "C:/Users/machi/AppData/Local/Temp/opencode/webui-worktrees/review-fixes/webui/frontend/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.55.1",
+    "workers": 1,
+    "webServer": {
+      "command": "\"D:\\whisper-diarization\\env\\python.exe\" -m webui.tests.serve --port 18761 --root \"C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\frontend\\.test-workspace\"",
+      "cwd": "../..",
+      "url": "http://127.0.0.1:18761/api/health",
+      "reuseExistingServer": false,
+      "timeout": 30000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "SyntaxError: Invalid regular expression: /?????????????|??????????/gi: Nothing to repeat",
+      "stack": "SyntaxError: Invalid regular expression: /?????????????|??????????/gi: Nothing to repeat"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-10-16T05:27:47.913Z",
+    "duration": 1265.448,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

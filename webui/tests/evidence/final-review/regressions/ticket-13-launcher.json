@@ -1,0 +1,18 @@
+{
+  "browser": "155.0.4283.45",
+  "command": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\start.cmd",
+  "cwd": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\frontend\\.test-workspace\\launcher",
+  "servicePort": 51849,
+  "debuggingPort": 51850,
+  "url": "http://127.0.0.1:51849/",
+  "failureExitCode": 1,
+  "failure": "Existing Python not found. Set WEBUI_PYTHON or pass -Python <absolute python.exe path>.\r\n����λ�� C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\start.ps1:21 �ַ�: 5\r\n+     throw 'Existing Python not found. Set WEBUI_PYTHON or pass -Pytho ...\r\n+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : OperationStopped: (Existing Python...thon.exe path>.:String) [], RuntimeException\r\n    + FullyQualifiedErrorId : Existing Python not found. Set WEBUI_PYTHON or pass -Python <absolute python.exe path>.\r\n \r\n",
+  "serverPid": "29776",
+  "portsClosed": true,
+  "cleanup": {
+    "status": 128,
+    "stdout": "",
+    "stderr": "����: �޷���ֹ PID 34744 (���� PID 7504 �ӽ���)�Ľ��̡�\r\nԭ��: û�д������ʵ�������С�\r\r\n����: �޷���ֹ PID 7504 (���� PID 10740 �ӽ���)�Ľ��̡�\r\nԭ��: û�д������ʵ�������С�\r\r\n"
+  },
+  "logs": "INFO:     Started server process [29776]\r\nINFO:     Waiting for application startup.\r\nINFO:     Application startup complete.\r\nINFO:     Uvicorn running on http://127.0.0.1:51849 (Press CTRL+C to quit)\r\nINFO:     127.0.0.1:51856 - \"GET /api/health HTTP/1.1\" 200 OK\r\nINFO:     127.0.0.1:58724 - \"GET / HTTP/1.1\" 200 OK\r\nINFO:     127.0.0.1:65256 - \"GET /assets/index-BBLk1t7b.css HTTP/1.1\" 200 OK\r\nINFO:     127.0.0.1:63537 - \"GET /assets/index-B1eVkF6x.js HTTP/1.1\" 200 OK\r\nINFO:     127.0.0.1:63537 - \"GET /favicon.ico HTTP/1.1\" 404 Not Found\r\nWebUI exited with code 1\r\n����λ�� C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\start.ps1:29 �ַ�: 32\r\n+ ... $LASTEXITCODE -ne 0) { throw \"WebUI exited with code $LASTEXITCODE\" }\r\n+                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\r\n    + CategoryInfo          : OperationStopped: (WebUI exited with code 1:String) [], RuntimeException\r\n    + FullyQualifiedErrorId : WebUI exited with code 1\r\n \r\n�밴���������. . . \r\n"
+}

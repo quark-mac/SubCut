@@ -15,9 +15,10 @@ import { TimelineMediaControls } from './TimelineMediaControls';
 import { BatchEditor } from './BatchEditor';
 import { AddSubtitleDialog } from './AddSubtitleDialog';
 import { MergeSubtitleDialog } from './MergeSubtitleDialog';
-import { mergeSelection } from './structureEditing';
+import { addSubtitle as addEntry, splitSubtitle as splitEntry, mergeSubtitles as mergeEntries, mergeSelection } from './structureEditing';
 import { offsetSpeakers } from './selectionEditing';
-import { SpeakerManager, specialSpeaker, type SpeakerDraft } from './SpeakerManager';
+import { SpeakerManager } from './SpeakerManager';
+import { mergeSpeaker, removeSpeaker, reorderSpeaker, replaceSubtitles, resolveSpeaker, saveSpeaker, speakerDraftError, type SpeakerDraft } from './speakerEditing';
 
 interface Draft { text: string; start: string; end: string; speaker: string }
 const draftFor = (entry: Entry, project: Project): Draft => ({ text: entry.text, start: String(entry.start_ms), end: String(entry.end_ms), speaker: project.speakers.find(s => s.id === entry.speaker_id)!.label });
@@ -110,17 +111,13 @@ export function App() {
   function commitDraft(): Project | null {
     const project = session.getProject();
     if (project && speakerDraft) {
-      const label = speakerDraft.label.trim();
-      const conflict = project.speakers.some(s => s.id !== speakerDraft.id && s.label === label);
-      if (!label || conflict) {
-        setSpeakerError(!label ? '说话人名称不能为空' : '名称已存在，请使用“合并说话人”操作');
+      const error = speakerDraftError(project, speakerDraft);
+      if (error) {
+        setSpeakerError(error);
         document.querySelector<HTMLInputElement>('.speaker-form input')?.focus();
         return null;
       }
-      const speaker = { id: speakerDraft.id ?? crypto.randomUUID(), label, color: speakerDraft.color, order: project.speakers.length - 2 };
-      const speakers = (speakerDraft.id ? project.speakers.map(s => s.id === speakerDraft.id ? { ...s, label, color: speaker.color } : s)
-        : [...project.speakers.slice(0, -2), speaker, ...project.speakers.slice(-2)]).map((s, order) => ({ ...s, order }));
-      const next = { ...project, speakers };
+      const next = saveSpeaker(project, { id: speakerDraft.id ?? crypto.randomUUID(), label: speakerDraft.label.trim(), color: speakerDraft.color });
       commitSpeakers(next);
       return next;
     }
@@ -141,14 +138,9 @@ export function App() {
     }
     const label = draft.speaker.trim();
     if (!label) return invalid('speaker', '说话人名称不能为空');
-    let speakers = project.speakers;
-    let speaker = speakers.find(s => s.label === label);
-    if (!speaker) {
-      speaker = { id: crypto.randomUUID(), label, color: '#71a8cc', order: speakers.length - 2 };
-      speakers = [...speakers.slice(0, -2), speaker, ...speakers.slice(-2)].map((s, order) => ({ ...s, order }));
-    }
-    const next = { ...project, speakers, entries: project.entries.map(entry => entry.id === selected
-      ? { ...entry, text: draft.text, start_ms: start, end_ms: end, speaker_id: speaker.id } : entry) };
+    const resolved = resolveSpeaker(project, label, crypto.randomUUID());
+    const next = { ...resolved.project, entries: project.entries.map(entry => entry.id === selected
+      ? { ...entry, text: draft.text, start_ms: start, end_ms: end, speaker_id: resolved.speaker.id } : entry) };
     session.commit(next); setDraft(draftFor(next.entries.find(e => e.id === selected)!, next)); setFieldError(null); setError('');
     return next;
   }
@@ -162,36 +154,22 @@ export function App() {
 
   function reorderSpeakers(source: string, target: string) {
     const snapshot = commitDraft();
-    if (!snapshot || source === target) return;
-    const ordinary = snapshot.speakers.filter(s => !specialSpeaker(s.label));
-    const from = ordinary.findIndex(s => s.id === source), to = ordinary.findIndex(s => s.id === target);
-    if (from < 0 || to < 0) return;
-    ordinary.splice(to, 0, ordinary.splice(from, 1)[0]);
-    const speakers = [...ordinary, ...snapshot.speakers.slice(-2)].map((s, order) => ({ ...s, order }));
-    commitSpeakers({ ...snapshot, speakers });
+    const next = snapshot && reorderSpeaker(snapshot, source, target);
+    if (next) commitSpeakers(next);
   }
 
   function mergeSpeakers(source: string, target: string): boolean {
     const snapshot = commitDraft();
-    if (!snapshot || source === target) return false;
-    const from = snapshot.speakers.find(s => s.id === source), to = snapshot.speakers.find(s => s.id === target);
-    if (!from || !to || specialSpeaker(from.label) || specialSpeaker(to.label)) return false;
-    commitSpeakers({ ...snapshot,
-      speakers: snapshot.speakers.filter(s => s.id !== source).map((s, order) => ({ ...s, order })),
-      entries: snapshot.entries.map(e => e.speaker_id === source ? { ...e, speaker_id: target } : e),
-    });
+    const next = snapshot && mergeSpeaker(snapshot, source, target);
+    if (!next) return false;
+    commitSpeakers(next);
     return true;
   }
 
   function deleteSpeaker(source: string) {
     const snapshot = commitDraft();
-    const speaker = snapshot?.speakers.find(s => s.id === source);
-    if (!snapshot || !speaker || specialSpeaker(speaker.label)) return;
-    const unknown = snapshot.speakers.find(s => s.label === '?')!;
-    commitSpeakers({ ...snapshot,
-      speakers: snapshot.speakers.filter(s => s.id !== source).map((s, order) => ({ ...s, order })),
-      entries: snapshot.entries.map(e => e.speaker_id === source ? { ...e, speaker_id: unknown.id } : e),
-    });
+    const next = snapshot && removeSpeaker(snapshot, source);
+    if (next) commitSpeakers(next);
   }
 
   function choose(entry: Entry, modifiers?: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) {
@@ -363,11 +341,11 @@ export function App() {
     const entry = snapshot?.entries.find(e => selectedIds.has(e.id));
     if (!snapshot || !entry) return;
     const at = Math.round((video.current?.currentTime ?? position / 1000) * 1000);
-    if (at <= entry.start_ms || at >= entry.end_ms) return;
+    const result = splitEntry(snapshot, entry.id, at, [crypto.randomUUID(), crypto.randomUUID()]);
+    if (!result) return;
     video.current?.pause();
-    const parts = [{ ...entry, id: crypto.randomUUID(), end_ms: at }, { ...entry, id: crypto.randomUUID(), start_ms: at }];
-    session.commit({ ...snapshot, entries: snapshot.entries.flatMap(e => e.id === entry.id ? parts : [e]) });
-    setSelectedIds(new Set(parts.map(e => e.id))); anchor.current = parts[0].id;
+    session.commit(result.project);
+    setSelectedIds(new Set(result.parts.map(e => e.id))); anchor.current = result.parts[0].id;
     setDraft(null); setFieldError(null); setError(''); setEditorTab('subtitles');
   }
 
@@ -383,23 +361,18 @@ export function App() {
 
   function mergeSubtitles(ids: Set<string>, speakerId: string) {
     const snapshot = session.getProject();
-    const group = snapshot && mergeSelection(snapshot, ids);
-    if (!snapshot || !group || !snapshot.speakers.some(s => s.id === speakerId)) return;
-    const entry: Entry = {
-      id: crypto.randomUUID(), start_ms: group[0].start_ms, end_ms: Math.max(...group.map(e => e.end_ms)),
-      text: group.map(e => e.text).join('\n'), speaker_id: speakerId,
-      tags: [...new Set(group.flatMap(e => e.tags))], sources: group.flatMap(e => e.sources),
-    };
-    const next = { ...snapshot, entries: snapshot.entries.flatMap(e => e.id === group[0].id ? [entry] : ids.has(e.id) ? [] : [e]) };
+    const result = snapshot && mergeEntries(snapshot, ids, speakerId, crypto.randomUUID());
+    if (!result) return;
+    const { project: next, entry } = result;
     session.commit(next); setSelected(entry.id); setDraft(draftFor(entry, next));
     setMerging(null); setFieldError(null); setError(''); setEditorTab('subtitles');
   }
 
   function addSubtitle(text: string, speakerId: string) {
     const snapshot = session.getProject();
-    if (!snapshot || !addition || !text.trim() || !snapshot.speakers.some(s => s.id === speakerId)) return;
-    const entry: Entry = { id: crypto.randomUUID(), start_ms: addition.start, end_ms: addition.end, text, speaker_id: speakerId, tags: [], sources: [] };
-    const next = { ...snapshot, entries: [...snapshot.entries, entry] };
+    const result = snapshot && addition && addEntry(snapshot, addition, text, speakerId, crypto.randomUUID());
+    if (!result) return;
+    const { project: next, entry } = result;
     session.commit(next); setSelected(entry.id); setDraft(draftFor(entry, next)); setEditorTab('subtitles'); setAddition(null); setError('');
   }
 
@@ -459,10 +432,7 @@ export function App() {
       const body = { media_path: mediaPath.trim(), subtitle_path: subtitlePath.trim(), format: importFormat };
       if (create && dialog === 'replace' && preview) {
         const current = session.getProject()!;
-        const remap = new Map(preview.speakers.map(s => [s.id, current.speakers.find(old => old.label === s.label)]));
-        const speakers = preview.speakers.map(s => ({ ...s, id: remap.get(s.id)?.id ?? s.id, color: remap.get(s.id)?.color ?? s.color }));
-        const entries = preview.entries.map(e => ({ ...e, speaker_id: remap.get(e.speaker_id)?.id ?? e.speaker_id }));
-        session.commit({ ...current, entries, speakers, subtitle_sources: preview.subtitle_sources });
+        session.commit(replaceSubtitles(current, preview));
         setSelected(null); setDraft(null); setFieldError(null); setDialog(null); setPreview(null);
       } else if (create) accept(await api<Project>('/projects', 'POST', { ...body, name, preview_fingerprint: preview?.fingerprint }));
       else setPreview(await api<ImportPreview>('/imports/preview', 'POST', body));

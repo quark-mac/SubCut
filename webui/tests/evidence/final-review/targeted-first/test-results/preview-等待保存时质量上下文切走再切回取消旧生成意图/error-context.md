@@ -1,0 +1,236 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]: ◈ 字幕校对
+    - button "文件" [disabled] [ref=e7]
+    - button "编辑" [ref=e9] [cursor=pointer]
+    - button "视图" [ref=e11] [cursor=pointer]
+    - button "帮助" [ref=e12] [cursor=pointer]
+    - generic [ref=e13]: 本机工作区
+  - generic [ref=e14]:
+    - heading "兼容预览-1792127729868" [level=1] [ref=e15]
+    - status "保存状态" [ref=e16]: 保存中…
+    - generic [ref=e17]:
+      - button "新建工程" [disabled] [ref=e18]
+      - button "替换字幕" [disabled] [ref=e19]
+      - button "保存工程" [ref=e20] [cursor=pointer]
+      - combobox "导出格式" [ref=e21]:
+        - option "说话人 SRT" [selected]
+        - option "普通 SRT"
+        - option "项目 JSONL"
+        - option "MOSS JSON"
+      - generic [ref=e22]:
+        - checkbox "保留已有元标签" [ref=e23]
+        - text: 保留已有元标签
+      - button "导出说话人 SRT" [ref=e24] [cursor=pointer]
+  - main [ref=e25]:
+    - complementary "工程资源" [ref=e26]:
+      - heading "工程资源" [level=2] [ref=e27]
+      - region "兼容预览副本" [ref=e28]:
+        - heading "兼容预览副本" [level=3] [ref=e29]
+        - generic [ref=e30]:
+          - text: 预览质量
+          - combobox "预览质量" [disabled] [ref=e31]:
+            - option "标准（最高 1920 宽）" [selected]
+            - option "轻量（最高 960 宽）"
+        - button "生成预览副本" [disabled] [ref=e32]
+        - button "刷新预览状态" [ref=e33] [cursor=pointer]
+        - region "预览媒体信息与任务详情" [ref=e34]:
+          - status "浏览器解码状态" [ref=e35]: 浏览器视频解码失败（仅识别到音轨），请生成预览副本
+          - paragraph [ref=e36]: matroska,webm · ffv1 / pcm_s16le
+          - paragraph [ref=e37]: 容器或编码可能不受浏览器支持。请以实际画面和声音为准，可生成 H.264/AAC 副本。
+          - paragraph [ref=e38]: 原片带非零时间戳，请生成副本后按零起点校对。
+      - region "波形生成" [ref=e39]:
+        - heading "波形" [level=3] [ref=e40]
+        - generic [ref=e41]:
+          - text: 波形采样密度
+          - combobox "波形采样密度" [ref=e42]:
+            - option "标准（10 ms）" [selected]
+            - option "精细（5 ms）"
+        - button "生成音频波形" [ref=e43] [cursor=pointer]
+        - button "刷新波形状态" [ref=e44] [cursor=pointer]
+        - region "波形任务详情" [ref=e45]
+      - region "缩略图生成" [ref=e46]:
+        - heading "缩略图" [level=3] [ref=e47]
+        - generic [ref=e48]:
+          - text: 缩略图采样密度
+          - combobox "缩略图采样密度" [ref=e49]:
+            - option "标准（1 秒）" [selected]
+            - option "精细（0.5 秒）"
+        - button "生成画面缩略图" [ref=e50] [cursor=pointer]
+        - button "刷新缩略图状态" [ref=e51] [cursor=pointer]
+        - region "缩略图任务详情" [ref=e52]
+      - button "刷新资源状态" [ref=e53] [cursor=pointer]
+      - heading "源视频" [level=3] [ref=e54]
+      - paragraph [ref=e55]: C:\Users\machi\AppData\Local\Temp\opencode\webui-worktrees\review-fixes\webui\frontend\.test-workspace\preview\1792127729532\markers-offset-5-silent-False.mkv
+      - paragraph [ref=e56]: 时长 00:00:09.000 · 原路径引用
+      - status "媒体资源状态" [ref=e57]: 可用
+      - group [ref=e58]
+      - button "重新定位原片" [disabled] [ref=e60]
+      - button "用新视频建立工程" [disabled] [ref=e61]
+      - heading "字幕来源" [level=3] [ref=e62]
+      - generic [ref=e63]:
+        - paragraph [ref=e64]: C:\Users\machi\AppData\Local\Temp\opencode\webui-worktrees\review-fixes\webui\frontend\.test-workspace\preview\1792127729532\markers.srt
+        - generic [ref=e65]: plain-srt · 可用
+      - heading "工作字幕" [level=3] [ref=e66]
+      - paragraph [ref=e67]: 3 条 · 工程修订 1
+      - paragraph [ref=e68]: C:\Users\machi\AppData\Local\Temp\opencode\webui-worktrees\review-fixes\webui\frontend\.test-workspace\projects\9b2ff95d-da1d-46c5-9b36-ad0a55aa6c17\project.json
+      - heading "媒体派生产物 / 预览副本" [level=3] [ref=e69]
+      - paragraph [ref=e70]: 暂无派生产物；可用时直接播放原片
+      - heading "导出文件" [level=3] [ref=e71]
+      - paragraph [ref=e72]: 继续编辑请保存工程。交换字幕不包含完整身份、来源和人物配置。
+      - paragraph [ref=e73]: 保存校对结果后导出
+    - separator "调整资源面板宽度" [ref=e74]
+    - region "视频预览" [ref=e75]:
+      - heading "视频预览 原片时间轴" [level=2] [ref=e76]:
+        - text: 视频预览
+        - generic [ref=e77]: 原片时间轴
+      - generic [ref=e78]:
+        - generic "播放字幕":
+          - generic:
+            - generic: "[?]"
+            - text: 切换质量时仍保存字幕
+      - generic [ref=e80]:
+        - button "播放" [ref=e81] [cursor=pointer]
+        - status "播放位置" [ref=e82]: 00:00:00.200 / 00:00:09.000
+        - generic [ref=e83]:
+          - checkbox "字幕" [checked] [ref=e84]
+          - text: 字幕
+        - generic [ref=e85]:
+          - checkbox "叠加人物名称" [checked] [ref=e86]
+          - text: 说话人
+      - generic [ref=e87]:
+        - generic [ref=e88]:
+          - text: 速度
+          - combobox "播放速度" [ref=e89]:
+            - option "0.5×"
+            - option "0.75×"
+            - option "1×" [selected]
+            - option "1.25×"
+            - option "1.5×"
+            - option "1.75×"
+            - option "2×"
+        - button "循环当前字幕" [ref=e90] [cursor=pointer]
+        - button "退出试听" [disabled] [ref=e91]
+        - status "试听状态" [ref=e92]: 自由播放
+        - generic [ref=e93]:
+          - textbox "跳转时间" [ref=e94]
+          - button "跳转" [ref=e95] [cursor=pointer]
+      - paragraph [ref=e96]: 单击定位 · 双击逐句试听 · 循环后用“退出试听”停止 · Ctrl+S 保存
+    - separator "调整编辑面板宽度" [ref=e97]
+    - region "字幕编辑器" [ref=e98]:
+      - tablist "编辑页签" [ref=e99]:
+        - tab "字幕" [selected] [ref=e100] [cursor=pointer]
+        - tab "说话人" [ref=e101] [cursor=pointer]
+      - heading "字幕 3 条" [level=2] [ref=e102]:
+        - text: 字幕
+        - generic [ref=e103]: 3 条
+      - generic [ref=e104]:
+        - searchbox "搜索字幕" [ref=e105]
+        - combobox "筛选说话人" [ref=e106]:
+          - option "全部说话人" [selected]
+          - option "未标注 ?"
+          - option "非对白 NONSPEECH"
+        - button "清除筛选" [disabled] [ref=e107]
+      - generic [ref=e109]:
+        - button "列表字幕 1" [pressed] [ref=e110] [cursor=pointer]:
+          - generic [ref=e111] [cursor=pointer]: 1 · 00:00:00.200 → 00:00:01.800
+          - generic [ref=e112] [cursor=pointer]: 切换质量时仍保存字幕
+          - generic [ref=e113] [cursor=pointer]: 未标注 ?
+        - button "列表字幕 2" [ref=e114] [cursor=pointer]:
+          - generic [ref=e115] [cursor=pointer]: 2 · 00:00:04.200 → 00:00:05.800
+          - generic [ref=e116] [cursor=pointer]: 绿色 880Hz 中部
+          - generic [ref=e117] [cursor=pointer]: 未标注 ?
+        - button "列表字幕 3" [ref=e118] [cursor=pointer]:
+          - generic [ref=e119] [cursor=pointer]: 3 · 00:00:08.100 → 00:00:08.900
+          - generic [ref=e120] [cursor=pointer]: 蓝色 1320Hz 结尾
+          - generic [ref=e121] [cursor=pointer]: 未标注 ?
+      - generic [ref=e122]:
+        - generic [ref=e123]:
+          - text: 字幕正文
+          - textbox "字幕正文" [ref=e124]: 切换质量时仍保存字幕
+        - generic [ref=e125]:
+          - generic [ref=e126]:
+            - text: 开始时间（毫秒）
+            - spinbutton "开始时间（毫秒）" [ref=e127]: "200"
+          - generic [ref=e128]:
+            - text: 结束时间（毫秒）
+            - spinbutton "结束时间（毫秒）" [ref=e129]: "1800"
+        - generic [ref=e130]:
+          - text: 说话人归属
+          - combobox "说话人归属" [ref=e131]:
+            - option "输入新的说话人名称" [disabled]
+            - option "未标注 ?" [selected]
+            - option "非对白 NONSPEECH"
+        - generic [ref=e132]:
+          - text: 说话人名称
+          - textbox "说话人名称" [ref=e133]: "?"
+        - button "应用修改" [disabled] [ref=e134]
+        - button "取消修改" [disabled] [ref=e135]
+        - paragraph [ref=e136]: 离开编辑区或应用修改时提交，随后自动保存。保存/导出先校验输入；Esc 取消草稿。
+  - separator "调整上下分区高度" [ref=e137]
+  - region "原片时间轴" [ref=e138]:
+    - generic [ref=e139]:
+      - heading "时间轴" [level=2] [ref=e140]
+      - button "撤销" [ref=e141] [cursor=pointer]
+      - button "重做" [disabled] [ref=e142]
+      - button "删除选中字幕" [ref=e143] [cursor=pointer]
+      - button "新增字幕" [ref=e144] [cursor=pointer]
+      - button "拆分字幕" [disabled] [ref=e145]
+      - button "合并字幕" [disabled] [ref=e146]
+      - combobox "当前说话人轨" [ref=e147]:
+        - option "未明确轨道 → ?" [selected]
+        - option "未标注 ?"
+        - option "非对白 NONSPEECH"
+      - generic [ref=e148]: 视频轨锁定 · 合法重叠保留
+    - generic [ref=e149]:
+      - button "吸附" [pressed] [ref=e150] [cursor=pointer]
+      - generic [ref=e151]:
+        - text: 缩放
+        - slider "时间轴缩放" [ref=e152]: "0"
+      - status "缩放倍率" [ref=e153]: 1×
+      - button "适合全片" [ref=e154] [cursor=pointer]
+      - generic [ref=e155]: 拖动字幕或两端调整 · 空白框选 · Ctrl/Shift 多选 · 拖动刻度定位
+    - region "时间轴轨道滚动区" [ref=e156]:
+      - generic [ref=e157]:
+        - generic [ref=e158]:
+          - generic [ref=e159]: 原片时间
+          - generic "原片时间刻度" [ref=e160]:
+            - generic: 00:00:00.000
+            - generic: 00:00:01.000
+            - generic: 00:00:02.000
+            - generic: 00:00:03.000
+            - generic: 00:00:04.000
+            - generic: 00:00:05.000
+            - generic: 00:00:06.000
+            - generic: 00:00:07.000
+            - generic: 00:00:08.000
+            - generic: 00:00:09.000
+            - button "拖动播放头" [ref=e161]: ▼
+        - generic [ref=e162]:
+          - button "选择轨道 🔒 视频轨" [ref=e163] [cursor=pointer]: 🔒 视频轨
+          - generic [ref=e164]:
+            - generic "原片时间媒体证据":
+              - generic: 原片 · 00:00:09.000 · 锁定 · 可在资源区生成波形和缩略图
+        - generic [ref=e165]:
+          - button "选择轨道 字幕总览" [ref=e166] [cursor=pointer]: 字幕总览
+          - generic [ref=e167]:
+            - button "字幕总览：切换质量时仍保存字幕" [pressed] [ref=e168]:
+              - generic [ref=e169]: 切换质量时仍保存字幕
+            - button "字幕总览：绿色 880Hz 中部" [ref=e172]:
+              - generic [ref=e173]: 绿色 880Hz 中部
+            - button "字幕总览：蓝色 1320Hz 结尾" [ref=e176]:
+              - generic [ref=e177]: 蓝色 1320Hz 结尾
+        - generic [ref=e180]:
+          - button "选择轨道 未标注 ?" [ref=e181] [cursor=pointer]: 未标注 ?
+          - generic [ref=e182]:
+            - button "未标注 ?：切换质量时仍保存字幕" [pressed] [ref=e183]:
+              - generic [ref=e184]: 切换质量时仍保存字幕
+            - button "未标注 ?：绿色 880Hz 中部" [ref=e187]:
+              - generic [ref=e188]: 绿色 880Hz 中部
+            - button "未标注 ?：蓝色 1320Hz 结尾" [ref=e191]:
+              - generic [ref=e192]: 蓝色 1320Hz 结尾
+        - button "选择轨道 非对白 NONSPEECH" [ref=e196] [cursor=pointer]: 非对白 NONSPEECH
+```

@@ -1,0 +1,329 @@
+{
+  "initial_head": "5586f22214f82e02d5bf85ffd7e59cdb7b2176c2",
+  "planning_baseline": "17b1aa80931e0f3a81ebec11c35071d8383b467a",
+  "merged_integration": "5586f22214f82e02d5bf85ffd7e59cdb7b2176c2",
+  "merge_result": "Already up to date.",
+  "python": "3.10.19",
+  "browser": "Microsoft Edge 155.0.4283.45",
+  "browser_result": "84 passed (4.9m)",
+  "backend_result": "42 passed (34.056s)",
+  "compile_files": 17,
+  "source_hashes": {
+    "webui/.gitignore": {
+      "sha256": "3a2e0f563b39ed7ec9d8a34fb0a813e840a11d949c43d37f8592ddad006ace64",
+      "lf_sha256": "139f9183b6c40ed14f54788eb675d37bee23ef2bececf22a7a98edf2179323b8"
+    },
+    "webui/README.md": {
+      "sha256": "924be8303ceacbe5b394e83cb305745eae3bf93b7780bfa012ca40e322f19349",
+      "lf_sha256": "2b34b49f131835c943d5a4c97e1ec57c044ca9c1a69337246c07c22c9eeafe6b"
+    },
+    "webui/__main__.py": {
+      "sha256": "a5e0d686e840deec84b169627ce9335d52af4ef2ec2adde3086587c076748fc7",
+      "lf_sha256": "4440586b2bd978d7f87725fdaa52ac0b7f516660eb37b7a7599c9611739c4510"
+    },
+    "webui/backend/app.py": {
+      "sha256": "ea53c083422d9324246860bccdc2fc419a69dd11c8af2f4cfb2367014714ef63",
+      "lf_sha256": "3341afa618db7c9428fa3ae761d6bcd41f4f3f4502edd74a4fbfb1a5d34f4b5d"
+    },
+    "webui/backend/errors.py": {
+      "sha256": "827e03581925f308812c8c49e19384561a4cd4579d5b0bf56d484edd8da266df",
+      "lf_sha256": "e464ac4e5b4e8f1550cbf63cca9ab605be337073c6e829299291b7c616845c1d"
+    },
+    "webui/backend/formats.py": {
+      "sha256": "dd730b327b9b75d9181bad917e72f071455fb2f406696dcdedd28a09801b52af",
+      "lf_sha256": "438fa9fd73a90dfd323923ca0ed93da0bd0a33f94da4bc5b405f34949014841c"
+    },
+    "webui/backend/media.py": {
+      "sha256": "ee400b8b5cca3f40021daf7fbae63ceb22eaf1f4f5b4832428bf0ac102fad7ac",
+      "lf_sha256": "3d9eb1e17d088d623e8a6dcd1ed73605eaaf8664eaff8b113c927483a05bf363"
+    },
+    "webui/backend/models.py": {
+      "sha256": "6546a2c3b3e5725577c6d47288b095d8d5458733ec582eb85777f5d0d04b8950",
+      "lf_sha256": "8ed7cc358902013e738243c891c955df57f7f776ee4e8838bd66b567d7b22499"
+    },
+    "webui/backend/preview.py": {
+      "sha256": "482c69dcb6ba6281be505936e4bc2a5e9729f8b2d5bd8e7bfc01420ea5e8e3de",
+      "lf_sha256": "36386e7647ac62b463c01163b8a9ab1dc24ed1082734babd087eb7fd84f69b24"
+    },
+    "webui/backend/resources.py": {
+      "sha256": "469f479d338561c4c543df1b8b9a956f205aae4feb5a88f89c4a83155d97317d",
+      "lf_sha256": "9a611a2a1faeb5d3fd20dc3b767852a7cfa421bd863dc37ffc2e81d3c2d4043a"
+    },
+    "webui/backend/speakers.py": {
+      "sha256": "4a3742beba081ef2d023ca3c4f9464f8743c9b49ce3e87babf102bd4542b055f",
+      "lf_sha256": "fca09465b2bb5bd3f9554fc854880be3aaa3548083f06a07e57a0b3ec3fb936b"
+    },
+    "webui/backend/storage.py": {
+      "sha256": "b31c2532854e194bde66caed34e5ccfbb446503e7dfb0167a01afa438244bbd7",
+      "lf_sha256": "68102b1ec9e1f1d68923158d1f31b4b9bb898c8c18ba3ac7ade347fd956291af"
+    },
+    "webui/backend/timeline_media.py": {
+      "sha256": "26dc16a1577494061322e65c91b30e5f015b8a39f57543d452d3c20e1e538937",
+      "lf_sha256": "f60ca2028f109c19d687e5d77ef7162261e98dcdb88abc83712ac6e1a921e940"
+    },
+    "webui/frontend/index.html": {
+      "sha256": "d57a1fc83d7fc3f00693631cd2c14315b9035ffd3bb98644e9c2d3fc08de56a8",
+      "lf_sha256": "eb1debd86c8ad0a8064526eb2af8291191c3860c19162eaf309832e35fd54d4a"
+    },
+    "webui/frontend/package-lock.json": {
+      "sha256": "5cfb02e48dc66061cc8e56dc8ada8bbdeccb418ae25760a6b2baee91de32b131",
+      "lf_sha256": "a85628753862a241b7f034990c65137c2463aac242e1c2fba023c46e2ddc5202"
+    },
+    "webui/frontend/package.json": {
+      "sha256": "9ee247d94dbbacaeb82e1f1fe93c31006c6db05a6fbabf079bfa37e9bbec653f",
+      "lf_sha256": "e88d980158fe05c54ebf6aead2057c2bddedf105c14b6b1052fd429681fe21f8"
+    },
+    "webui/frontend/playwright.config.ts": {
+      "sha256": "ec22339d17fa9fbd9585b2e8573ccfd8a91d9ba140f605787269c9adad415ee0",
+      "lf_sha256": "01a8fbfc22ff7d29ed67bb13796363aa025f6bd77bbf7d082b0b3cdfd36f89a5"
+    },
+    "webui/frontend/src/AddSubtitleDialog.tsx": {
+      "sha256": "dbc5c186356ee89e99e4e9090b4632c0a06b1a006dcedc98276c63436faa2e20",
+      "lf_sha256": "94e12aa4612322e955915dd14dd311e51e6fe10315cce0c2492384e49a3fcdd4"
+    },
+    "webui/frontend/src/App.tsx": {
+      "sha256": "3d8c0c68edee50848dcced6edfc5a0464192941a00981eda9286fe079f644458",
+      "lf_sha256": "6c8391630de9040f034d51f295373fa0174eff6132f1cbb4ac6b7ad240a261d0"
+    },
+    "webui/frontend/src/BatchEditor.tsx": {
+      "sha256": "1414649c8251ef1892f88a3573d6566a688660a22414a28350077ca19849d614",
+      "lf_sha256": "52092ef4ab725cbbe2148fbacbc2073c48a8300aa01a9d5c9936a3734a7f19c9"
+    },
+    "webui/frontend/src/MergeSubtitleDialog.tsx": {
+      "sha256": "d5fecea0fc8ba211ecd723f0c2f44e18ace62a6e134355b531eb11d89490e239",
+      "lf_sha256": "540f4956188799583a9295ae3d3693ddc4575d6b6a6b473a2c0a0ebb511214b7"
+    },
+    "webui/frontend/src/PreviewCopyControls.tsx": {
+      "sha256": "f77a3e5abc1bdb4580de3cc18bb8abed3fe6e7fa168ad9e4b5c79b9fc8b12903",
+      "lf_sha256": "5b9a395fc6cad3063e16bb295936707c7f2fc1d32eeb83a41a077919a2db6e6d"
+    },
+    "webui/frontend/src/ProjectResources.tsx": {
+      "sha256": "c963992f7f2620493ab5fab1ea1843ccc9fa0fbc06f960d7fc6b0b3a3491851d",
+      "lf_sha256": "dc4ff706ddf4d0e7e786d718efc87b529e676d6893d2d2dc4d847f30021583a0"
+    },
+    "webui/frontend/src/SourceTimeline.tsx": {
+      "sha256": "517141d8265db8ee881122e9bec733f5386a648e360cff6ab2f58aa1efc321a5",
+      "lf_sha256": "f20826a8d1edf997a1183b03534c566ed7b67a611d89e7d0538d3a00bf7120a8"
+    },
+    "webui/frontend/src/SpeakerManager.tsx": {
+      "sha256": "7aa1f2acc6f5ef813ff9bbd46321bd121283ce44ebfa45c612cd951803bc11a3",
+      "lf_sha256": "465901922c3bd9ebacb295f1b256d9a39aae85d6f1ae1aabd1fcffb760ae6508"
+    },
+    "webui/frontend/src/SubtitleList.tsx": {
+      "sha256": "93989f3af5ad1775490be6df8f1485e022cd2835fbe668a742142f4023ea463e",
+      "lf_sha256": "eded95bfd1836a22a0789f443c2a49d9702e9ec2aa120a210de7fa37f4cc431b"
+    },
+    "webui/frontend/src/TimelineEvidence.tsx": {
+      "sha256": "a909d37bba44159f730170f8e713f0d9fa96817a0f20d6fac774dd72cc9a63d3",
+      "lf_sha256": "4fca251db04225708953c582a6b3771e48b49c764ad4cb2ddbe60f9cb4a643ce"
+    },
+    "webui/frontend/src/TimelineMediaControls.tsx": {
+      "sha256": "df4c7cafb699e0637f309e90b3faac308a446b367a53f0d7ad19ee1470f91e80",
+      "lf_sha256": "84895601f5916efb0fb6031f0380bbed39d49ec4cb79b589c42ff87cda6171be"
+    },
+    "webui/frontend/src/WorkspaceHelp.tsx": {
+      "sha256": "d14ba6c748bff2e25a238765c1f283d7f0226b67707a1a973a494e079cdc8038",
+      "lf_sha256": "2aa54dcc39b504186729fbf66f1d8b79837fec6d261a1072dae9bd5e65ebe593"
+    },
+    "webui/frontend/src/WorkspaceSplitter.tsx": {
+      "sha256": "8e55083684c45f706be426c9634f4238a45242d25c8a2ac97e52cfc29effd57a",
+      "lf_sha256": "c697b295a5ee1b98055efd8cd3a9161559fa15af74c3c1fd02d4629546a7ced2"
+    },
+    "webui/frontend/src/activeEntries.ts": {
+      "sha256": "ba485a59e33277f22aca7d1a517064d7c0078783c89556021f1227c3fa219913",
+      "lf_sha256": "f086ce0935b96290cce0c187c5c0a0cb1d0465903a575be78c54c722ab5ec215"
+    },
+    "webui/frontend/src/api.ts": {
+      "sha256": "7300023db59c89909210136fef00be1a3dbeafedabfe58a7015f83e06858d88c",
+      "lf_sha256": "4e232092c9f86085913a6461ce0f1a2ba587ed0a60c3e761ec04b1da89662a5f"
+    },
+    "webui/frontend/src/main.tsx": {
+      "sha256": "0b931700557dd83ff5b781d0f8eb327307d7beb4b5a7b730c95906ec721d6d3b",
+      "lf_sha256": "47bbb595a850847154dcb069ad195c21151fa6393059c1a0b7c25d9e46fd8498"
+    },
+    "webui/frontend/src/selectionEditing.ts": {
+      "sha256": "3f207910084fd25f6f8585c3bff0507efbf66abd2d25e0348f67cbb90d75c06a",
+      "lf_sha256": "f68081b6ed311796bcb4a62fc42eafeeca413bddefd0df05e9ce496708012c8b"
+    },
+    "webui/frontend/src/speakerEditing.ts": {
+      "sha256": "8b5a427559592d18f4374838a8b4d23f4f7b1be93980d50a162c17693d442896",
+      "lf_sha256": "8b5a427559592d18f4374838a8b4d23f4f7b1be93980d50a162c17693d442896"
+    },
+    "webui/frontend/src/structureEditing.ts": {
+      "sha256": "9086305ae9c2dbf27cae2e921429ac99c71677b051c6dbc3a1216574961b4729",
+      "lf_sha256": "5e673dfd3448668c1f322c3f8021923f88217215aead93bcfe9413b8d1b2def6"
+    },
+    "webui/frontend/src/style.css": {
+      "sha256": "23bb2817f48aa59fe007d9c4a4b1ee946bbb5d75dd8fc90219d62e0071359490",
+      "lf_sha256": "a6d9cccbf92a75d260f49266650f4aa8b3a244fbe731641754d79fa481ef25a2"
+    },
+    "webui/frontend/src/useAudition.ts": {
+      "sha256": "ddade00aded5279e0a78451ea149e9d8a42b92fc12fba9ab2c507525cc38087e",
+      "lf_sha256": "dba58721c65e48719fbb7ee08901c65af760c6e8b721cd33789f53365b89fb4e"
+    },
+    "webui/frontend/src/useMediaTask.ts": {
+      "sha256": "bbcd31ffafd4e2bcd961cf6376e66f1469630a7c0f690bf00954a975a1b7081a",
+      "lf_sha256": "bbcd31ffafd4e2bcd961cf6376e66f1469630a7c0f690bf00954a975a1b7081a"
+    },
+    "webui/frontend/src/usePreviewCopy.ts": {
+      "sha256": "cb31ce603944e17405c75575c0c388aaf24c48715b1f005bb337e176ef14f275",
+      "lf_sha256": "bbfeb4fae2cac5eb02f1ac9e1156224040b39c01375418e6249f150ac4f7363a"
+    },
+    "webui/frontend/src/useProjectSession.ts": {
+      "sha256": "8bbe0dc24d1c13d627cd2dc11a52eec40099a920c48e364f341f84d8a03d6185",
+      "lf_sha256": "7969216a3ed16d5438124a863b6cdf9e459665d542eff8bfc036bee2d095efc9"
+    },
+    "webui/frontend/src/useTimelineMedia.ts": {
+      "sha256": "a96430476db2cb471f01257048e3b23a34c6140bdbb986963d9295b7b0867786",
+      "lf_sha256": "a96430476db2cb471f01257048e3b23a34c6140bdbb986963d9295b7b0867786"
+    },
+    "webui/frontend/tests/drag-timing.spec.ts": {
+      "sha256": "9c9fb5a9d4625594a693639b04225cffd25e3b60bf7bd2f468ba99ae641c81a0",
+      "lf_sha256": "d94023cba66f96ffe8af1f14486f4d402187835471f992ff8d8212f2913dfc2e"
+    },
+    "webui/frontend/tests/editing.spec.ts": {
+      "sha256": "04d6168cb12be04b137e4e5f93e18dbe4a064ef64690328ae2e6691e0102ca74",
+      "lf_sha256": "71b4df440e1e804455aa7bdfc3a84583bbb3ae483c3318b951e70ea36cd300cd"
+    },
+    "webui/frontend/tests/exchange.spec.ts": {
+      "sha256": "7ea12fec2c499d39bfab8b0078d4ac3d900d734cac26b85944a613abaa23b5e5",
+      "lf_sha256": "706fd7d4391cf415060b9dd8703ef1614e2b54abaeb1f43a869e144a73769cea"
+    },
+    "webui/frontend/tests/integration.spec.ts": {
+      "sha256": "2dbd779b9d7166a4eecac1570985e718e846b4da283c9913300b7b265aa10b1b",
+      "lf_sha256": "ea9be486844ef5a30e26e90aa4055e56850bc477deee7370b17f21451dec25e8"
+    },
+    "webui/frontend/tests/launcher.spec.ts": {
+      "sha256": "1baf8511f2720172f1f2604010f8cd2c73f9e8d70d409e9ac4d5980d3e86b8df",
+      "lf_sha256": "44e2443c1ea3ad0da0435e913af13239fd905d65880f03cba3f08afbbc5cb5ac"
+    },
+    "webui/frontend/tests/long-film.spec.ts": {
+      "sha256": "e3e0ce3d42037572b76da8dec4b3590e69686d2c68604301b60006ce5736b9df",
+      "lf_sha256": "b2359bd7663831654ae6ed2a25eefced74d88fb52069ac3931a0b818e55ecd22"
+    },
+    "webui/frontend/tests/multiselect.spec.ts": {
+      "sha256": "0a80a70459c065fc9b6adf9d1c2c20c567f89f8d73cf0fdc55b1355c8265b66a",
+      "lf_sha256": "b2e3864e2bbd80d5c193cfd3072a1c59b1239b214b70d7bb4dd087a7db4c60a4"
+    },
+    "webui/frontend/tests/preview.spec.ts": {
+      "sha256": "726de23d2bfa5da6ea26d4c4b2dbf25182691b756ef4f2ab7a59d641398fcc17",
+      "lf_sha256": "f9e1d5d5ff8fffd555fd6db5e27094b75718c06c5d77cdd7695db0e4ca34d4f0"
+    },
+    "webui/frontend/tests/resources.spec.ts": {
+      "sha256": "ccf86b2d4277f9e1c54488d8069b65bd94e8ec89344ca5873ff8479c4b75eb25",
+      "lf_sha256": "e6a45b6cc6ccde3963574c5911243c223657952694da73eb9961120ba624289c"
+    },
+    "webui/frontend/tests/review.spec.ts": {
+      "sha256": "5954b118eca3bd41c3de5b50e19c4f257d489710f1b846852cfee940ea68fda9",
+      "lf_sha256": "09c1cc8713b1b2db1a525246c4df94167528f4dc33f69f7287851d480f24f544"
+    },
+    "webui/frontend/tests/speakers.spec.ts": {
+      "sha256": "651020f6bd9b8fc2c90ce9b2ecceee5a3c62629c7bf5014f8ee8f0414e11db6d",
+      "lf_sha256": "24d7b1ba494e1605b9e95a85d5b2cbeec33abc4835988739056c1a2f608f4faf"
+    },
+    "webui/frontend/tests/structure.spec.ts": {
+      "sha256": "73fdd40d1d94a59ad4b15ff5587021888dd86a2487b46a82c69dcc6df7f3eda0",
+      "lf_sha256": "72624cd9b416da717c082202600de49d8b0a802e3054b1e5ae9d8a13885e89a9"
+    },
+    "webui/frontend/tests/timeline-media.spec.ts": {
+      "sha256": "6c03cc67bc76a44cdd32d688df2d9a0e7e18007709b3e1098f3eb446a4b8a977",
+      "lf_sha256": "61ab354cf7fccf32a0d96025937e87fda58ccdde30cf181385f986d77b04ec87"
+    },
+    "webui/frontend/tests/timeline.spec.ts": {
+      "sha256": "722e91d8132a25b12f818964c4ab3fbf7b78b2ab398505a1218b477fbae29a3a",
+      "lf_sha256": "fa25582e0ac13c552930c0eabf734ae1cb58664cddde727794291c3626aa6300"
+    },
+    "webui/frontend/tsconfig.json": {
+      "sha256": "8e9aa0559cf69233334d0803e4d076fd1c07530c2a2493e25f5438db3e752eb9",
+      "lf_sha256": "f8001c17253e5df9800294551c416d0a85bc88236ba701d2ba7bc189ebd1665e"
+    },
+    "webui/frontend/vite.config.ts": {
+      "sha256": "bbada1835c49e552575059c49fcb30174e3407f434988ce6f4e81fea23596b92",
+      "lf_sha256": "e558e4591ec7e6383b035e4a7ec3f5b3f6f48c9b9db4daef6902ddc34f9f0c4a"
+    },
+    "webui/requirements.txt": {
+      "sha256": "4fb5422298b3477679321c3231ef4873efd6c96f0ba09178d43728dc3649ed70",
+      "lf_sha256": "8f7de12fc7f320e0932d2c553a5646b4bbad3d5f36ac24cecd073529073d3e80"
+    },
+    "webui/start.cmd": {
+      "sha256": "ed9bdd3731f3b9539644f55be07a59b87e53d7557ebff20dcd2a863f0729d5dd",
+      "lf_sha256": "56e81ed193096bd9f709e675cb4c5eb4d11d9174d8bc9ce7ff211c0414532c81"
+    },
+    "webui/start.ps1": {
+      "sha256": "eff06189a23b35090d69d1f0040b5a9a134eb8d4af3a98be56e5ca93694d2035",
+      "lf_sha256": "81fa26c84ad7b7294fec1113b8d20d15561d3404596045267db80c05e984903c"
+    },
+    "webui/tests/fixtures.py": {
+      "sha256": "979fa1affb7354ce5a7ad857e880320dbd1d4caadb6921f4748691f2c2578ddc",
+      "lf_sha256": "90152ab57352203cbf9faa1acc90507b3683adb1ced25d06bead627c4bb74f1e"
+    },
+    "webui/tests/serve.py": {
+      "sha256": "e5274d74865b803d5d20ae2cf59d0fa285bd6b3cc6006be81713e9a571de43a8",
+      "lf_sha256": "45c7af0a1f734d693f60b38de22106e187cf78b877493c0bd5f7079f9fa74f7e"
+    },
+    "webui/tests/test_http.py": {
+      "sha256": "49cf280bb7ea5e67fedb4ed6d0a541a700eb92924691d037fe5d5b409feb68b3",
+      "lf_sha256": "27dbcba92f0d3419bdefb81b152e69c2fa6efa6d6e9f41085cb7082c3435df62"
+    },
+    "webui/tests/test_launcher.py": {
+      "sha256": "5e604a8cce0e7cbab53e008dc7e7bb73318a788f067d98b5d5efb7d85ceece82",
+      "lf_sha256": "15a5a1c245a4bf13a20f2f2290a765abd052e2d1ac3662d81b33a4f1c898f7d2"
+    },
+    "webui/tests/test_preview.py": {
+      "sha256": "955f52ec782ae9de6344e761c4035d93a4e81309cda11efa449f31c2bfa3adaf",
+      "lf_sha256": "8dfc7a8c546060a8d03486e961bc084219c2296096f32f6c37721fe0aa98a92e"
+    },
+    "webui/tests/test_timeline_media.py": {
+      "sha256": "d264df14f4d2726ef730d597d81d2e20ec3e833753932407bd21899ecd8d458d",
+      "lf_sha256": "3048e3065fc4341b07dfc79514cfed32e06870bdde0b00fbb0f7d75d3f795694"
+    }
+  },
+  "built_assets": {
+    "webui/frontend/dist/index.html": "8b82ad694ffe81dc87688ef82e776609ddf771b300b8d8f149d518ca9bcf56ba",
+    "webui/frontend/dist/assets/index-B1eVkF6x.js": "ea2835f7a0d3cfb4af7625402ae062276f273acb99205e9daead64e0ec362478",
+    "webui/frontend/dist/assets/index-BBLk1t7b.css": "4ad0e179914e1f3888a8cd22933e04ae1e7acf63b95d5c35ec5bc656bc279abe"
+  },
+  "regressions": 27,
+  "scale": {
+    "coldLoadMs": 624,
+    "hotReopenMs": 646,
+    "searchMs": 92,
+    "inputMs": 45,
+    "saveMs": 489,
+    "durationMs": 7200000,
+    "entries": 4000,
+    "speakers": 26,
+    "cache": "Browser HTTP cache explicitly cleared before open; OS file cache not flushed; fixture generation/import read media."
+  },
+  "actual_outputs": {
+    "speaker-srt": {
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\frontend\\.test-workspace\\projects\\93010e07-b901-444d-ad3d-0e32839cc91b\\exports\\c92e835d-4187-45da-9d85-5b554d0ac707.srt",
+      "entries": 4000,
+      "exists": true,
+      "bytes": 388539,
+      "sha256": "9f98d1131fb3bbdf54b315fd0f5fae6e9f3778464456a8c87cbf8386b36234fe"
+    },
+    "plain-srt": {
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\frontend\\.test-workspace\\projects\\93010e07-b901-444d-ad3d-0e32839cc91b\\exports\\54d05787-de97-4b41-9e3c-c45cae067d94.srt",
+      "entries": 4000,
+      "exists": true,
+      "bytes": 345769,
+      "sha256": "b241441cdfddb3ee48d240af3af1c0c868fabde29a3f15e294c121b33e1aca5e"
+    },
+    "normalized-jsonl": {
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\frontend\\.test-workspace\\projects\\93010e07-b901-444d-ad3d-0e32839cc91b\\exports\\b9543d5d-701a-4dc9-a055-82bd23a65bb5.jsonl",
+      "entries": 4000,
+      "exists": true,
+      "bytes": 741099,
+      "sha256": "9a6d82aeac3c01e61aeaccc8eef60764e42d0838c937f686e80393a5ef4660d2"
+    },
+    "moss-json": {
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes\\webui\\frontend\\.test-workspace\\projects\\93010e07-b901-444d-ad3d-0e32839cc91b\\exports\\ac7559a0-5367-413a-aa01-f7dac5e37a40.json",
+      "entries": 4000,
+      "exists": true,
+      "bytes": 768381,
+      "sha256": "3883f3fbbbf635b668b8b832e328c5824dd773ad8a6bb9cf04ed4717f98522f0"
+    }
+  },
+  "windows_range_disconnect_count": 4
+}

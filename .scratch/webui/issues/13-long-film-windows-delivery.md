@@ -31,6 +31,13 @@ Spec: [WebUI 字幕与说话人编辑器](../spec.md)
 
 ## Comments
 
+### 2026-10-16 最终两轴审查修复（等待独立复审）
+
+- 唯一实现代理在干净 `review-fixes` / `feat/webui-review-fixes` 从集成 `5586f22` 开始，规划基线 `17b1aa8`；没有启动其他代理。Standards 与 Spec 各自原顺序的全部发现、修复映射、红绿及实际完整验证持久记录于 [最终审查修复报告](../final-review.md)，两轴不合并重排。
+- 共用媒体任务读取/轮询/提交生命周期，修复预览生成等待保存时同上下文刷新吞掉 POST；保留源/参数/工程改变取消与旧回执保护。纯人物集合/替换映射及字幕结构变换从 App 抽出，组件仍管理草稿、选择及 UI/HTTP/DOM 编排。普通/说话人 SRT 对空段/纯空白分隔行（含 CR/LF、首尾空行）给出条目级错误和 JSONL 建议，不删除换行、不登记坏导出、不限制合法工程正文、不改生产解析器。
+- 完成前 `git merge feat/webui` 为 Already up to date，随后最终真实 Edge **84/84（4.9m）**、后端 HTTP/真实媒体/启动 **42/42（34.056s）**，typecheck/build/17个Python文件编译通过。新场景另用 JSON reporter 2/2 保留实际附件；原窗口、质量/密度/保存/切换竞态、真实帧数进度、Windows 自动开窗和三个长片用例均重新运行。中间不可达新测试与证据命令编码失败原样记录，不冒充产品通过或掩盖失败。
+- 新证据、源/构建摘要与日志位于 `webui/tests/evidence/final-review/`；本轮自动重写的27份旧票证据先独立归档再恢复旧版本。测试服务/独立 Edge/Explorer 目录窗口清理结果见报告。仅交付修复分支，不合回集成、不推送，保留 worktree/素材/输出。**spec 仍 ready-for-agent，等待独立复审；本段不宣称最终独立 review 或集成完成。**
+
 - 2026-10-16 恢复：唯一写入代理在干净ticket-13工作树执行 `git merge feat/webui`，快进至集成失败记录 `8613300`。重新置in-progress并撤销受阻项勾选；加载diagnosing-bugs/TDD，沿用既定浏览器/公开HTTP/Windows Shell接缝诊断Explorer空路径和波形生成POST丢失，旧的81全绿不替代本轮验收。
 
 - 2026-10-16：在独立 `feat/webui-13` 工作树开始；干净基线 `4546e57`，与 `D:\whisper-diarization` 的 `feat/webui` 一致，01–12 均 done。沿用 spec 已确认的真实浏览器、公共 HTTP、CLI/实际文件接缝，TDD 从整片可见范围与连续编辑闭环开始。最终十组验收将另存持久报告，spec 状态留待最终审查。

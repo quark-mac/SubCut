@@ -1,0 +1,137 @@
+[
+  {
+    "original": "webui/tests/evidence/ticket-05-speaker-management.jpg",
+    "archived": "regressions/ticket-05-speaker-management.jpg",
+    "sha256": "e68f824e1a4097ffd826ebe5613c380f4f25013816009dd86f9c3ee25c877ebb"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-06-drag-timing.jpg",
+    "archived": "regressions/ticket-06-drag-timing.jpg",
+    "sha256": "cae60b4c99f24343515c6336764a4f5cd77c5a9aa2844be1a11081b18655c644"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-07-batch-editing.jpg",
+    "archived": "regressions/ticket-07-batch-editing.jpg",
+    "sha256": "e3ff85d49f29bca6ba6d2b87fba8721888c41efd55d14a232f1350b5bc6cb9bb"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-08-structure-editing.jpg",
+    "archived": "regressions/ticket-08-structure-editing.jpg",
+    "sha256": "1d768a231f8218e4595717ced614e27ca53f045c7e11d7f83630ec2667e8c20a"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-10-export-location.jpg",
+    "archived": "regressions/ticket-10-export-location.jpg",
+    "sha256": "d829120634f65b335b6784752ade010c4ea250cb7d9d4bfbf23ccb7ef72a1e3d"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-10-export-location.json",
+    "archived": "regressions/ticket-10-export-location.json",
+    "sha256": "235a3c55e0be08ae0d808fd1c3d27106dae9087a43c36f728d93373446ae4713"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-10-relocated-resources.jpg",
+    "archived": "regressions/ticket-10-relocated-resources.jpg",
+    "sha256": "277e41ab7c40fc5c9e06a78e474d21e4bf82e335ab271da8fa6cc6634149f174"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-11-1s.jpg",
+    "archived": "regressions/ticket-11-1s.jpg",
+    "sha256": "c4c636c270ebd68827a1711d17d04e49e624e91407bd482f99b04ecf8de6eff8"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-11-5s.jpg",
+    "archived": "regressions/ticket-11-5s.jpg",
+    "sha256": "826639a7228f5c7ff1d1f52a64a1f21e4d527d506f569df089d489b60e6d650e"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-11-8.5s.jpg",
+    "archived": "regressions/ticket-11-8.5s.jpg",
+    "sha256": "0a0c9f18e7bd7bddabf5b59e6a1ba4b61032f3e5d2da0581e4ac2ef34535f2c9"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-11-concurrency.json",
+    "archived": "regressions/ticket-11-concurrency.json",
+    "sha256": "c7586112f8e7796d447ba7b01876ad750565c668168c400e0706cff06fe61256"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-11-playback.json",
+    "archived": "regressions/ticket-11-playback.json",
+    "sha256": "ba1dec722bda00cde4645195986c2ae026f3c893fad55aae1a84580595c6cb3e"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-11-retry.jpg",
+    "archived": "regressions/ticket-11-retry.jpg",
+    "sha256": "ae66aaaf1aad39db6d8961095bd46277aea2dfaee13e64292ae57eee0264902b"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-12-alignment.json",
+    "archived": "regressions/ticket-12-alignment.json",
+    "sha256": "468b1a6578ca230687c48fcb465989097c06762e4c60ee1932b601d76581cd68"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-12-delayed-preview.jpg",
+    "archived": "regressions/ticket-12-delayed-preview.jpg",
+    "sha256": "28a1ddc2de80d034ed2868df6e44a349fd8041bc43eb976c2778098526bce479"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-12-fast-progress.json",
+    "archived": "regressions/ticket-12-fast-progress.json",
+    "sha256": "13cd8049828a6f28a54c2c6ef830971b96576d8f7b11c6a24aa6e879b2808a54"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-12-progress.json",
+    "archived": "regressions/ticket-12-progress.json",
+    "sha256": "a9e5b95269c09218f049c731796c189a7062e2b5bc42458f3e36a8a7bc51467b"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-12-retry.jpg",
+    "archived": "regressions/ticket-12-retry.jpg",
+    "sha256": "8781d5e896325d29d8391a15dfbac557c4fb6d8285fb30779e6bf87c4019ae8d"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-12-running-progress.jpg",
+    "archived": "regressions/ticket-12-running-progress.jpg",
+    "sha256": "b445c2d79f42fbff337f5da5e09ab4f9ff2800ec9f09bfa6eda771306a4a151e"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-12-timeline.jpg",
+    "archived": "regressions/ticket-12-timeline.jpg",
+    "sha256": "1d841466e4aa94bcf136028120c64f77214491577a5777f37adc03c41c872875"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-13-combination.jpg",
+    "archived": "regressions/ticket-13-combination.jpg",
+    "sha256": "205caa5b1e01bd69bbff57c3d50c3a2f9d289f7f4e2fcdbe2ffb4abd8b0d9e31"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-13-combination.json",
+    "archived": "regressions/ticket-13-combination.json",
+    "sha256": "696cd9ca4c82c4337712ed004bf863d99e6f38b5f91686aa863479b4de58a052"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-13-integration-fix/pointer-media-green.json",
+    "archived": "regressions/ticket-13-integration-fix/pointer-media-green.json",
+    "sha256": "2741e33f272b5358b58cbee685e569e03601f1e163e0dbdbfac7c455bc1f9e8c"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-13-launcher.json",
+    "archived": "regressions/ticket-13-launcher.json",
+    "sha256": "fe461fad29b46dab28959503ba474ac89e93676775941fe23112abe64c8c7ddc"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-13-long-film.jpg",
+    "archived": "regressions/ticket-13-long-film.jpg",
+    "sha256": "c18768ea8df52bfdf509502ebf11f68de38b90b0834e3b3913c978b579a2b7f8"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-13-scale.json",
+    "archived": "regressions/ticket-13-scale.json",
+    "sha256": "29ae7d5ca2d3bfc449bba3c35eaef58bd39a3068bd56ec947f66ff2c0af2aef9"
+  },
+  {
+    "original": "webui/tests/evidence/ticket-13-virtual-selection.json",
+    "archived": "regressions/ticket-13-virtual-selection.json",
+    "sha256": "680bf8a738c86d10dec7891dddd21a583e951d4dd28477db683e9e280fe471e4"
+  }
+]

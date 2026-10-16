@@ -1,8 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import type { Project } from './api';
-
-export interface SpeakerDraft { id: string | null; label: string; color: string }
-export const specialSpeaker = (label: string) => label === '?' || label === 'NONSPEECH';
+import { specialSpeaker, type SpeakerDraft } from './speakerEditing';
 
 interface Props {
   project: Project;
