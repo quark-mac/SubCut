@@ -1,0 +1,41 @@
+python.exe : test_cache_parameters_integrity_restart_and_changed_source (webui.tests.test_timeline_media.TimelineMediaH
+TTPTests) ... FAIL
+所在位置 行:3 字符: 1
++ & 'D:\whisper-diarization\env\python.exe' -m unittest webui.tests.tes ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_cache_para...Tests) ... FAIL:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+======================================================================
+FAIL: test_cache_parameters_integrity_restart_and_changed_source (webui.tests.test_timeline_media.TimelineMediaHTTPTest
+s)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\machi\AppData\Local\Temp\opencode\webui-worktrees\ticket-13\webui\tests\test_timeline_media.py", line
+124, in test_cache_parameters_integrity_restart_and_changed_source
+    self.assertEqual(detailed['state'], 'succeeded', detailed)
+AssertionError: 'failed' != 'succeeded'
+- failed
++ succeeded
+ : {'id': 'b6bce220-b244-4a46-ab32-6c13e7276253', 'project_id': 'f0742c55-9c28-425d-8a8b-50caf52875c4', 'state': 'faile
+d', 'progress': 0, 'kind': 'thumbnails', 'parameters': {'version': 1, 'density': 'detailed', 'timebase': 'common-source
+-origin', 'interval_ms': 500, 'width': 160, 'height': 90, 'format': 'jpeg', 'quality': 4, 'sampling': 'source-fps-round
+-up'}, 'media_identity': 'sha256:fdc8551ba57c8ee76a4cf2a2604f861dd546704f4b97de7397918929bd152e14', 'artifact_id': None
+, 'cached': False, 'error': {'code': 'thumbnails_failed', 'message': "濯掍綋鐢熸垚澶辫触锛岃妫€鏌ュ伐鍏枫€佹枃浠跺強纾佺洏鏉冮檺鍚庨噸璇曪細[WinError 5]
+ 鎷掔粷璁块棶銆? 'C:\\\\Users\\\\machi\\\\AppData\\\\Local\\\\Temp\\\\webui-preview-jahya1gp\\\\workspace\\\\f0742c55-9c28-425
+d-8a8b-50caf52875c4\\\\tasks\\\\tmp49tz322t' -> 'C:\\\\Users\\\\machi\\\\AppData\\\\Local\\\\Temp\\\\webui-preview-jahy
+a1gp\\\\workspace\\\\f0742c55-9c28-425d-8a8b-50caf52875c4\\\\tasks\\\\b6bce220-b244-4a46-ab32-6c13e7276253.json'"}, 'to
+ols': {'ffmpeg': 'ffmpeg version 9.0.2-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers', 'ffprobe
+': 'ffprobe version 9.0.2-full_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers'}, 'command': ['ffmpeg'
+, '-hide_banner', '-loglevel', 'error', '-nostdin', '-y', '-copyts', '-start_at_zero', '-i', 'C:\\Users\\machi\\AppData
+\\Local\\Temp\\webui-preview-jahya1gp\\mutable-timeline.mkv', '-map', '0:v:0', '-an', '-vf', 'fps=1000/500:start_time=0
+:round=up,scale=160:90:force_original_aspect_ratio=decrease,pad=160:90:(ow-iw)/2:(oh-ih)/2,setsar=1', '-t', '9.0', '-q:
+v', '4', '-progress', 'pipe:1', '-stats_period', '0.1', 'C:\\Users\\machi\\AppData\\Local\\Temp\\webui-preview-jahya1gp
+\\workspace\\f0742c55-9c28-425d-8a8b-50caf52875c4\\timeline-media\\b6bce220-b244-4a46-ab32-6c13e7276253-yyjnkz4_\\%08d.
+jpg'], 'progress_source': 'sampled_frames', 'processed_frames': 0}
+
+----------------------------------------------------------------------
+Ran 1 test in 2.978s
+
+FAILED (failures=1)

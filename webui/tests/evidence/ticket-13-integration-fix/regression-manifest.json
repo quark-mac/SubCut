@@ -1,0 +1,142 @@
+[
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-05-speaker-management.jpg",
+    "bytes": 154691,
+    "sha256": "6ac5be09b532c2c465778377f98ba7fb974b43fcb87915c02260a41c1097094b"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-06-drag-timing.jpg",
+    "bytes": 147913,
+    "sha256": "e727470b0d1d890f9026e54b18aabdd4149e37117e5c66b7f85ea6ddd7e65b8a"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-07-batch-editing.jpg",
+    "bytes": 147079,
+    "sha256": "989abfd0ac34f5d586ce9e2270bf63e8ea500b6aa51297c019f3f282cb964777"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-08-structure-editing.jpg",
+    "bytes": 153465,
+    "sha256": "18830fec095742ae2e70982abe7002de3d0ec520318b7713eb82603427ddf384"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-10-export-location.jpg",
+    "bytes": 138282,
+    "sha256": "a21e2981d65a552693a1c1ae4f7f890bcaf88add1048df26e8eb15bbf04efc07"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-10-export-location.json",
+    "bytes": 2686,
+    "sha256": "f15bc7ce7c35d751e2a58140d173fa2345ddfeec24622d5cb4f0b2f2ad6ce374"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-10-relocated-resources.jpg",
+    "bytes": 137570,
+    "sha256": "8b24c4e50c535d240a0163c7a548a0da925b2cd4e0c770e139f17c74e47b910c"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-11-1s.jpg",
+    "bytes": 125679,
+    "sha256": "75b8b70aee59239a52f2505459a06d1e48759686009c5ceb3a198420de0d4445"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-11-5s.jpg",
+    "bytes": 126488,
+    "sha256": "3dffeaa1a3903c6d727e84c729b94213880274b464943dec0251bd124b4a2207"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-11-8.5s.jpg",
+    "bytes": 124615,
+    "sha256": "be5fd9e825308092c4699a5b9ae229b4623835af96d4a260ce5820046efb819e"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-11-concurrency.json",
+    "bytes": 1597,
+    "sha256": "0c7d8e2b2f4446d6aed746fed6ff411715d4463a8e2cbab39a0e769427c94207"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-11-playback.json",
+    "bytes": 5302,
+    "sha256": "ff062a98eb032e49e3ad105058f6c3f6e882e63e743929888d07b97831b0aacd"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-11-quality-response-order.json",
+    "bytes": 8231,
+    "sha256": "f5abca830b64552d8f98ca856452c6563ccf5e5bbf87881aca9685f85c26eb02"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-11-retry.jpg",
+    "bytes": 132193,
+    "sha256": "654a3ec78f6eb1e17e48b62e85110fd9ed185f62535498645d1d5d856d64e037"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-12-alignment.json",
+    "bytes": 148715,
+    "sha256": "7b4d81956027cc87ff91fdda9cfee3a3b90b5cee23fda8d3413edfea1ca2a5ba"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-12-delayed-preview.jpg",
+    "bytes": 133573,
+    "sha256": "e24fa1d19535bc5ff47f3162d386c7ba4d27c9659c8432e171d7038e6f2d1fd5"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-12-fast-progress.json",
+    "bytes": 164,
+    "sha256": "5be04d4c6f88a295e0a85a69b3e00e2cf0c68bd466144e36dba0c7abc5eddced"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-12-progress.json",
+    "bytes": 3135,
+    "sha256": "40bac89fec8cca6eba9c6bd7c43f02059050a2bd5065b53ce6904bd4e0b90525"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-12-retry.jpg",
+    "bytes": 130391,
+    "sha256": "9a076dbeb054ff943688eeb5bc8d41bfb7ff793bc9fc310c3c9b7028e65e0b4a"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-12-running-progress.jpg",
+    "bytes": 128576,
+    "sha256": "c8e87e34f490e3c616b1a3d72fe4815cb6e086ba843ecfb497fc6ce8062e3a7d"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-12-timeline.jpg",
+    "bytes": 133616,
+    "sha256": "1ea2044cc9ce0da1d370b6b7bbfba5c0e9505bc46fd5cb6c3006c4c05d94cfb6"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-13-combination.jpg",
+    "bytes": 139680,
+    "sha256": "ff6f79c5d67d12fb1105a80ca1d752248766dac073029fd0de8dcddb98d6fe4f"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-13-combination.json",
+    "bytes": 9939,
+    "sha256": "f8526863bd3bb9cc6264398870d5d6b70133e60fc07aa1c41d3c8fc5beb45541"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-13-launcher.json",
+    "bytes": 2254,
+    "sha256": "807ce545ba4c89dcd4892720f2fc5e859618f3f47eae1169a089a153b34c5875"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-13-long-film.jpg",
+    "bytes": 163678,
+    "sha256": "bc2ebaa74db78e415d3c65906a541019d149465c2dc79c65ea59da0ccb6888a5"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-13-scale.json",
+    "bytes": 18541,
+    "sha256": "540499523299742e49b184a891b91875dccf7b4a26d97487601db7b1265354f9"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-13-virtual-selection.json",
+    "bytes": 683,
+    "sha256": "12b7604627afd8a46c870c2b7eebe3be18359dc576a1b4b50230b1b3af5cfb84"
+  },
+  {
+    "file": "ticket-13-integration-fix/regressions/ticket-13-windows-launch.jpg",
+    "bytes": 132388,
+    "sha256": "7e6f094d8f9b8d70da88947987cab39cb4ac7d31d792961ffb2db79d4945d70f"
+  }
+]

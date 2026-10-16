@@ -44,7 +44,11 @@ def inventory(project: Project, directory: Path):
 def open_folder(path: Path):
     try:
         if sys.platform == 'win32':
-            os.startfile(str(path))
+            # The default Folder shell verb can return success with an empty,
+            # permanently busy Explorer tab. Navigate the system Explorer
+            # explicitly; /n avoids replacing an unrelated user's folder view.
+            explorer = Path(os.environ.get('SystemRoot', r'C:\Windows')) / 'explorer.exe'
+            subprocess.Popen([str(explorer), '/n,', str(path)])
         else:
             subprocess.Popen(['open' if sys.platform == 'darwin' else 'xdg-open', str(path)])
     except OSError as exc:

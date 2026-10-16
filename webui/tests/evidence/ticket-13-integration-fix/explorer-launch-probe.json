@@ -1,0 +1,22 @@
+{
+    "observedAt":  "2026-10-16T04:28:07.6715111Z",
+    "oldTarget":  "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-13\\webui\\frontend\\.test-workspace\\integration-fix\\Shell 旧入口 spaces",
+    "oldWindows":  [
+                       {
+                           "hwnd":  467208,
+                           "path":  null,
+                           "location":  "",
+                           "busy":  true
+                       }
+                   ],
+    "explicitTarget":  "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-13\\webui\\frontend\\.test-workspace\\integration-fix\\Shell 显式导航 spaces",
+    "explicitWindows":  [
+                            {
+                                "hwnd":  467294,
+                                "path":  "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-13\\webui\\frontend\\.test-workspace\\integration-fix\\Shell 显式导航 spaces",
+                                "location":  "file:///C:/Users/machi/AppData/Local/Temp/opencode/webui-worktrees/ticket-13/webui/frontend/.test-workspace/integration-fix/Shell%20显式导航%20spaces",
+                                "busy":  false
+                            }
+                        ],
+    "waitPerLaunchSeconds":  2
+}

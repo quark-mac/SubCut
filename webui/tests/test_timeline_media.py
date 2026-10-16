@@ -1,6 +1,9 @@
 """Actual source-time waveform/thumbnail jobs through HTTP, not mocked media."""
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 import subprocess
+from threading import Barrier
+import time
 import unittest
 import shutil
 
@@ -142,6 +145,42 @@ class TimelineMediaHTTPTests(unittest.TestCase):
             self.assertEqual(self.client.post(url + '/timeline-media/' + kind, json={}).status_code, 409)
         self.assertTrue(all(a['status'] == 'stale' for a in self.client.get(url + '/resources').json()['media_artifacts']))
         self.assertEqual(self.client.get(url).json()['entries'], project['entries'])
+
+    def test_concurrent_pollers_never_interrupt_real_media_jobs(self):
+        project = self.create()
+        url = f'/api/projects/{project["id"]}'
+        for kind in ('waveform', 'thumbnails'):
+            ready = Barrier(7)
+            task = {}
+
+            def observe():
+                ready.wait(timeout=10)
+                states = []
+                deadline = time.monotonic() + 15
+                while time.monotonic() < deadline:
+                    response = self.client.get(url + '/tasks/' + task['id'])
+                    self.assertEqual(response.status_code, 200, response.text)
+                    value = response.json()
+                    states.append(value['state'])
+                    if value['state'] in ('succeeded', 'failed'):
+                        self.assertEqual(value['state'], 'succeeded', value)
+                        return states
+                self.fail('Concurrent polling never observed a completed real media job')
+
+            with ThreadPoolExecutor(max_workers=6) as readers:
+                observations = [readers.submit(observe) for _ in range(6)]
+                response = self.client.post(url + '/timeline-media/' + kind, json={})
+                try:
+                    self.assertEqual(response.status_code, 202, response.text)
+                    task.update(response.json())
+                finally:
+                    ready.wait(timeout=10)
+                for observation in observations:
+                    self.assertTrue(observation.result())
+        saved = self.client.get(url).json()
+        self.assertEqual(saved['entries'], project['entries'])
+        self.assertEqual(saved['revision'], 1)
+        self.assertEqual(len(saved['media_artifacts']), 2)
 
     def test_failures_do_not_publish_and_retry_keeps_concurrent_save(self):
         project = self.create()

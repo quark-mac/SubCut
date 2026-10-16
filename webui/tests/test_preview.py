@@ -83,7 +83,9 @@ class PreviewHTTPTests(unittest.TestCase):
     def finish(self, url, task):
         states = [task['state']]
         for _ in range(600):
-            task = self.client.get(url + '/tasks/' + task['id']).json()
+            response = self.client.get(url + '/tasks/' + task['id'])
+            self.assertEqual(response.status_code, 200, response.text)
+            task = response.json()
             states.append(task['state'])
             self.assertGreaterEqual(task['progress'], 0)
             self.assertLessEqual(task['progress'], 1)

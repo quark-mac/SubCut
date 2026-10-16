@@ -161,6 +161,59 @@ test('非零 PTS 与延迟音轨使用原片零点，预览切换不移动波形
   await expect(button(page, '撤销')).toBeDisabled();
 });
 
+test('按下生成波形到松开之间返回真实媒体信息，不丢失点击或新密度生成意图', async ({ page }, testInfo) => {
+  let releaseProbe!: () => void, probeRead!: () => void, releaseDensity!: () => void, densityRead!: () => void;
+  const probeGate = new Promise<void>(resolve => { releaseProbe = resolve; });
+  const probeCaptured = new Promise<void>(resolve => { probeRead = resolve; });
+  const densityGate = new Promise<void>(resolve => { releaseDensity = resolve; });
+  const densityCaptured = new Promise<void>(resolve => { densityRead = resolve; });
+  await page.route('**/api/projects/*/playback?quality=standard', async route => {
+    const response = await route.fetch(); probeRead(); await probeGate; await route.fulfill({ response });
+  });
+  const project = await fixture(page);
+  await probeCaptured;
+  await page.route(`**/api/projects/${project.id}/timeline-media/waveform?density=detailed`, async route => {
+    const response = await route.fetch(); densityRead(); await densityGate; await route.fulfill({ response });
+  });
+  const requests: string[] = [];
+  page.on('request', request => { if (request.method() === 'POST' && request.url().includes(project.id)) requests.push(request.url()); });
+  const events = await page.evaluateHandle(() => {
+    const records: { type: string; target: string }[] = [];
+    for (const type of ['pointerdown', 'pointerup', 'click']) document.addEventListener(type, event => {
+      const target = event.target as HTMLElement;
+      if (target.closest('.resources')) records.push({ type, target: `${target.tagName}:${target.textContent?.trim().slice(0, 80)}` });
+    }, true);
+    return records;
+  });
+  let before: unknown, after: unknown, pressed = false;
+  try {
+    await page.getByLabel('波形采样密度', { exact: true }).selectOption('detailed'); await densityCaptured;
+    const generate = button(page, '生成音频波形');
+    await generate.scrollIntoViewIfNeeded();
+    const rect = (await generate.boundingBox())!; before = rect;
+    await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2); await page.mouse.down(); pressed = true;
+    const delivered = page.waitForResponse(r => r.url().endsWith('/playback?quality=standard'));
+    releaseProbe(); await delivered;
+    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    after = await generate.boundingBox();
+    await page.mouse.up(); pressed = false;
+    await expect.poll(() => requests.filter(url => url.endsWith('/timeline-media/waveform')).length).toBe(1);
+    expect(after).toEqual(before);
+    releaseDensity();
+    await expect(page.getByRole('status', { name: '波形任务状态' })).toContainText('成功');
+    await expect(page.locator('.locked svg')).toBeVisible();
+    const disk = await (await page.request.get(`/api/projects/${project.id}`)).json();
+    expect(disk.entries).toEqual(project.entries); expect(disk.revision).toBe(1);
+    expect(disk.media_artifacts.map((a: { parameters: { step_ms: number } }) => a.parameters.step_ms)).toEqual([5]);
+  } finally {
+    releaseProbe(); releaseDensity(); if (pressed) await page.mouse.up();
+    const observation = JSON.stringify({ project: project.id, before, after, requests, events: await events.jsonValue() }, null, 2);
+    await fs.mkdir('../tests/evidence/ticket-13-integration-fix', { recursive: true });
+    await fs.writeFile('../tests/evidence/ticket-13-integration-fix/pointer-media-green.json', observation);
+    await testInfo.attach('pointer-media.json', { body: observation, contentType: 'application/json' });
+  }
+});
+
 test('晚到旧 GET 不能覆盖新密度任务，晚到完成与自动保存回执不能覆盖其他工程草稿', async ({ page }) => {
   const project = await fixture(page);
   const other = await (await page.request.post(`/api/projects/${project.id}/save-as`, { data: { revision: 1, name: `${project.name}-另存` } })).json() as Project;

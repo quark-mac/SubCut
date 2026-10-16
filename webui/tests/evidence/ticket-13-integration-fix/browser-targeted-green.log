@@ -1,0 +1,25 @@
+
+> subtitle-editing-webui@0.1.0 test:browser
+> playwright test resources.spec.ts timeline-media.spec.ts -g 璧勬簮鍖烘墦寮€瀹為檯瀵煎嚭浣嶇疆|鏅氬埌鏃?GET|鎸変笅鐢熸垚娉㈠舰
+
+node.exe : [2m[WebServer] [22mINFO:     Started server process [11236]
+所在位置 行:1 字符: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([2m[WebServer]...process [11236]:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+[2m[WebServer] [22mINFO:     Waiting for application startup.
+[2m[WebServer] [22mINFO:     Application startup complete.
+[2m[WebServer] [22mINFO:     Uvicorn running on http://127.0.0.1:18761 (Press CTRL+C to quit)
+
+Running 3 tests using 1 worker
+
+
+  ok 1 tests\resources.spec.ts:323:1 鈥?璧勬簮鍖烘墦寮€瀹為檯瀵煎嚭浣嶇疆锛學indows Explorer 绐楀彛涓庣湡瀹炴枃浠朵竴鑷?(4.0s)
+
+  ok 2 tests\timeline-media.spec.ts:272:1 鈥?鎸変笅鐢熸垚娉㈠舰鍒版澗寮€涔嬮棿杩斿洖鐪熷疄濯掍綋淇℃伅锛屼笉涓㈠け鐐瑰嚮鎴栨柊瀵嗗害鐢熸垚鎰忓浘 (2.1s)
+
+  ok 3 tests\timeline-media.spec.ts:376:1 鈥?鏅氬埌鏃?GET 涓嶈兘瑕嗙洊鏂板瘑搴︿换鍔★紝鏅氬埌瀹屾垚涓庤嚜鍔ㄤ繚瀛樺洖鎵т笉鑳借鐩栧叾浠栧伐绋嬭崏绋?(5.5s)
+
+  3 passed (14.0s)

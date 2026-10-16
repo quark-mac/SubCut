@@ -31,6 +31,8 @@ Spec: [WebUI 字幕与说话人编辑器](../spec.md)
 
 ## Comments
 
+- 2026-10-16 恢复：唯一写入代理在干净ticket-13工作树执行 `git merge feat/webui`，快进至集成失败记录 `8613300`。重新置in-progress并撤销受阻项勾选；加载diagnosing-bugs/TDD，沿用既定浏览器/公开HTTP/Windows Shell接缝诊断Explorer空路径和波形生成POST丢失，旧的81全绿不替代本轮验收。
+
 - 2026-10-16：在独立 `feat/webui-13` 工作树开始；干净基线 `4546e57`，与 `D:\whisper-diarization` 的 `feat/webui` 一致，01–12 均 done。沿用 spec 已确认的真实浏览器、公共 HTTP、CLI/实际文件接缝，TDD 从整片可见范围与连续编辑闭环开始。最终十组验收将另存持久报告，spec 状态留待最终审查。
 - 2026-10-16 完成：列表窗口化、时间轴双向可见块、按完整布局的跨视窗框选；缓存排序/播放重叠查询/人物计数与媒体证据渲染。4000按钮红灯→窗口化转绿；额外长人物名红灯复现DOM行高与虚拟坐标错位，固定行高并保留完整名称提示/无障碍标签后转绿。无依赖临时Python红灯→启动器给出准确安装命令。首次完整启动清理的taskkill竞态未算通过，保存失败日志，改为终止本次日志PID并验证服务/DevTools端口关闭后复验。
 - 最终运行（相同最终构建、真实Edge `155.0.4283.45`）：`npm ci`、`npm run typecheck`、`npm run build` 通过；`npm run test:browser` **81 passed (6.1m)**；`D:\whisper-diarization\env\python.exe -m unittest discover -s webui/tests -p 'test_*.py' -v` **40 passed / 33.223s**；全部 **17** 个WebUI Python文件编译退出0。完整现有HTTP、真实FFmpeg、票11/12晚回执/保存切换/帧数进度、快速任务均重新运行。
@@ -69,3 +71,15 @@ npm --prefix webui/frontend run test:browser
 - 浏览器日志有 5 次 Windows Proactor ConnectionResetError / WinError10054，对应其他用例仍通过，未隐藏日志。PowerShell 对普通 stderr 的 NativeCommandError 包装不是测试结果；本轮以真实 40/40、79/2 和退出码为准。
 - 失败 `.last-run.json`、两个 error-context/trace、完整日志、票 11 竞态附件、两个失败工程快照、24 个自动改写证据及本轮长片 ffprobe 结果，已归档至被忽略的 `webui/frontend/.test-workspace/ticket-13-integration-failure/`。日志原件为 `.test-workspace/ticket-13-integration-{backend,browser}.log`；实际工程/素材/输出保留。仅恢复本轮自动改写的已跟踪证据到合并版本，恢复后工作树干净，再仅追加本段并独立提交，不覆盖旧票失败/通过归档。
 - 最后检查 18761/18762/18763/18764、56581/56582 均无监听，无 WebUI Python、ffmpeg/ffprobe 或本轮独立启动 Edge 残留；测试目录 Explorer 窗口数为 0。保留全部工作树、未推送、未启动代理。**票 13 已合入但本轮集成验收被上述两项阻塞；顶部 done 是原任务工作树验收状态，Spec 保持非 done，待修复复验和最终双轴 review。**
+
+### 2026-10-16 集成阻塞恢复完成（覆盖上一段未修复状态，保留其失败历史）
+
+- 唯一写入实现代理仅在 `ticket-13` / `feat/webui-13` 工作；开始先合入 `feat/webui`，从10d5e63快进至指定集成 `8613300a33a11e2fe9e3a2835a8649febe0a8721`，改票为in-progress并撤销受阻项勾选。加载diagnosing-bugs/TDD，无代理/新会话；完成前再次 `git merge feat/webui` 为Already up to date。没有将修复合回集成或推送。
+- 诊断与验收主报告：[恢复报告](../../../webui/tests/evidence/ticket-13-integration-fix/acceptance.md)；更新后的十组报告 `webui/tests/evidence/ticket-13-acceptance.md`、机器摘要 `webui/tests/evidence/ticket-13-verification.json`。原集成79/2日志、媒体快照与旧81/40摘要仍保留，不以重跑掩盖失败。
+- Explorer原用例稳定红于path:null；固定null/空枚举边界、过滤后又真实红于目录未导航。含中文/空格目录的实际Windows同机对照表明os.startfile返回成功但空地址/Busy，显式系统Explorer /n导航能读到精确目标路径。兼容空路径并修复导航；绿灯仍验证真实HWND、导出文件内容及资源状态，不用opened:true替代。
+- 波形原用例单跑曾过，未据此关闭。新增可控真实HTTP回执与真实鼠标回归先红：按下后媒体信息返回使按钮位移20.390625px，松开落到SELECT，零POST；新布局固定操作区，异步详情定高可滚动/可键盘聚焦，相同矩形不变、down/up/click完整、一次5ms波形POST及实际SVG/产物。未改超时、未改为pointerdown提交。原trace.zip截断，未声称可回放原失败每个pointer事件。
+- 完整后端另捕获任务JSON读/替换WinError5竞态；共享轮询诊断加HTTP状态断言，新增六路公共HTTP轮询在旧实现先红500/storage_error。所有任务write与get共用原RLock后，同一回归及原缓存/重启测试转绿；保留真实帧数进度算法、代次及等待保存意图逻辑。
+- 实际针对性绿：浏览器原两项+新点击回归3/3（14.0s）；HTTP并发轮询+原缓存测试2/2（5.435s）。最终全套真实Edge **82/82（6.3m）**、HTTP/媒体/CLI **41/41（34.763s）**，无跳过/重试；npm ci/typecheck/build逐项退出0、17个Python文件编译退出0。摘要记录63个源/测试/配置文件原始及LF归一化SHA-256、实际JS/CSS产物哈希。Windows Proactor取消Range仍有WinError10054，原日志保留，未放宽页面/保存断言。
+- 票11/12晚到GET、质量/密度、等待保存刷新、晚任务/保存回执与工程切换、240秒1080p真实帧数中间进度、54秒快速完成均在最终全套复验。28份本轮跨票证据独立保存在 `webui/tests/evidence/ticket-13-integration-fix/regressions/`，清单带SHA-256；已提交前票与首轮证据恢复原样。
+- 十组验收、完整组合链、三个长片与真实Windows自动开窗全部再次执行。实际7200秒/4000条/26人物；本轮打开1399ms、热重开1452ms、搜索103ms、播放到填字45ms、保存497ms。仅清浏览器HTTP缓存，未清OS缓存，仍非高码率电影或连续两小时耐久基准。补充OpenChamber真实页面布局/解码画面检查与截图，不冒充音频鉴定或Edge自动化结果。
+- 本轮独立启动62183/DevTools62184已关闭；补充手动服务PID19504停止。清理JSON确认18761/18762/18763/18764/62183/62184/56581/56582无监听，无ticket-13 Python/ffmpeg/独立Edge残留；保留素材/输出/工作树，不关闭用户预存Explorer或共享浏览器面板。全部标准重新勾选，票恢复done；**spec仍ready-for-agent，等待主代理最终code-review与集成闭环**。

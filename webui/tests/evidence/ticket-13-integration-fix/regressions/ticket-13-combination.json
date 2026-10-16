@@ -1,0 +1,304 @@
+{
+  "original": {
+    "format_version": 1,
+    "id": "efb2c38b-20c0-47d0-a1a8-2d979d243eff",
+    "name": "最终组合-1792125077988",
+    "revision": 8,
+    "media": {
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-13\\webui\\frontend\\.test-workspace\\inputs\\短片.mp4",
+      "duration_ms": 8000,
+      "identity": "sha256:dd5ca2cb993d3cf6122a71dd1eee524634edad8ffa14472508ff85f780298025",
+      "size_bytes": 309077
+    },
+    "subtitle_sources": [
+      {
+        "id": "7ee13031-4af4-486d-83cb-acf188a41f7f",
+        "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-13\\webui\\frontend\\.test-workspace\\inputs\\最终组合.jsonl",
+        "format": "normalized-jsonl"
+      }
+    ],
+    "entries": [
+      {
+        "id": "367bf195-b226-4d7b-b1db-812ce11c3b0f",
+        "start_ms": 200,
+        "end_ms": 3000,
+        "text": "最终组合提交\n保留全部来源",
+        "speaker_id": "2c1b34b3-743b-413c-99f4-7d2830b5ca64",
+        "tags": [
+          "MULTI",
+          "MERGED",
+          "CUSTOM"
+        ],
+        "sources": [
+          {
+            "subtitle_id": "7ee13031-4af4-486d-83cb-acf188a41f7f",
+            "index": 91,
+            "source_entries": [
+              9,
+              9,
+              2
+            ],
+            "moss_id": null
+          },
+          {
+            "subtitle_id": "7ee13031-4af4-486d-83cb-acf188a41f7f",
+            "index": 7,
+            "source_entries": [
+              8
+            ],
+            "moss_id": null
+          },
+          {
+            "subtitle_id": "7ee13031-4af4-486d-83cb-acf188a41f7f",
+            "index": 65,
+            "source_entries": [
+              0,
+              4
+            ],
+            "moss_id": null
+          }
+        ]
+      },
+      {
+        "id": "f381b61b-29e8-428d-935a-62aa5490aaaf",
+        "start_ms": 3200,
+        "end_ms": 4000,
+        "text": "后句",
+        "speaker_id": "0867412a-8c94-4e45-bf30-3d68b1691cb1",
+        "tags": [],
+        "sources": [
+          {
+            "subtitle_id": "7ee13031-4af4-486d-83cb-acf188a41f7f",
+            "index": 33,
+            "source_entries": [],
+            "moss_id": null
+          }
+        ]
+      },
+      {
+        "id": "06726b6b-2246-47e2-ae82-49994cd145fb",
+        "start_ms": 5000,
+        "end_ms": 6000,
+        "text": "组合标签",
+        "speaker_id": "2c1b34b3-743b-413c-99f4-7d2830b5ca64",
+        "tags": [],
+        "sources": [
+          {
+            "subtitle_id": "7ee13031-4af4-486d-83cb-acf188a41f7f",
+            "index": 14,
+            "source_entries": [
+              22
+            ],
+            "moss_id": null
+          }
+        ]
+      },
+      {
+        "id": "e81a428e-00c9-499d-8a63-320fb9f5fcea",
+        "start_ms": 6200,
+        "end_ms": 7000,
+        "text": "非对白",
+        "speaker_id": "8afe0c5c-6857-41fb-8c38-9ab45647c7f1",
+        "tags": [],
+        "sources": [
+          {
+            "subtitle_id": "7ee13031-4af4-486d-83cb-acf188a41f7f",
+            "index": 15,
+            "source_entries": [
+              23
+            ],
+            "moss_id": null
+          }
+        ]
+      }
+    ],
+    "speakers": [
+      {
+        "id": "0867412a-8c94-4e45-bf30-3d68b1691cb1",
+        "label": "乙",
+        "color": "#a695ce",
+        "order": 0
+      },
+      {
+        "id": "2273bba6-b4f1-45c2-a2ef-4676f6636ee7",
+        "label": "甲",
+        "color": "#71a8cc",
+        "order": 1
+      },
+      {
+        "id": "2c1b34b3-743b-413c-99f4-7d2830b5ca64",
+        "label": "甲&乙",
+        "color": "#7db7a2",
+        "order": 2
+      },
+      {
+        "id": "9f208151-7a68-461e-b4cd-05ed703c6001",
+        "label": "?",
+        "color": "#c6a272",
+        "order": 3
+      },
+      {
+        "id": "8afe0c5c-6857-41fb-8c38-9ab45647c7f1",
+        "label": "NONSPEECH",
+        "color": "#71a8cc",
+        "order": 4
+      }
+    ],
+    "exports": [],
+    "media_artifacts": []
+  },
+  "copy": {
+    "format_version": 1,
+    "id": "a313025b-692b-445c-afb6-9d7a954384ea",
+    "name": "最终组合-1792125077988-副本",
+    "revision": 1,
+    "media": {
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-13\\webui\\frontend\\.test-workspace\\inputs\\短片.mp4",
+      "duration_ms": 8000,
+      "identity": "sha256:dd5ca2cb993d3cf6122a71dd1eee524634edad8ffa14472508ff85f780298025",
+      "size_bytes": 309077
+    },
+    "subtitle_sources": [
+      {
+        "id": "7ee13031-4af4-486d-83cb-acf188a41f7f",
+        "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-13\\webui\\frontend\\.test-workspace\\inputs\\最终组合.jsonl",
+        "format": "normalized-jsonl"
+      }
+    ],
+    "entries": [
+      {
+        "id": "367bf195-b226-4d7b-b1db-812ce11c3b0f",
+        "start_ms": 200,
+        "end_ms": 3000,
+        "text": "最终组合提交\n保留全部来源",
+        "speaker_id": "2c1b34b3-743b-413c-99f4-7d2830b5ca64",
+        "tags": [
+          "MULTI",
+          "MERGED",
+          "CUSTOM"
+        ],
+        "sources": [
+          {
+            "subtitle_id": "7ee13031-4af4-486d-83cb-acf188a41f7f",
+            "index": 91,
+            "source_entries": [
+              9,
+              9,
+              2
+            ],
+            "moss_id": null
+          },
+          {
+            "subtitle_id": "7ee13031-4af4-486d-83cb-acf188a41f7f",
+            "index": 7,
+            "source_entries": [
+              8
+            ],
+            "moss_id": null
+          },
+          {
+            "subtitle_id": "7ee13031-4af4-486d-83cb-acf188a41f7f",
+            "index": 65,
+            "source_entries": [
+              0,
+              4
+            ],
+            "moss_id": null
+          }
+        ]
+      },
+      {
+        "id": "f381b61b-29e8-428d-935a-62aa5490aaaf",
+        "start_ms": 3200,
+        "end_ms": 4000,
+        "text": "后句",
+        "speaker_id": "0867412a-8c94-4e45-bf30-3d68b1691cb1",
+        "tags": [],
+        "sources": [
+          {
+            "subtitle_id": "7ee13031-4af4-486d-83cb-acf188a41f7f",
+            "index": 33,
+            "source_entries": [],
+            "moss_id": null
+          }
+        ]
+      },
+      {
+        "id": "06726b6b-2246-47e2-ae82-49994cd145fb",
+        "start_ms": 5000,
+        "end_ms": 6000,
+        "text": "组合标签",
+        "speaker_id": "2c1b34b3-743b-413c-99f4-7d2830b5ca64",
+        "tags": [],
+        "sources": [
+          {
+            "subtitle_id": "7ee13031-4af4-486d-83cb-acf188a41f7f",
+            "index": 14,
+            "source_entries": [
+              22
+            ],
+            "moss_id": null
+          }
+        ]
+      },
+      {
+        "id": "e81a428e-00c9-499d-8a63-320fb9f5fcea",
+        "start_ms": 6200,
+        "end_ms": 7000,
+        "text": "非对白",
+        "speaker_id": "8afe0c5c-6857-41fb-8c38-9ab45647c7f1",
+        "tags": [],
+        "sources": [
+          {
+            "subtitle_id": "7ee13031-4af4-486d-83cb-acf188a41f7f",
+            "index": 15,
+            "source_entries": [
+              23
+            ],
+            "moss_id": null
+          }
+        ]
+      }
+    ],
+    "speakers": [
+      {
+        "id": "0867412a-8c94-4e45-bf30-3d68b1691cb1",
+        "label": "乙",
+        "color": "#a695ce",
+        "order": 0
+      },
+      {
+        "id": "2273bba6-b4f1-45c2-a2ef-4676f6636ee7",
+        "label": "甲",
+        "color": "#71a8cc",
+        "order": 1
+      },
+      {
+        "id": "2c1b34b3-743b-413c-99f4-7d2830b5ca64",
+        "label": "甲&乙",
+        "color": "#7db7a2",
+        "order": 2
+      },
+      {
+        "id": "9f208151-7a68-461e-b4cd-05ed703c6001",
+        "label": "?",
+        "color": "#c6a272",
+        "order": 3
+      },
+      {
+        "id": "8afe0c5c-6857-41fb-8c38-9ab45647c7f1",
+        "label": "NONSPEECH",
+        "color": "#71a8cc",
+        "order": 4
+      }
+    ],
+    "exports": [],
+    "media_artifacts": []
+  },
+  "outputs": {
+    "speaker-srt": "1\n00:00:00,200 --> 00:00:03,000\n[甲&乙] {MULTI} {MERGED} {CUSTOM} 最终组合提交\n保留全部来源\n\n2\n00:00:03,200 --> 00:00:04,000\n[乙] 后句\n\n3\n00:00:05,000 --> 00:00:06,000\n[甲&乙] 组合标签\n\n4\n00:00:06,200 --> 00:00:07,000\n[NONSPEECH] 非对白\n",
+    "plain-srt": "1\n00:00:00,200 --> 00:00:03,000\n{MULTI} {MERGED} {CUSTOM} 最终组合提交\n保留全部来源\n\n2\n00:00:03,200 --> 00:00:04,000\n后句\n\n3\n00:00:05,000 --> 00:00:06,000\n组合标签\n\n4\n00:00:06,200 --> 00:00:07,000\n非对白\n",
+    "normalized-jsonl": "{\"idx\": 1, \"start\": 0.2, \"end\": 3.0, \"speaker\": \"甲&乙\", \"tags\": [\"MULTI\", \"MERGED\", \"CUSTOM\"], \"text\": \"最终组合提交\\n保留全部来源\", \"source_entries\": [9, 9, 2, 8, 0, 4]}\n{\"idx\": 2, \"start\": 3.2, \"end\": 4.0, \"speaker\": \"乙\", \"tags\": [], \"text\": \"后句\", \"source_entries\": []}\n{\"idx\": 3, \"start\": 5.0, \"end\": 6.0, \"speaker\": \"甲&乙\", \"tags\": [], \"text\": \"组合标签\", \"source_entries\": [22]}\n{\"idx\": 4, \"start\": 6.2, \"end\": 7.0, \"speaker\": \"NONSPEECH\", \"tags\": [], \"text\": \"非对白\", \"source_entries\": [23]}\n",
+    "moss-json": "[\n  {\n    \"id\": \"367bf195-b226-4d7b-b1db-812ce11c3b0f\",\n    \"start\": 0.2,\n    \"end\": 3.0,\n    \"speaker\": \"甲&乙\",\n    \"text\": \"最终组合提交\\n保留全部来源\"\n  },\n  {\n    \"id\": \"f381b61b-29e8-428d-935a-62aa5490aaaf\",\n    \"start\": 3.2,\n    \"end\": 4.0,\n    \"speaker\": \"乙\",\n    \"text\": \"后句\"\n  },\n  {\n    \"id\": \"06726b6b-2246-47e2-ae82-49994cd145fb\",\n    \"start\": 5.0,\n    \"end\": 6.0,\n    \"speaker\": \"甲&乙\",\n    \"text\": \"组合标签\"\n  },\n  {\n    \"id\": \"e81a428e-00c9-499d-8a63-320fb9f5fcea\",\n    \"start\": 6.2,\n    \"end\": 7.0,\n    \"speaker\": \"NONSPEECH\",\n    \"text\": \"非对白\"\n  }\n]\n"
+  }
+}

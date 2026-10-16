@@ -193,23 +193,27 @@ test('资源区打开实际导出位置，Windows Explorer 窗口与真实文件
   await expect(button(page, '打开导出位置')).toBeVisible();
   const exported = (await disk(page, project.id)).exports[0];
   const folder = path.dirname(exported.path);
-  const windows = () => JSON.parse(execFileSync('powershell.exe', ['-NoProfile', '-Command',
+  // Shell.Application also enumerates non-filesystem/transitional windows. Pin
+  // that OS-boundary case on every machine, while still finding a REAL opened
+  // exports window below (never substitute these records for the actual shell).
+  const windows = () => [{ path: null, hwnd: 0 }, { path: '', hwnd: 0 }, ...JSON.parse(execFileSync('powershell.exe', ['-NoProfile', '-Command',
     "$OutputEncoding=[Console]::OutputEncoding=[Text.UTF8Encoding]::new(); $s=New-Object -ComObject Shell.Application; $items=@($s.Windows() | ForEach-Object { try { [pscustomobject]@{path=$_.Document.Folder.Self.Path; hwnd=[long]$_.HWND} } catch {} }); ConvertTo-Json -InputObject $items -Compress",
-  ], { encoding: 'utf8' }).trim() || '[]') as { path: string; hwnd: number }[];
+  ], { encoding: 'utf8' }).trim() || '[]')] as { path: string | null; hwnd: number }[];
+  const isExportFolder = (window: { path: string | null }) => typeof window.path === 'string' && window.path.toLowerCase() === folder.toLowerCase();
   const before = windows();
   const response = page.waitForResponse(r => r.url().endsWith('/open-location'));
   try {
     await button(page, '打开导出位置').click();
     const receipt = await (await response).json();
     expect(receipt).toMatchObject({ project_id: project.id, export_id: exported.id, opened: true, path: folder });
-    await expect.poll(() => windows().some(w => w.path.toLowerCase() === folder.toLowerCase()), { timeout: 15000 }).toBe(true);
-    const actual = windows().find(w => w.path.toLowerCase() === folder.toLowerCase())!;
+    await expect.poll(() => windows().some(isExportFolder), { timeout: 15000 }).toBe(true);
+    const actual = windows().find(isExportFolder)!;
     expect(before.some(w => w.hwnd === actual.hwnd && w.path === folder)).toBe(false);
     expect(await fs.readFile(exported.path, 'utf8')).toContain('[甲&乙] 完整来源\n第二行');
     const resources = await (await page.request.get(`/api/projects/${project.id}/resources`)).json();
     expect(resources.exports[0]).toMatchObject({ id: exported.id, status: 'available', path: exported.path });
     await fs.writeFile('../tests/evidence/ticket-10-export-location.json', JSON.stringify({ platform: process.platform,
-      verifiedAt: new Date().toISOString(), receipt, explorer: actual, exported, resources }, null, 2));
+      verifiedAt: new Date().toISOString(), ignoredOSBoundaryRecords: ['null', 'empty'], receipt, explorer: actual, exported, resources }, null, 2));
     await page.screenshot({ path: '../tests/evidence/ticket-10-export-location.jpg', fullPage: true });
   } finally {
     // Close only the unique export folder opened by this test, never the user's other windows.

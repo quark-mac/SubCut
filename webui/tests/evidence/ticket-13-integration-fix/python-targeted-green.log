@@ -1,0 +1,15 @@
+python.exe : test_concurrent_pollers_never_interrupt_real_media_jobs (webui.tests.test_timeline_media.TimelineMediaHTTP
+Tests) ... ok
+所在位置 行:2 字符: 1
++ & 'D:\whisper-diarization\env\python.exe' -m unittest webui.tests.tes ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_concurrent...TPTests) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_cache_parameters_integrity_restart_and_changed_source (webui.tests.test_timeline_media.TimelineMediaHTTPTests) ...
+ ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 5.435s
+
+OK

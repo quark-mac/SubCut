@@ -14,9 +14,11 @@ export function TimelineMediaControls({ media, kind, busy, onGenerate }: {
     </select></label>
     <button disabled={busy || media.busy} onClick={onGenerate}>{media.task?.state === 'failed' ? `重试${action}` : action}</button>
     <button onClick={media.refresh}>刷新{kind}状态</button>
-    {media.task && <><p role="status" aria-label={`${kind}任务状态`}>{states[media.task.state]} · {Math.round(media.task.progress * 100)}%{media.task.cached ? ' · 复用缓存' : ''}</p>
-      <progress aria-label={`${kind}生成进度`} max={1} value={media.task.progress} />
-      {media.task.error && <p role="alert" className="field-error">{media.task.error.message}</p>}</>}
-    {media.error && <p role="status" aria-label={`${kind}读取错误`} className="field-error">{media.error}</p>}
+    <div className="media-status" tabIndex={0} role="region" aria-label={`${kind}任务详情`}>
+      {media.task && <><p role="status" aria-label={`${kind}任务状态`}>{states[media.task.state]} · {Math.round(media.task.progress * 100)}%{media.task.cached ? ' · 复用缓存' : ''}</p>
+        <progress aria-label={`${kind}生成进度`} max={1} value={media.task.progress} />
+        {media.task.error && <p role="alert" className="field-error">{media.task.error.message}</p>}</>}
+      {media.error && <p role="status" aria-label={`${kind}读取错误`} className="field-error">{media.error}</p>}
+    </div>
   </section>;
 }

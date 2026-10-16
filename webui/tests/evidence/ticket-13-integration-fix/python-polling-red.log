@@ -1,0 +1,32 @@
+python.exe : test_concurrent_pollers_never_interrupt_real_media_jobs (webui.tests.test_timeline_media.TimelineMediaHTTP
+Tests) ... FAIL
+所在位置 行:2 字符: 1
++ & 'D:\whisper-diarization\env\python.exe' -m unittest webui.tests.tes ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_concurrent...Tests) ... FAIL:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+======================================================================
+FAIL: test_concurrent_pollers_never_interrupt_real_media_jobs (webui.tests.test_timeline_media.TimelineMediaHTTPTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\machi\AppData\Local\Temp\opencode\webui-worktrees\ticket-13\webui\tests\test_timeline_media.py", line
+179, in test_concurrent_pollers_never_interrupt_real_media_jobs
+    self.assertTrue(observation.result())
+  File "D:\whisper-diarization\env\lib\concurrent\futures\_base.py", line 458, in result
+    return self.__get_result()
+  File "D:\whisper-diarization\env\lib\concurrent\futures\_base.py", line 403, in __get_result
+    raise self._exception
+  File "D:\whisper-diarization\env\lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "C:\Users\machi\AppData\Local\Temp\opencode\webui-worktrees\ticket-13\webui\tests\test_timeline_media.py", line
+162, in observe
+    self.assertEqual(response.status_code, 200, response.text)
+AssertionError: 500 != 200 : {"error":{"code":"storage_error","message":"鏂囦欢璇诲啓澶辫触锛岃妫€鏌ヨ矾寰勩€佺鐩樼┖闂村拰璁块棶鏉冮檺鍚庨噸璇?,"field
+":null,"entry":null}}
+
+----------------------------------------------------------------------
+Ran 1 test in 1.340s
+
+FAILED (failures=1)

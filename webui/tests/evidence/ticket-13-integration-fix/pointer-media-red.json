@@ -1,0 +1,34 @@
+{
+  "project": "216eb928-1e12-467a-84a7-62bd6ff0c78a",
+  "before": {
+    "x": 24,
+    "y": 413,
+    "width": 104,
+    "height": 33
+  },
+  "after": {
+    "x": 24,
+    "y": 433.390625,
+    "width": 104,
+    "height": 33
+  },
+  "requests": [],
+  "events": [
+    {
+      "type": "pointerdown",
+      "target": "BUTTON:生成音频波形"
+    },
+    {
+      "type": "pointerup",
+      "target": "SELECT:标准（10 ms）精细（5 ms）"
+    },
+    {
+      "type": "click",
+      "target": "SECTION:波形波形采样密度标准（10 ms）精细（5 ms）生成音频波形刷新波形状态"
+    },
+    {
+      "type": "pointerup",
+      "target": "SELECT:标准（10 ms）精细（5 ms）"
+    }
+  ]
+}

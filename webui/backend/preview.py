@@ -50,9 +50,13 @@ class PreviewTasks:
         return self.store.directory(project_id) / 'tasks' / f'{task_id}.json'
 
     def write(self, task):
-        path = self.task_path(task['project_id'], task['id'])
-        path.parent.mkdir(exist_ok=True)
-        atomic_write(path, json.dumps(task, ensure_ascii=False, indent=2))
+        # Windows readers do not share delete access. Even an atomic replace
+        # fails if a concurrent GET has the old task file open. All writers,
+        # including FFmpeg progress, must use the same lock as get().
+        with self.lock:
+            path = self.task_path(task['project_id'], task['id'])
+            path.parent.mkdir(exist_ok=True)
+            atomic_write(path, json.dumps(task, ensure_ascii=False, indent=2))
 
     def get(self, project_id, task_id):
         with self.lock:

@@ -41,6 +41,11 @@ h3 { font-size: 12px; color: #acb9cf; margin: 23px 0 8px; }
 .path { overflow-wrap: anywhere; font-size: 12px; line-height: 1.6; }
 .muted { color: #94a2b8; line-height: 1.7; }
 .resources > .muted { margin-top: 14px; }
+/* Async probes/task receipts must not move a button between press and release,
+   including buttons in the next section. Details remain keyboard-scrollable. */
+.media-status { height: 5rem; overflow: auto; overflow-wrap: anywhere; margin-top: 8px; }
+.preview-status { height: 10rem; }
+.media-status:focus-visible { outline: 2px solid #7cb9ff; outline-offset: 2px; }
 .export { margin: 12px 0; }
 .preview-panel { display: flex; flex-direction: column; padding: 14px; min-width: 0; min-height: 0; }
 h2 span { color: #8495af; font-size: 11px; font-weight: 400; margin-left: 10px; }

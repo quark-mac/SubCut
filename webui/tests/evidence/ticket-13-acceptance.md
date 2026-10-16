@@ -1,6 +1,6 @@
 # Ticket 13 — WebUI 最终集成验收
 
-日期：2026-10-16。范围：`feat/webui-13`，基于集成 `4546e57`（01–12 已完成）。本文是本轮实际运行证据，不以各票旧报告代替复验。实现只修改 `webui/` 与本票 tracker；不运行模型、不修改生产默认值、Gold、源片或保护目录。
+日期：2026-10-16。范围：`feat/webui-13`。首轮基于集成 `4546e57`（01–12 已完成）；恢复集成阻塞时先快进合入 `8613300`（含 `10d5e63` 和 79/2 失败记录），修复并重新执行全部入口。本文不以各票旧报告代替复验。实现只修改 `webui/` 与本票 tracker；不运行模型、不修改生产默认值、Gold、源片或保护目录。
 
 规格：`.scratch/webui/spec.md` 的十组验收、`issues/13-long-film-windows-delivery.md`；跨票检查参考 repo 外 `webui-acceptance-map.md`。规格状态仍保留 `ready-for-agent`，由主代理在最终 code-review 通过后闭环。
 
@@ -26,11 +26,20 @@ $Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName 
 & $env:WEBUI_PYTHON -m py_compile $Files.FullName
 ```
 
-浏览器主服务使用 **18761**，不复用已有服务；辅助服务绑定独立空闲端口。最终日志：[`ticket-13-browser-final.log`](ticket-13-browser-final.log)、[`ticket-13-python-final.log`](ticket-13-python-final.log)。以下矩阵中的测试均为本轮真实执行入口；没有 mock React 状态、工程历史或媒体 worker。必要的故障/晚回执只在公共 HTTP 或操作系统文件边界注入。
+浏览器主服务使用 **18761**，不复用已有服务；辅助服务绑定独立空闲端口。恢复后的最终日志：[`browser-full.log`](ticket-13-integration-fix/browser-full.log)、[`python-full.log`](ticket-13-integration-fix/python-full.log)。以下十组矩阵中的测试均已再执行；没有 mock React 状态、工程历史或媒体 worker。必要的故障/晚回执只在公共 HTTP 或操作系统文件边界注入。
 
-**最终结果：81项真实Edge通过（6.1分钟）；40项HTTP/媒体/CLI通过（33.223秒）；17个WebUI Python文件编译退出0；npm ci、类型检查、生产构建通过。** 构建日志为 [`ticket-13-build.log`](ticket-13-build.log)，源文件SHA-256及机器可读结果为 [`ticket-13-verification.json`](ticket-13-verification.json)。本轮重新生成的20份前票证据单独保存在 `ticket-13-regressions/`，摘要见 [`ticket-13-regression-manifest.json`](ticket-13-regression-manifest.json)；旧票证据恢复为原样，避免把历史执行覆盖成今天的结果。
+**恢复后最终结果：82项真实Edge通过（6.3分钟）；41项HTTP/媒体/CLI通过（34.763秒）；17个WebUI Python文件编译退出0；npm ci、类型检查、生产构建通过。** 构建日志为 [`build-final.log`](ticket-13-integration-fix/build-final.log)，源文件SHA-256及机器可读结果为 [`ticket-13-verification.json`](ticket-13-verification.json)。恢复轮重新生成的28份跨票证据单独保存在 `ticket-13-integration-fix/regressions/`，清单见 [`regression-manifest.json`](ticket-13-integration-fix/regression-manifest.json)；旧票与首轮证据恢复原样。首轮81/40和集成79/2的记录仍保留，不能当作本轮结果。
 
-## TDD 与本轮修复
+## 集成阻塞修复（最新）
+
+完整诊断、红绿证据和取舍见 [`ticket-13-integration-fix/acceptance.md`](ticket-13-integration-fix/acceptance.md)：
+
+- Explorer 枚举兼容 null/空路径；进一步实测发现默认 Folder shell verb 返回成功但未导航，改用系统 Explorer 显式导航。仍必须验证真实目录窗口与导出内容，不用 opened:true 代替。
+- 新增可控真实 HTTP 回执时序：鼠标按下生成波形后，旧实现被探测信息推动20.390625px，松开落在下拉框，零POST；固定操作区/可滚动状态详情后矩形不变、完整点击、恰好一次精细波形POST及实际产物。没有延长超时或改为按下就执行。
+- 全套额外暴露 Windows 任务JSON读/替换竞态；六路公共HTTP轮询在旧实现先红500，最小修复为所有任务写入与读取共用RLock。相同回归、缓存重启及完整41项再绿，不改票12真实帧数算法。
+- 原票11/12晚回执、保存切换、真实帧数中间进度与快速任务全部再运行。原集成失败媒体trace截断，未假称能回放原失败的全部指针细节；新受控回归证明并修复同类点击丢失。
+
+## TDD 与首轮修复（历史，保留）
 
 1. 长片 `long-film.spec.ts` 首先失败：`expect(.subtitle-row.count()).toBeLessThan(80)`，实得 **4000**。随后实现列表窗口化、时间轴横纵可见块、按完整布局的框选；同一用例转绿。数量上限是验证没有全量挂载的结构性检查，不是臆造的毫秒性能承诺。
 2. 当前排序、前缀最大结束时间索引和人物计数按字幕数组变化重建，不随播放每帧重排/遍历所有人物字幕；媒体证据组件按稳定参数复用。只呈现可见条目，完整工程仍用于结构连续性、身份和输出。框选不再仅遍历 DOM：长片窗口卸载后仍保留经过的十条选择。
@@ -61,7 +70,7 @@ $Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName 
 
 ## 规模观测口径
 
-原始数据：[`ticket-13-scale.json`](ticket-13-scale.json)。视频为真实 7200秒 H.264/AAC MP4，160×90 / 1fps、连续440Hz音频；这是时间范围/工程规模夹具，不代表4K高码率电影。字幕4000条（多行、原序号倒序、重复原来源索引、元标签），24普通人物 + 两特殊轨。另一个4000条夹具专测同时间同人物重叠及虚拟框选。
+最新原始数据：[`ticket-13-scale.json`](ticket-13-integration-fix/regressions/ticket-13-scale.json)。视频为真实 7200秒 H.264/AAC MP4，160×90 / 1fps、连续440Hz音频；这是时间范围/工程规模夹具，不代表4K高码率电影。字幕4000条（多行、原序号倒序、重复原来源索引、元标签），24普通人物 + 两特殊轨。另一个4000条夹具专测同时间同人物重叠及虚拟框选。
 
 - “冷加载”只明确清除了 Edge HTTP cache；新建 fixture/import 已读过媒体，**没有清空 Windows 文件缓存**，不能称真正磁盘冷启动。
 - 加载值包含文件菜单、读取工程列表、打开及首条可操作；热重开还包含页面 reload。搜索包含 Playwright 输入与可见断言；输入值包含点击播放到填字完成；显式保存包含 UI点击、提交、HTTP、服务校验及回执。它们是端到端观察，不是纯组件耗时或吞吐基准。
@@ -72,23 +81,23 @@ $Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName 
 
 | 观察 | 实际值 |
 | --- | --- |
-| 清浏览器HTTP缓存后打开工程至首条可操作 | 1377 ms |
-| 页面reload后热重开 | 1436 ms |
-| 搜索第2400条至可见 | 94 ms |
-| 点击播放至完成正文填入 | 41 ms |
-| 显式保存至服务回执“已保存” | 484 ms |
+| 清浏览器HTTP缓存后打开工程至首条可操作 | 1399 ms |
+| 页面reload后热重开 | 1452 ms |
+| 搜索第2400条至可见 | 103 ms |
+| 点击播放至完成正文填入 | 45 ms |
+| 显式保存至服务回执“已保存” | 497 ms |
 | 全片视图已挂载列表 / 字幕块 | 6 / 1232（完整数据4000条，两种轨道视图不是两份数据） |
-| 全片播放采样355帧，UI rAF间隔中位 / P95 / 最大 | 5.6 / 11.2 / 22.2 ms，采样窗口无Long Task条目 |
-| 256×播放中编辑/保存采样496帧，UI rAF间隔中位 / P95 / 最大 | 5.6 / 5.6 / 38.8 ms，采样窗口无Long Task条目 |
+| 全片播放采样355帧，UI rAF间隔中位 / P95 / 最大 | 5.6 / 11.2 / 22.1 ms，采样窗口无Long Task条目 |
+| 256×播放中编辑/保存采样499帧，UI rAF间隔中位 / P95 / 最大 | 5.6 / 5.7 / 44.4 ms，采样窗口无Long Task条目 |
 
-汇总：[`ticket-13-scale-summary.json`](ticket-13-scale-summary.json)；原片实际ffprobe及SHA-256：[`ticket-13-long-media.json`](ticket-13-long-media.json)，文件24,882,620 bytes、时长7200.000秒，非伪造duration字段。rAF统计使用原始采样最近秩P95；短采样无Long Task不等于所有操作都无延迟。冷/热值包含不同导航过程，热值不比冷值小也没有改写数据。
+最新汇总：[`scale-summary.json`](ticket-13-integration-fix/scale-summary.json)；原片实际ffprobe及SHA-256：[`ticket-13-long-media.json`](ticket-13-long-media.json)，文件24,882,620 bytes、时长7200.000秒，非伪造duration字段。rAF统计使用原始采样最近秩P95；短采样无Long Task不等于所有操作都无延迟。冷/热值包含不同导航过程，热值不比冷值小也没有改写数据。首轮1377/1436/94/41/484ms的原始数据保留于本目录原文件，不与恢复轮混算。
 
 ## Windows 与手动观察
 
-- [`ticket-13-launcher.json`](ticket-13-launcher.json) / [`ticket-13-windows-launch.jpg`](ticket-13-windows-launch.jpg)：实际 `.cmd` → PowerShell → Python 服务 → Python webbrowser 打开 installed Edge 独立窗口，workspace 路径含空格/中文。测试连接该已打开窗口观察 UI，不主动导航代替打开。无 Python 的启动退出码1、错误指向 `WEBUI_PYTHON`；临时无依赖 Python 与未构建副本分别有实际失败检查。
+- 最新 [`ticket-13-launcher.json`](ticket-13-integration-fix/regressions/ticket-13-launcher.json) / [`ticket-13-windows-launch.jpg`](ticket-13-integration-fix/regressions/ticket-13-windows-launch.jpg)：实际 `.cmd` → PowerShell → Python 服务 → Python webbrowser 打开 installed Edge 独立窗口，workspace 路径含空格/中文。测试连接该已打开窗口观察 UI，不主动导航代替打开。无 Python 的启动退出码1、错误指向 `WEBUI_PYTHON`；临时无依赖 Python 与未构建副本分别有实际失败检查。
 - [`ticket-13-manual.json`](ticket-13-manual.json) / [`ticket-13-manual-long-film.jpg`](ticket-13-manual-long-film.jpg)：另外通过 OpenChamber 浏览器面板实际预览并创建4000条**普通SRT**工程，搜索2400、点击定位01:09:58.250、修改多行、保存并导出4000条说话人SRT；画面与工作字幕叠加目视检查。手动面板没有声称完成听感验收。该服务18764已关闭。
 - 音画的主要客观证据为 Edge 实际 canvas / Web Audio 样本、HTTP媒体解码、真实SVG峰/JPEG时间坐标，不用截图冒充音频测量。
-- 本轮Edge实际采样：1秒红帧 `[254,0,0]` / 430Hz、5秒绿帧 `[0,254,0]` / 870Hz、8.5秒蓝帧 `[0,0,255]` / 1320Hz；原始目标440/880/1320Hz，公开验收允许20Hz窗口测量偏差，并检查实际能量。不是把目标频率当作测量值。真实缩略图进度依次出现19/40/71/105/143/169/208/240帧，最终240帧，登记/验证完成前保持99%，而非假时间进度。
+- 首轮Edge实际采样：1秒红帧 `[254,0,0]` / 430Hz、5秒绿帧 `[0,254,0]` / 870Hz、8.5秒蓝帧 `[0,0,255]` / 1320Hz；原始目标440/880/1320Hz，公开验收允许20Hz窗口测量偏差，并检查实际能量。恢复轮使用相同断言再次通过，原始新样本另存恢复轮regressions。不是把目标频率当作测量值。恢复轮真实缩略图进度依次出现0/18/50/117/155/181/220/240帧，最终240帧，登记/验证完成前保持99%，而非假时间进度。
 
 ## 边界与残留
 
@@ -96,4 +105,4 @@ $Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName 
 - Windows Python3.10 Proactor 在浏览器取消长视频 Range 连接时有时记录 `ConnectionResetError: WinError 10054`；这是服务端断连日志，未发生页面脚本错误、字幕丢失或保存失败，后续请求及测试继续通过。未为了隐藏它改事件循环或放宽验收断言。
 - 默认路径、离线编辑、原片身份及缓存失败语义沿用既有公共契约；源片失联不等于丢工程，失败产物不当缓存。MOSS/SRT 交换文件不宣称完整工程往返。
 - 集成分支合并确认和测试统计记于本票 Comments，交付提交见 `feat/webui-13` 的Git历史及完成回复；未把本功能合回集成，最终Spec审查由主代理执行。
-- 完成前 `git merge feat/webui` 返回 `Already up to date`，祖先检查通过，集成仍为4546e57。18761、18764及最新自动启动52733/DevTools52734均无监听；也检查先前失败运行的56811/56812，无残留本轮WebUI服务进程。工作树、测试素材及输出保留；没有推送或合回集成。
+- 恢复轮完成前 `git merge feat/webui` 返回 `Already up to date`；集成为8613300，未将本轮修复合回集成。最新自动启动端口62183/DevTools62184及主服务/手动端口清理见verification。首轮52733/52734等清理记录保留为历史，不冒充本轮端口。工作树、测试素材及输出保留；没有推送。

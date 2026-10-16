@@ -1,0 +1,28 @@
+[
+  {
+    "command": [
+      "npm.cmd",
+      "ci"
+    ],
+    "exit": 0,
+    "seconds": 4.235
+  },
+  {
+    "command": [
+      "npm.cmd",
+      "run",
+      "typecheck"
+    ],
+    "exit": 0,
+    "seconds": 1.672
+  },
+  {
+    "command": [
+      "npm.cmd",
+      "run",
+      "build"
+    ],
+    "exit": 0,
+    "seconds": 2.547
+  }
+]
