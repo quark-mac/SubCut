@@ -57,6 +57,8 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
   const clickedEntry = useRef<string | null>(null);
   const zoomAnchor = useRef<number | null>(null);
   const [fitWidth, setFitWidth] = useState(1000);
+  const [viewportHeight, setViewportHeight] = useState(300);
+  const [scrollTop, setScrollTop] = useState(0);
   const [zoom, setZoom] = useState(0);
   const duration = project.media.duration_ms;
   const width = fitWidth * 2 ** zoom;
@@ -65,7 +67,7 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
 
   useLayoutEffect(() => {
     const element = viewport.current!;
-    const measure = () => setFitWidth(Math.max(100, element.clientWidth - labelWidth));
+    const measure = () => { setFitWidth(Math.max(100, element.clientWidth - labelWidth)); setViewportHeight(element.clientHeight); };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(element);
@@ -117,6 +119,27 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
   }, [duration, width]);
   // Render ruler labels only around the visible range, including while horizontally scrolling.
   const [scrollLeft, setScrollLeft] = useState(0);
+  // Layout includes every entry (minimum hit width and overlap lanes), but DOM only
+  // includes blocks intersecting the viewport. Playback doesn't repeat this scan.
+  const renderedTracks = useMemo(() => {
+    let top = 30;
+    return tracks.map(track => {
+      const trackTop = top; top += track.height + 1;
+      const blocks = [...track.blocks.filter(b => !previewById.has(b.entry.id) || track.id === 'overview' || track.id === previewById.get(b.entry.id)!.speaker_id),
+        ...(preview ?? []).filter(e => track.id === e.speaker_id && !track.blocks.some(b => b.entry.id === e.id))
+          .map((entry, lane) => ({ entry, lane, left: Math.min(entry.start_ms / duration * width, width - 4), width: Math.max(4, (entry.end_ms - entry.start_ms) / duration * width) })),
+      ].filter(block => {
+        if (project.entries.length <= 100) return true;
+        const entry = previewById.get(block.entry.id) ?? block.entry;
+        const left = Math.min(entry.start_ms / duration * width, width - 4);
+        const right = Math.max(entry.end_ms / duration * width, left + 4);
+        const y = trackTop + block.lane * 35 + 4;
+        return left <= scrollLeft + fitWidth + 100 && right >= scrollLeft - 100 &&
+          y <= scrollTop + viewportHeight + 35 && y + 28 >= scrollTop - 35;
+      });
+      return { ...track, blocks };
+    });
+  }, [tracks, preview, duration, width, scrollLeft, fitWidth, scrollTop, viewportHeight]);
   const firstTick = Math.max(0, Math.floor(scrollLeft / width * duration / tickStep));
   const lastTick = Math.min(Math.floor(duration / tickStep), Math.ceil((scrollLeft + fitWidth) / width * duration / tickStep));
   const ticks = Array.from({ length: Math.max(0, lastTick - firstTick + 1) }, (_, i) => (firstTick + i) * tickStep);
@@ -249,9 +272,15 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
     setMarquee({ left, top, width: right - left, height: bottom - top });
     const ids = new Set(current.additive ? current.original : []);
     if (right - left >= 3 || bottom - top >= 3) {
-      for (const clip of viewport.current!.querySelectorAll<HTMLElement>('[data-entry-id]')) {
-        const rect = clip.getBoundingClientRect(), origin = contentPoint(rect.left, rect.top);
-        if (origin.x <= right && origin.x + rect.width >= left && origin.y <= bottom && origin.y + rect.height >= top) ids.add(clip.dataset.entryId!);
+      // Hit-test the complete layout, not mounted DOM: scrolling a marquee must
+      // retain crossed entries even after their virtual blocks leave the viewport.
+      let trackTop = 30;
+      for (const track of tracks) {
+        for (const block of track.blocks) {
+          const x = labelWidth + block.left, y = trackTop + 1 + block.lane * 35 + 4;
+          if (x <= right && x + block.width >= left && y <= bottom && y + 28 >= top) ids.add(block.entry.id);
+        }
+        trackTop += track.height + 1;
       }
     }
     onSelect(ids);
@@ -297,6 +326,7 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
       }}
       onScroll={event => {
         setScrollLeft(event.currentTarget.scrollLeft);
+        setScrollTop(event.currentTarget.scrollTop);
         if (edit.current) moveEdit({ pointerId: edit.current.pointer, clientX: edit.current.clientX, clientY: edit.current.clientY });
         if (box.current) moveBox({ pointerId: box.current.pointer, clientX: box.current.clientX, clientY: box.current.clientY });
       }}>
@@ -322,18 +352,15 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
               style={{ left: `${position / duration * 100}%` }} disabled={busy}>▼</button>
           </div>
         </div>
-        {tracks.map(track => <div className="track" key={track.id}
+        {renderedTracks.map(track => <div className="track" key={track.id} style={{ height: track.height + 1 }}
           data-speaker-id={project.speakers.some(s => s.id === track.id) ? track.id : undefined}>
-          <button className="track-label" style={{ color: track.color }} aria-label={`选择轨道 ${track.label}`}
+          <button className="track-label" style={{ color: track.color }} title={track.label} aria-label={`选择轨道 ${track.label}`}
             aria-pressed={currentTrack === track.id} disabled={busy || !!preview}
             onClick={() => onTrack(project.speakers.some(s => s.id === track.id) ? track.id : '')}>{track.label}</button>
           <div className={`track-body ${track.id === 'video' ? 'locked' : ''}`} style={{ height: track.height }}>
             {track.id === 'video' && <TimelineEvidence waveform={waveform} thumbnails={thumbnails}
               duration={duration} width={width} scrollLeft={scrollLeft} viewportWidth={fitWidth} />}
-            {[...track.blocks.filter(b => !previewById.has(b.entry.id) || track.id === 'overview' || track.id === previewById.get(b.entry.id)!.speaker_id),
-              ...(preview ?? []).filter(e => track.id === e.speaker_id && !track.blocks.some(b => b.entry.id === e.id))
-                .map((entry, lane) => ({ entry, lane, left: Math.min(entry.start_ms / duration * width, width - 4), width: Math.max(4, (entry.end_ms - entry.start_ms) / duration * width) })),
-            ].map(({ entry: original, lane, left, width: blockWidth }) => {
+            {track.blocks.map(({ entry: original, lane, left, width: blockWidth }) => {
               const entry = previewById.get(original.id) ?? original;
               const previewLeft = Math.min(entry.start_ms / duration * width, width - 4);
               const displayWidth = entry === original ? blockWidth : Math.max(4, entry.end_ms / duration * width - previewLeft);

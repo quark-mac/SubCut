@@ -8,8 +8,6 @@ import threading
 import time
 import webbrowser
 
-import uvicorn
-
 
 def main():
     parser = argparse.ArgumentParser(description="本机字幕校对工作台")
@@ -17,6 +15,13 @@ def main():
     parser.add_argument("--workspace", type=Path)
     parser.add_argument("--no-browser", action="store_true")
     args = parser.parse_args()
+    try:
+        import uvicorn
+        import fastapi  # Check both service dependencies before spawning browser work.
+    except ImportError as error:
+        requirements = Path(__file__).parent / 'requirements.txt'
+        parser.exit(1, f'缺少 WebUI Python 依赖（{error.name}）。请使用现有 Python 环境安装：\n'
+                       f'"{sys.executable}" -m pip install -r "{requirements}"\n')
     for tool in ('ffprobe', 'ffmpeg'):
         configured = os.environ.get('WEBUI_' + tool.upper(), tool)
         if not shutil.which(configured):

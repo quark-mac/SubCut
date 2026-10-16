@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { Project } from './api';
 
 export interface SpeakerDraft { id: string | null; label: string; color: string }
@@ -23,6 +23,11 @@ export function SpeakerManager({ project, draft, error, busy, onEdit, onChange, 
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [mergeSource, setMergeSource] = useState<string | null>(null);
   const [mergeTarget, setMergeTarget] = useState('');
+  const counts = useMemo(() => {
+    const result = new Map<string, number>();
+    for (const entry of project.entries) result.set(entry.speaker_id, (result.get(entry.speaker_id) ?? 0) + 1);
+    return result;
+  }, [project.entries]);
   return <div className="speaker-manager" role="tabpanel" aria-label="说话人管理">
     <button disabled={busy} onClick={() => onEdit({ id: null, label: '', color: '#71a8cc' })}>新增说话人</button>
     <p className="hint">拖动 ⠿ 调整普通轨顺序，松开后提交；Esc 取消。组合标签作为一个人物保留，特殊轨固定在底部。</p>
@@ -49,7 +54,7 @@ export function SpeakerManager({ project, draft, error, busy, onEdit, onChange, 
         dragging.current = null; setDropTarget(null);
       }}>
       <strong style={{ color: speaker.color }}>{speaker.label === '?' ? '未标注 ?' : speaker.label === 'NONSPEECH' ? '非对白 NONSPEECH' : speaker.label}</strong>
-      <small className="muted">{project.entries.filter(e => e.speaker_id === speaker.id).length} 条字幕{specialSpeaker(speaker.label) ? ' · 固定特殊轨' : ''}</small>
+      <small className="muted">{counts.get(speaker.id) ?? 0} 条字幕{specialSpeaker(speaker.label) ? ' · 固定特殊轨' : ''}</small>
       {!specialSpeaker(speaker.label) && <div className="speaker-actions">
         <button className="speaker-drag" aria-label={`拖动排序 ${speaker.label}`} title="拖到目标人物的位置；Esc 取消" disabled={busy || !!draft} draggable={!busy && !draft}
           onDragStart={event => { dragging.current = speaker.id; event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', speaker.id); }}

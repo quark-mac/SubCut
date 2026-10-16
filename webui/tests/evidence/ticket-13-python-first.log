@@ -1,0 +1,56 @@
+python.exe : test_competing_saves_have_one_winner_and_late_old_request_cannot_overwrite (test_http.ProjectHTTPTests) ..
+. ok
+所在位置 行:1 字符: 1
++ & 'D:\whisper-diarization\env\python.exe' -m unittest discover -s web ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_competing_...TPTests) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_creation_rejects_changed_source_after_preview_instead_of_importing_unseen_content (test_http.ProjectHTTPTests) ...
+ ok
+test_existing_media_cache_references_survive_relocation_but_are_not_shared_by_copies (test_http.ProjectHTTPTests) ... o
+k
+test_explicit_srt_modes_preserve_labels_and_only_consume_known_metadata (test_http.ProjectHTTPTests) ... ok
+test_four_real_exports_keep_source_indices_tags_labels_and_stable_sort (test_http.ProjectHTTPTests) ... ok
+test_invalid_edits_and_stale_revision_preserve_saved_state (test_http.ProjectHTTPTests) ... ok
+test_invalid_import_reports_entry_field_and_never_creates_partial_project (test_http.ProjectHTTPTests) ... ok
+test_invalid_speakers_cannot_change_special_semantics_or_corrupt_references (test_http.ProjectHTTPTests) ... ok
+test_invalid_stored_subtitle_is_reported_instead_of_being_exported (test_http.ProjectHTTPTests) ... ok
+test_json_imports_keep_four_distinct_identities_seconds_and_open_labels (test_http.ProjectHTTPTests) ... ok
+test_legacy_identity_is_pinned_before_move_and_missing_legacy_cannot_claim_a_different_original (test_http.ProjectHTTPT
+ests) ... ok
+test_malformed_save_shape_returns_field_error_and_preserves_project (test_http.ProjectHTTPTests) ... ok
+test_open_speaker_labels_save_with_stable_entry_and_special_identities (test_http.ProjectHTTPTests) ... ok
+test_original_video_supports_browser_byte_range_seeking (test_http.ProjectHTTPTests) ... ok
+test_plain_srt_accepts_bom_crlf_and_extra_separator_lines (test_http.ProjectHTTPTests) ... ok
+test_preview_applies_complete_replacement_atomically_and_can_restore_previous_sources (test_http.ProjectHTTPTests) ...
+ok
+test_preview_create_and_reopen_preserve_plain_subtitles (test_http.ProjectHTTPTests) ... ok
+test_project_srt_accepts_production_hour_width_and_arrow_spacing (test_http.ProjectHTTPTests) ... ok
+test_real_atomic_replace_failure_preserves_complete_file_and_retry_recovers (test_http.ProjectHTTPTests) ... ok
+test_relocation_verifies_full_content_identity_and_new_media_creates_separate_project (test_http.ProjectHTTPTests) ...
+ok
+test_resources_report_missing_changed_and_export_files_without_losing_edits (test_http.ProjectHTTPTests) ... ok
+test_save_as_copies_complete_editing_document_with_independent_project_identity (test_http.ProjectHTTPTests) ... ok
+test_save_reopen_and_export_current_text_in_stable_time_order (test_http.ProjectHTTPTests) ... ok
+test_speaker_management_conflicts_are_explicit_and_saves_are_atomic (test_http.ProjectHTTPTests) ... ok
+test_structured_errors_are_located_and_never_partially_imported (test_http.ProjectHTTPTests) ... ok
+test_unknown_version_and_missing_media_are_explicit_and_preserve_document (test_http.ProjectHTTPTests) ... ok
+test_actual_probe_ignores_extension_and_uses_playback_origin (test_preview.PreviewHTTPTests) ... ok
+test_delayed_audio_keeps_its_offset_relative_to_video (test_preview.PreviewHTTPTests) ... ok
+test_launcher_uses_configured_tools_without_path_and_opens_saved_work_without_tools (test_preview.PreviewHTTPTests) ...
+ ok
+test_missing_tools_real_generation_failure_retry_and_restart_cache (test_preview.PreviewHTTPTests) ... ok
+test_parameters_output_integrity_and_source_changes_invalidate_cache (test_preview.PreviewHTTPTests) ... ok
+test_real_conversion_registers_complete_cache_and_keeps_edits_and_original_time (test_preview.PreviewHTTPTests) ... ok
+test_silent_video_is_valid_without_inventing_an_audio_track (test_preview.PreviewHTTPTests) ... ok
+test_cache_parameters_integrity_restart_and_changed_source (test_timeline_media.TimelineMediaHTTPTests) ... ok
+test_delayed_audio_silence_and_preview_use_one_common_origin (test_timeline_media.TimelineMediaHTTPTests) ... ok
+test_failures_do_not_publish_and_retry_keeps_concurrent_save (test_timeline_media.TimelineMediaHTTPTests) ... ok
+test_thumbnails_are_actual_frames_at_explicit_source_times (test_timeline_media.TimelineMediaHTTPTests) ... ok
+test_waveform_is_real_and_carries_source_time (test_timeline_media.TimelineMediaHTTPTests) ... ok
+
+----------------------------------------------------------------------
+Ran 38 tests in 33.227s
+
+OK

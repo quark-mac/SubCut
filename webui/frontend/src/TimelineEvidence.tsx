@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { api, timeLabel } from './api';
 
 interface Waveform { duration_ms: number; has_audio: boolean; peaks: { start_ms: number; end_ms: number; peak: number }[] }
 interface Thumbnails { interval_ms: number; frames: { time_ms: number; url: string }[] }
-export function TimelineEvidence({ waveform, thumbnails, duration, width, scrollLeft, viewportWidth }: {
+export const TimelineEvidence = memo(function TimelineEvidence({ waveform, thumbnails, duration, width, scrollLeft, viewportWidth }: {
   waveform: string | null; thumbnails: string | null; duration: number; width: number; scrollLeft: number; viewportWidth: number;
 }) {
   const [wave, setWave] = useState<{ url: string; value: Waveform } | null>(null);
@@ -48,4 +48,4 @@ export function TimelineEvidence({ waveform, thumbnails, duration, width, scroll
     {(waveError || imageError) && <span role="status" className="evidence-message" style={{ left: scrollLeft + 8 }}>时间轴资源加载失败，可刷新波形/缩略图状态重试：{waveError || imageError}</span>}
     {!waveform && !thumbnails && <span className="evidence-message" style={{ left: scrollLeft + 8 }}>原片 · {timeLabel(duration)} · 锁定 · 可在资源区生成波形和缩略图</span>}
   </div>;
-}
+});

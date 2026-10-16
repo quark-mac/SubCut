@@ -82,6 +82,9 @@ video { width: 100%; height: 100%; max-height: 100%; object-fit: contain; }
 .subtitle-row.active .row-time { color: #93d6c5; }
 .row-time { font-size: 10px; color: #9eb0c8; font-variant-numeric: tabular-nums; }
 .row-text { white-space: pre-wrap; line-height: 1.5; }
+.virtual-subtitles { position: relative; }
+.virtual-subtitles .row-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.virtual-subtitles .row-time, .virtual-subtitles .speaker-label { flex-shrink: 0; }
 .speaker-label { font-size: 10px; color: #aac1d8; }
 .entry-editor { padding: 12px; border-top: 1px solid #384254; display: flex; flex-direction: column; gap: 10px; overflow: auto; max-height: 65%; }
 .entry-editor label { font-size: 12px; color: #afc1d8; }
@@ -114,9 +117,9 @@ video { width: 100%; height: 100%; max-height: 100%; object-fit: contain; }
 .tick { position: absolute; top: 6px; padding-left: 3px; height: 24px; border-left: 1px solid #68778e; white-space: nowrap; pointer-events: none; }
 .end-tick { right: 0; padding: 0 3px; border-left: 0; border-right: 1px solid #68778e; background: #1b2330; }
 .playhead-handle { position: absolute; top: 0; bottom: 0; width: 16px; transform: translateX(-50%); padding: 0; color: #ffc18d; background: #5c3627; border: 0; border-radius: 0; cursor: ew-resize; }
-.track { display: grid; grid-template-columns: 150px 1fr; border-top: 1px solid #303848; min-height: 46px; }
+.track { display: grid; grid-template-columns: 150px 1fr; grid-template-rows: minmax(0, 1fr); border-top: 1px solid #303848; min-height: 46px; }
 .track-label { position: sticky; left: 0; z-index: 2; padding: 12px; color: #bbc9dc; background: #242c3a; font-size: 12px; overflow-wrap: anywhere; }
-.track-label { border: 0; border-radius: 0; text-align: left; }
+.track-label { border: 0; border-radius: 0; text-align: left; min-height: 0; overflow: hidden; }
 .track-label[aria-pressed=true] { box-shadow: inset 3px 0 #7cbbff; background: #30425c; }
 .track-body { position: relative; overflow: clip; background: repeating-linear-gradient(90deg, transparent, transparent calc(10% - 1px), #2d3544 calc(10% - 1px), #2d3544 10%); }
 .locked { background-color: #262c37; color: #8696ae; font-size: 11px; }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, ordered, timeLabel, type Entry, type ExportFormat, type ImportPreview, type ImportFormat, type Project, type ProjectSummary } from './api';
 import { useProjectSession } from './useProjectSession';
 import { useAudition } from './useAudition';
@@ -8,6 +8,8 @@ import { ProjectResources } from './ProjectResources';
 import { usePreviewCopy } from './usePreviewCopy';
 import { PreviewCopyControls } from './PreviewCopyControls';
 import { SourceTimeline } from './SourceTimeline';
+import { SubtitleList } from './SubtitleList';
+import { activeEntryQuery } from './activeEntries';
 import { useTimelineMedia } from './useTimelineMedia';
 import { TimelineMediaControls } from './TimelineMediaControls';
 import { BatchEditor } from './BatchEditor';
@@ -482,12 +484,19 @@ export function App() {
     } else video.current.pause();
   }
 
-  const previewById = new Map(timingPreview?.map(e => [e.id, e]));
-  const entries = ordered((project?.entries ?? []).map(e => previewById.get(e.id) ?? e));
+  const committedEntries = useMemo(() => ordered(project?.entries ?? []), [project?.entries]);
+  const entries = useMemo(() => {
+    if (!timingPreview) return committedEntries;
+    const previewById = new Map(timingPreview.map(e => [e.id, e]));
+    return ordered(committedEntries.map(e => previewById.get(e.id) ?? e));
+  }, [committedEntries, timingPreview]);
   const shownDraft = timingPreview?.length === 1 && project ? draftFor(timingPreview[0], project) : draft;
   const duration = project?.media.duration_ms ?? 1;
-  const activeEntries = entries.filter(entry => entry.start_ms <= position && entry.end_ms > position);
-  const overlayEntries = ordered(project?.entries ?? []).filter(entry => entry.start_ms <= position && entry.end_ms > position);
+  const queryActive = useMemo(() => activeEntryQuery(entries), [entries]);
+  const queryOverlay = useMemo(() => activeEntryQuery(committedEntries), [committedEntries]);
+  const activeIds = new Set(queryActive(position).map(e => e.id));
+  const overlayEntries = queryOverlay(position);
+  const mergeGroup = useMemo(() => project && mergeSelection(project, selectedIds), [project?.entries, selectedIds]);
   const speakerName = (id: string) => {
     const label = project?.speakers.find(s => s.id === id)?.label ?? '?';
     return label === '?' ? '未标注 ?' : label === 'NONSPEECH' ? '非对白 NONSPEECH' : label;
@@ -548,7 +557,7 @@ export function App() {
           <button disabled={!session.canRedo || draftChanged || speakerChanged} onClick={() => { setMenu(null); history(true); }}>重做编辑</button>
           <button disabled={position >= duration} onClick={() => { setMenu(null); beginAdd(); }}>新增字幕…</button>
           <button disabled={!current || position <= current.start_ms || position >= current.end_ms} onClick={() => { setMenu(null); splitSubtitle(); }}>在播放头拆分</button>
-          <button disabled={!project || !mergeSelection(project, selectedIds)} onClick={() => { setMenu(null); beginMerge(); }}>合并连续选择</button>
+          <button disabled={!mergeGroup} onClick={() => { setMenu(null); beginMerge(); }}>合并连续选择</button>
           <button disabled={!selectedIds.size} onClick={() => { setMenu(null); deleteSelected(); }}>删除选择</button>
         </div>}
       </div>
@@ -655,17 +664,8 @@ export function App() {
           </select>
           <button onClick={() => { setSearch(''); setSpeakerFilter(''); }} disabled={!search && !speakerFilter}>清除筛选</button>
         </div>
-        <div className="subtitle-list" aria-label="字幕列表">
-          {entries.map((entry, index) => ({ entry, index })).filter(({ entry }) => entry.text.toLocaleLowerCase().includes(search.toLocaleLowerCase()) && (!project?.speakers.some(s => s.id === speakerFilter) || entry.speaker_id === speakerFilter)).map(({ entry, index }) => <button key={entry.id} aria-label={`列表字幕 ${index + 1}`} disabled={busy}
-            className={`subtitle-row ${selectedIds.has(entry.id) ? 'selected' : ''} ${activeEntries.some(active => active.id === entry.id) ? 'active' : ''}`}
-            aria-pressed={selectedIds.has(entry.id)} onClick={event => choose(entry, event)} onDoubleClick={event => { if (!event.ctrlKey && !event.metaKey && !event.shiftKey) listen(entry); }}>
-            <span className="row-time">{index + 1} · {timeLabel(entry.start_ms)} → {timeLabel(entry.end_ms)}</span>
-            <span className="row-text">{entry.text}</span>
-            <span className="speaker-label" style={{ color: project?.speakers.find(s => s.id === entry.speaker_id)?.color }}>{speakerName(entry.speaker_id)}</span>
-          </button>)}
-          {!entries.length && <p className="muted">导入后在此选择字幕进行校对</p>}
-          {!!entries.length && !entries.some(entry => entry.text.toLocaleLowerCase().includes(search.toLocaleLowerCase()) && (!project?.speakers.some(s => s.id === speakerFilter) || entry.speaker_id === speakerFilter)) && <p className="muted">没有匹配字幕</p>}
-        </div>
+        <SubtitleList entries={entries} speakers={project?.speakers ?? []} selected={selectedIds} active={activeIds}
+          search={search} speakerFilter={speakerFilter} busy={busy} onChoose={choose} onListen={listen} />
         {selectedIds.size > 1 && project ? <BatchEditor key={[...selectedIds].sort().join(',')} project={project}
           entries={entries.filter(e => selectedIds.has(e.id))} busy={busy || timing.current} onAssign={assignSelected} /> : draft ? <div className="entry-editor" onBlur={event => {
           if (!event.currentTarget.contains(event.relatedTarget as Node | null)) commitDraft();
@@ -700,7 +700,7 @@ export function App() {
         <button disabled={busy || !selectedIds.size || timing.current} onClick={deleteSelected}>删除选中字幕</button>
         <button disabled={!project || busy || timing.current || position >= duration} onClick={beginAdd}>新增字幕</button>
         <button disabled={busy || timing.current || !current || position <= current.start_ms || position >= current.end_ms} onClick={splitSubtitle} title="Ctrl+B · 单选且播放头严格位于内部，两段复制全文">拆分字幕</button>
-        <button disabled={busy || timing.current || !project || !mergeSelection(project, selectedIds)} onClick={beginMerge} title="Ctrl+M · 全体工作字幕时间排序中连续多选">合并字幕</button>
+        <button disabled={busy || timing.current || !mergeGroup} onClick={beginMerge} title="Ctrl+M · 全体工作字幕时间排序中连续多选">合并字幕</button>
         <select aria-label="当前说话人轨" value={project?.speakers.some(s => s.id === currentTrack) ? currentTrack : ''} disabled={!project || busy || timing.current} onChange={event => setCurrentTrack(event.target.value)}>
           <option value="">未明确轨道 → ?</option>
           {project?.speakers.map(s => <option key={s.id} value={s.id}>{speakerName(s.id)}</option>)}

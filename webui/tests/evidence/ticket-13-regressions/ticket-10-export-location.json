@@ -1,0 +1,58 @@
+{
+  "platform": "win32",
+  "verifiedAt": "2026-10-16T03:47:07.866Z",
+  "receipt": {
+    "project_id": "8e5b07bd-ebcb-45c3-9be7-39e1bca38693",
+    "export_id": "4c6fc8b6-455b-4f90-8624-148d275a18fc",
+    "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-13\\webui\\frontend\\.test-workspace\\projects\\8e5b07bd-ebcb-45c3-9be7-39e1bca38693\\exports",
+    "opened": true
+  },
+  "explorer": {
+    "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-13\\webui\\frontend\\.test-workspace\\projects\\8e5b07bd-ebcb-45c3-9be7-39e1bca38693\\exports",
+    "hwnd": 532160
+  },
+  "exported": {
+    "id": "4c6fc8b6-455b-4f90-8624-148d275a18fc",
+    "filename": "字幕-speaker-srt-r1.srt",
+    "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-13\\webui\\frontend\\.test-workspace\\projects\\8e5b07bd-ebcb-45c3-9be7-39e1bca38693\\exports\\4c6fc8b6-455b-4f90-8624-148d275a18fc.srt",
+    "format": "speaker-srt",
+    "keep_tags": false,
+    "revision": 1
+  },
+  "resources": {
+    "project_id": "8e5b07bd-ebcb-45c3-9be7-39e1bca38693",
+    "revision": 2,
+    "media": {
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-13\\webui\\frontend\\.test-workspace\\inputs\\资源原片-1792122425018.mp4",
+      "duration_ms": 8000,
+      "identity": "sha256:dd5ca2cb993d3cf6122a71dd1eee524634edad8ffa14472508ff85f780298025",
+      "size_bytes": 309077,
+      "status": "available"
+    },
+    "subtitle_sources": [
+      {
+        "id": "745aa732-ff0d-42a6-b090-d653ce711f8b",
+        "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-13\\webui\\frontend\\.test-workspace\\inputs\\资源-1792122425018.jsonl",
+        "format": "normalized-jsonl",
+        "status": "available"
+      }
+    ],
+    "working_subtitles": {
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-13\\webui\\frontend\\.test-workspace\\projects\\8e5b07bd-ebcb-45c3-9be7-39e1bca38693\\project.json",
+      "count": 2,
+      "status": "available"
+    },
+    "media_artifacts": [],
+    "exports": [
+      {
+        "id": "4c6fc8b6-455b-4f90-8624-148d275a18fc",
+        "filename": "字幕-speaker-srt-r1.srt",
+        "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-13\\webui\\frontend\\.test-workspace\\projects\\8e5b07bd-ebcb-45c3-9be7-39e1bca38693\\exports\\4c6fc8b6-455b-4f90-8624-148d275a18fc.srt",
+        "format": "speaker-srt",
+        "keep_tags": false,
+        "revision": 1,
+        "status": "available"
+      }
+    ]
+  }
+}
