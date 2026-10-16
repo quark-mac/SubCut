@@ -1,6 +1,6 @@
 # 本机字幕校对 WebUI
 
-当前提供三种 SRT 解释模式、normalized JSONL、MOSS JSON 预览 → 创建工程或整体替换 → 原片播放定位与逐句/循环试听 → 正文/整数毫秒时间/开放人物归属编辑 → 自动保存 → 菜单重开 → 四种字幕导出。支持会话内撤销/重做、有效输入提交与可靠保存；整体替换的条目、人物和来源一起撤销。深色中文工作区包括可调整尺寸的资源区、播放器、可搜索筛选的字幕列表与编辑器、锁定视频轨、字幕总览及说话人轨。
+当前提供三种 SRT 解释模式、normalized JSONL、MOSS JSON 预览 → 创建工程或整体替换 → 原片播放定位与逐句/循环试听 → 正文/整数毫秒时间/开放人物归属编辑 → 自动保存 → 菜单重开 → 四种字幕导出。支持会话内撤销/重做、有效输入提交与可靠保存；整体替换的条目、人物和来源一起撤销。深色中文工作区包括可调整尺寸的资源区、播放器、可搜索筛选的字幕列表与编辑器、含真实波形及缩略图的锁定视频轨、字幕总览及说话人轨。
 
 ## 安装
 
@@ -72,7 +72,10 @@ $env:WEBUI_FFPROBE = 'D:\whisper-diarization\MOSS-Transcribe-Diarize\ffmpeg\ffmp
 34. **兼容预览副本**：资源区可选择标准（最大 1920 宽、CRF 23）或轻量（最大 960 宽、CRF 28），显示等待 / 运行中 / 成功 / 失败及百分比。启动生成先保存有效输入，生成期间仍可编辑和切换工程；后台任务归属原工程，重开可继续查看进度。失败显示实际工具或文件错误，“重试生成预览副本”创建新任务。“刷新预览状态”重查任务与缓存，查询失败也可使用此按钮恢复。
 35. **时间与缓存**：转换整条音视频时间线，保留静音、黑场、间隙及音轨相对视频的延迟。使用一个共同播放起点归零，不分别将各轨起点拉到零；非零起始 PTS 的素材请使用生成副本校对。副本不修改字幕/导出时间。音频采用 AAC 160k/48kHz；无音轨的原片保持无音轨。缓存同时关联完整源 SHA-256、全部生成参数/版本以及产物 SHA-256；切换质量不会误用另一组参数的结果，切回可复用仍有效的副本。失联、内容变化、损坏或缺失副本不作为有效缓存。
 
-工程文件保存稳定的工程/字幕/说话人身份、格式版本、媒体路径/内容身份/时长、字幕来源及来源序号、当前工作字幕、已有元标签及导出记录。未知版本和损坏工程会明确报错并保留文件；原片缺失不会以空工程代替。继续编辑以工程保存对象为准：交换字幕缺少工程人物配置、来源上下文等字段，不能替代完整工程保存。后续票补充波形与缩略图生成。
+36. **波形与缩略图**：资源区分别点击“生成音频波形 / 生成画面缩略图”，可选择标准或精细密度。沿用预览的同一后台队列、真实进度、失败原因、重试及重开复用规则；生成前先提交并保存有效输入，生成后仍可编辑或切换工程。完成后视频轨内显示缩略图（上部）及波形（下部）；生成及加载本身不会增加轨道、字幕编辑历史或编辑修订（已有有效草稿的提交仍按正常编辑处理）。
+37. **时间轴媒体证据**：波形是实际音频降为 8kHz 单声道后按 10ms / 5ms 窗口取绝对峰值；静音显示中线，无音轨明确显示“无音轨 · 空波形”。缩略图是按原片每 1 秒 / 0.5 秒采样的 160×90 JPEG（保留比例加黑边），悬浮提示实际采样毫秒；它们是时间点参考，不代表两采样点之间所有帧。二者直接从原片按共同播放起点生成，保留延迟音轨和间隙，不借用裁剪或压缩后的时间。缩放/横移只请求当前可见的聚合波形并解码所需缩略图；改变密度不会误用旧参数，切回可复用有效结果。加载失败可点击“刷新波形状态 / 刷新缩略图状态”重试，编辑及保存仍可用。
+
+工程文件保存稳定的工程/字幕/说话人身份、格式版本、媒体路径/内容身份/时长、字幕来源及来源序号、当前工作字幕、已有元标签及导出记录。未知版本和损坏工程会明确报错并保留文件；原片缺失不会以空工程代替。继续编辑以工程保存对象为准：交换字幕缺少工程人物配置、来源上下文等字段，不能替代完整工程保存。
 
 ### 格式与来源契约
 
@@ -143,6 +146,15 @@ npm --prefix webui/frontend run test:browser
 
 同文件的 54 秒/1280×720 夹具验证后台进度与自动保存、晚到任务/保存回执、未提交草稿及工程切换组合；真实请求先完成，回执在公共 HTTP 边界延迟，核对两份工程的实际保存结果。缺工具用独立空闲端口服务和实际可执行文件配置：缺失路径 → 错配真实 ffprobe 导致转码失败 → 安装现有 ffmpeg 到测试配置位置 → UI 重试成功。各服务在测试结束退出。截图和机器可读结果在 `tests/evidence/ticket-11-*`；产物与任务日志保留在 `.test-workspace/preview/` 和 `.test-workspace/projects/<id>/`。单独运行：`npm --prefix webui/frontend run test:browser -- preview.spec.ts`。
 
+`timeline-media.spec.ts` 的 5 项真实 Edge 验收使用已知在 1 / 5 / 8.5 秒出现的 100ms 声音脉冲及红/绿/蓝画面，验证 1× / 2× / 8×、水平滚动、1100 / 1800 / 1440 宽度下，实际 SVG 峰值与 JPEG 图像的位置对齐刻度；波形 SVG 不超过视口宽，图片节点数量受视口限制。另验证 +5 秒 PTS、+500ms 音轨延迟、切换实际兼容副本前后证据不移动、无音轨、重开缓存、旧 GET 晚于新密度任务、晚到任务/自动保存回执与工程切换、真实缺/错工具后的保存和 UI 重试。54 秒/1280×720 原片检查中间进度、活动任务去重及未完成产物的 409。`test_timeline_media.py` 的 5 项 HTTP 检查真实波形/帧像素、延迟音轨与预览重新生成证据的一致性、无音轨、重启复用、参数/源身份/产物完整性失效和并发保存。单独运行：
+
+```powershell
+& $env:WEBUI_PYTHON -m unittest webui.tests.test_timeline_media -v
+npm --prefix webui/frontend run test:browser -- timeline-media.spec.ts
+```
+
+证据：`tests/evidence/ticket-12-timeline.jpg`（脉冲）、`ticket-12-delayed-preview.jpg`、`ticket-12-retry.jpg`、`ticket-12-alignment.json`（Edge 版本及实际布局/峰值）、`ticket-12-progress.json`。另在 18764 用 OpenChamber 浏览器实际新建、分别生成三种媒体资源、跳到 5 秒、重开复用，截图为 `ticket-12-manual-reopened.jpg`；仅操作自建样本，验收服务结束后停止。
+
 ### 手动检查用自建素材
 
 ```powershell
@@ -184,6 +196,10 @@ npm --prefix webui/frontend run dev
 | `POST /api/projects/{id}/preview` | `{quality?: standard\|small}` → 202 任务；状态 queued/running/succeeded/failed、progress 0–1、error、artifact_id、cached；同源同参数活动任务去重，有效缓存立即返回 succeeded/cached |
 | `GET /api/projects/{id}/tasks/{task_id}` | 持久任务状态/进度/错误、工具版本与实际命令；工程切换不改变任务归属 |
 | `GET /api/projects/{id}/previews/{artifact_id}` | 只读取已登记且身份/参数/产物完整性有效的 MP4；Range/206/416，失效返回 409 |
+| `POST /api/projects/{id}/timeline-media/{kind}` | kind 为 waveform/thumbnails，`{density?: standard\|detailed}` → 202；复用同一队列/任务状态、活动去重、失败和有效缓存规则 |
+| `GET /api/projects/{id}/timeline-media/{kind}?density=standard` | `{project_id, artifact, task, url}`；仅返回匹配当前参数及完整身份的资源与同种/同参数最新任务 |
+| `GET /api/projects/{id}/timeline-artifacts/{artifact_id}?start_ms=0&end_ms=9000&bins=1000` | 波形：`{duration_ms, has_audio, peaks:[{start_ms,end_ms,peak}]}`，按基础采样网格聚合，bins 为目标数量（1–4096，边缘可多一格）；无音轨 peaks 为空。缩略图：`{duration_ms,interval_ms,width,height,frames:[{time_ms,url}]}` |
+| `GET /api/projects/{id}/timeline-artifacts/{artifact_id}/frames/{index}` | 读取有效 ZIP 中的一张实际 JPEG；越界 404、未完成/缺失/损坏/参数过期 409，源变化 409 |
 
 错误：`{error: {code, message, field, entry}}`，SRT/MOSS 条目位置 `entry` 从 1 开始，JSONL 使用物理行号（含空行），文件级错误为 null。保存使用修订比较和同目录临时文件/fsync/原子替换；失败不覆盖现有文件。创建先完整验证，临时工程目录原子发布。`speakers` 为完整配置数组：身份/名称唯一、六位十六进制颜色、`order` 从零连续；最后两项为身份固定的 `?`、`NONSPEECH`。字幕只能引用本次配置中的有效人物与来源身份；整体替换预览的新人物 ID 应先映射到现有同名人物（尤其两个特殊轨）再提交。所有导出记录含 `format / keep_tags / revision`。工程版本仍为 1，旧 plain-srt 文档缺少的新增来源/导出字段按空值加载。
 
@@ -197,6 +213,7 @@ npm --prefix webui/frontend run dev
 - `Project.media_artifacts` 记录**已经成功发布**的派生产物：`{id, kind: preview|waveform|thumbnails, path, media_identity, parameters, output_identity?}`。预览必须同时匹配源摘要、当前全部参数及产物摘要；旧记录没有 `output_identity` 时保留引用但不作为可播预览。同一原片重定位保留有效引用；另存为/换片新工程清空缓存与导出登记，避免共享可写产物。
 - `backend/preview.py` 单 worker 排队执行 FFmpeg，进度来自 `-progress`，任务记录与 stderr 在 `<工程>/tasks/`。先写 `<工程>/previews/<task>.partial.mp4`，成功后检查实际编码/起点/时长、再次核验源身份，原子改名及登记；失败/运行中的文件不进入资源数组或播放接口。服务重启后未完成任务查询标为 failed/`task_interrupted`，允许重试；不自动恢复转码。
 - 资源登记在与 PUT 相同的锁内**重读最新工程，只追加资源**，不递增字幕编辑/导出的 `revision`。PUT 也重读最新资源，只更新编辑字段。这使后台完成不会制造编辑修订冲突或覆盖字幕/人物/导出；客户端资源刷新与字幕保存/历史独立，按工程身份和请求代次丢弃过期播放/任务回执。
+- `backend/timeline_media.py` 在同一任务队列中生成 `<工程>/timeline-media/<task>.json`（零起点、明确 step_ms 的峰值数组）和 `.zip`（manifest.json 的原片采样时间与 JPEG）。WAV / JPEG 中间文件在任务专属临时目录，结束即清理；JSON / ZIP 在原子发布前也先写 `.partial`。资源清单及各读取接口验证源身份、当前版本/密度的全部参数和整个产物摘要。范围接口只回传需要的聚合峰值，解析后的不可变数据采用有界进程缓存；不把全片 PCM 送进浏览器。
 - `ProjectResources.tsx` 在工程 ID/修订变化或用户刷新时读取公开资源清单；`useProjectSession.persist()` 返回保存是否成功供切换门禁，失败仍保留草稿/历史。`relocate(project)` 只更新媒体与磁盘修订，不重置字幕历史；新工程 `open(project)` 建立新会话。
 
 `SourceTimeline.tsx` 负责原片坐标、缩放/滚动、刻度、轨内错层和 pointer 手势。接收同一 `project / selected: Set<Entry.id> / position`，通过 `onChoose(entry, modifiers?)` 请求选择、`onSeek(integerMilliseconds)` 请求播放定位；自身只持有临时手势，不维护第二份持久字幕。`onBeginEdit(id)` 先校验/提交已有表单并返回有效选择条目数组，暂停但不跳播放头；`onPreview(entries | null)` 同步 App 的临时列表/字段/播放叠加；`onCommitEdit(entries)` 在释放时一次提交整个集合的时间和归属。`onBeginSelect / onSelect(Set<id>) / onEndSelect` 承载框选校验、ID 去重与取消恢复，不调用播放定位或历史。预览不进入 `session.commit`，布局保持提交前轨道高度以免命中目标在手势中移动；释放后重新错层。取消、无变化或无效表单不产生拖动历史。坐标以原始条目整数时间为基准，不使用最小点击宽度反推时长。`selectionEditing.ts` 的共同轨道偏移供键盘与鼠标复用；`BatchEditor.tsx` 展示共同属性，仅暂存明确目标，提交由 App 构造单个完整快照。

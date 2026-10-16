@@ -119,7 +119,11 @@ video { width: 100%; height: 100%; max-height: 100%; object-fit: contain; }
 .track-label { border: 0; border-radius: 0; text-align: left; }
 .track-label[aria-pressed=true] { box-shadow: inset 3px 0 #7cbbff; background: #30425c; }
 .track-body { position: relative; overflow: clip; background: repeating-linear-gradient(90deg, transparent, transparent calc(10% - 1px), #2d3544 calc(10% - 1px), #2d3544 10%); }
-.locked { background-color: #262c37; color: #8696ae; padding: 13px; font-size: 11px; }
+.locked { background-color: #262c37; color: #8696ae; font-size: 11px; }
+.timeline-evidence { position: absolute; inset: 0; pointer-events: none; }
+.timeline-evidence img { position: absolute; top: 0; height: 54px; object-fit: cover; border-right: 1px solid #111; }
+.timeline-evidence svg { position: absolute; bottom: 2px; overflow: hidden; fill: #62cbb0; }
+.evidence-message { position: absolute; bottom: 8px; white-space: nowrap; }
 .clip { position: absolute; height: 28px; text-align: left; padding: 3px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid #b1c6de66; color: #101925; font-size: 11px; border-radius: 4px; min-width: 4px; }
 .clip { touch-action: none; user-select: none; cursor: grab; }
 .clip > span { padding: 0 8px; }

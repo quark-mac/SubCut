@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { ordered, timeLabel, type Entry, type Project } from './api';
 import { offsetSpeakers } from './selectionEditing';
+import { TimelineEvidence } from './TimelineEvidence';
 
 interface Props {
   project: Project;
@@ -8,6 +9,8 @@ interface Props {
   position: number;
   busy: boolean;
   currentTrack: string;
+  waveform: string | null;
+  thumbnails: string | null;
   onTrack: (id: string) => void;
   onChoose: (entry: Entry, modifiers?: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) => void;
   onSeek: (milliseconds: number) => void;
@@ -38,7 +41,7 @@ interface EditGesture {
   targets: number[];
 }
 
-export function SourceTimeline({ project, selected, position, busy, currentTrack, onTrack, onChoose, onListen, onSeek, onBeginEdit, onPreview, onCommitEdit, onBeginSelect, onSelect, onEndSelect }: Props) {
+export function SourceTimeline({ project, selected, position, busy, currentTrack, waveform, thumbnails, onTrack, onChoose, onListen, onSeek, onBeginEdit, onPreview, onCommitEdit, onBeginSelect, onSelect, onEndSelect }: Props) {
   const viewport = useRef<HTMLDivElement>(null);
   const ruler = useRef<HTMLDivElement>(null);
   const gesture = useRef<{ pointer: number; start: number } | null>(null);
@@ -102,7 +105,7 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
         ends[lane] = end;
         return { entry, lane, left: start, width: end - start };
       });
-      return { ...track, blocks, height: Math.max(46, ends.length * 35 + 8) };
+      return { ...track, blocks, height: track.id === 'video' ? 90 : Math.max(46, ends.length * 35 + 8) };
     });
   }, [project.entries, project.speakers, duration, width]);
 
@@ -325,7 +328,8 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
             aria-pressed={currentTrack === track.id} disabled={busy || !!preview}
             onClick={() => onTrack(project.speakers.some(s => s.id === track.id) ? track.id : '')}>{track.label}</button>
           <div className={`track-body ${track.id === 'video' ? 'locked' : ''}`} style={{ height: track.height }}>
-            {track.id === 'video' && <span>原片 · {timeLabel(duration)} · 锁定</span>}
+            {track.id === 'video' && <TimelineEvidence waveform={waveform} thumbnails={thumbnails}
+              duration={duration} width={width} scrollLeft={scrollLeft} viewportWidth={fitWidth} />}
             {[...track.blocks.filter(b => !previewById.has(b.entry.id) || track.id === 'overview' || track.id === previewById.get(b.entry.id)!.speaker_id),
               ...(preview ?? []).filter(e => track.id === e.speaker_id && !track.blocks.some(b => b.entry.id === e.id))
                 .map((entry, lane) => ({ entry, lane, left: Math.min(entry.start_ms / duration * width, width - 4), width: Math.max(4, (entry.end_ms - entry.start_ms) / duration * width) })),

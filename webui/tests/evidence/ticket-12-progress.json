@@ -1,0 +1,39 @@
+{
+  "project": "b59ef389-8d36-4534-9788-5d6a0c55b180",
+  "task": "6316a67f-e449-4d4a-bca2-c12b29c02124",
+  "observations": [
+    {
+      "state": "running",
+      "progress": 0
+    },
+    {
+      "state": "running",
+      "progress": 0.018518518518518517
+    },
+    {
+      "state": "succeeded",
+      "progress": 1
+    }
+  ],
+  "duration_ms": 54000,
+  "cached": [
+    {
+      "id": "6316a67f-e449-4d4a-bca2-c12b29c02124",
+      "kind": "thumbnails",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-12\\webui\\frontend\\.test-workspace\\projects\\b59ef389-8d36-4534-9788-5d6a0c55b180\\timeline-media\\6316a67f-e449-4d4a-bca2-c12b29c02124.zip",
+      "media_identity": "sha256:e50964cc5e5bb6a784d8d27058bb3b3201d1a4298ed93b65046d12e0696450b3",
+      "parameters": {
+        "version": 1,
+        "density": "standard",
+        "timebase": "common-source-origin",
+        "interval_ms": 1000,
+        "width": 160,
+        "height": 90,
+        "format": "jpeg",
+        "quality": 4,
+        "sampling": "source-fps-round-up"
+      },
+      "output_identity": "sha256:fcc06e0ff7f271c7cd218572fa51f12388f915d52c7100dd4a11e6a388c91d43"
+    }
+  ]
+}

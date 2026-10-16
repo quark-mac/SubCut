@@ -122,3 +122,7 @@ class RelocateRequest(Model):
 
 class PreviewRequest(Model):
     quality: Literal['standard', 'small'] = 'standard'
+
+
+class TimelineMediaRequest(Model):
+    density: Literal['standard', 'detailed'] = 'standard'

@@ -4,17 +4,18 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from .errors import Problem
 from .formats import EXPORT_TYPES, read_subtitles, validate_entries, validate_sources, write_subtitles
 from .media import inspect_media, local_file, probe_media, verify_media
 from .resources import inventory, open_folder
-from .models import CopyRequest, CreateRequest, Export, ExportRequest, ImportRequest, NewMediaRequest, PreviewRequest, Project, RelocateRequest, SaveRequest, SubtitleSource, identity
+from .models import CopyRequest, CreateRequest, Export, ExportRequest, ImportRequest, NewMediaRequest, PreviewRequest, Project, RelocateRequest, SaveRequest, SubtitleSource, TimelineMediaRequest, identity
 from .preview import PreviewTasks, cached_preview, parameters, valid_artifact
 from .storage import Store, atomic_write
 from .speakers import validate_speakers
+from . import timeline_media
 
 
 store = Store(Path(os.environ.get("WEBUI_WORKSPACE", Path(__file__).resolve().parents[1] / "workspace")))
@@ -129,6 +130,48 @@ def generate_preview(project_id: str, body: PreviewRequest):
 @app.get('/api/projects/{project_id}/tasks/{task_id}')
 def get_task(project_id: str, task_id: str):
     return tasks.get(project_id, task_id)
+
+
+@app.post('/api/projects/{project_id}/timeline-media/{kind}', status_code=202)
+def generate_timeline_media(project_id: str, kind: str, body: TimelineMediaRequest):
+    return tasks.submit_media(project_id, kind, timeline_media.parameters(kind, body.density))
+
+
+@app.get('/api/projects/{project_id}/timeline-media/{kind}')
+def get_timeline_media(project_id: str, kind: str, density: str = 'standard'):
+    expected = timeline_media.parameters(kind, density)
+    with store.lock:
+        project = store.load(project_id)
+    verify_media(project.media)
+    artifact = timeline_media.cached(project, kind, expected)
+    return {'project_id': project_id, 'artifact': artifact, 'task': tasks.latest(project_id, kind, expected),
+            'url': f'/api/projects/{project_id}/timeline-artifacts/{artifact.id}' if artifact else None}
+
+
+def timeline_artifact(project_id, artifact_id):
+    with store.lock:
+        project = store.load(project_id)
+    verify_media(project.media)
+    artifact = next((a for a in project.media_artifacts if a.id == artifact_id and a.kind in ('waveform', 'thumbnails')), None)
+    if not artifact or not valid_artifact(artifact, project, timeline_media.parameters(artifact.kind, artifact.parameters.get('density', 'standard'))):
+        raise Problem('时间轴缓存已失效或未完成，请重新生成', status=409, code='timeline_media_stale')
+    return artifact
+
+
+@app.get('/api/projects/{project_id}/timeline-artifacts/{artifact_id}')
+def get_timeline_artifact(project_id: str, artifact_id: str, start_ms: int = 0, end_ms: int | None = None, bins: int = 1000):
+    artifact = timeline_artifact(project_id, artifact_id)
+    if artifact.kind == 'thumbnails':
+        return timeline_media.thumbnails_manifest(artifact, f'/api/projects/{project_id}/timeline-artifacts/{artifact_id}')
+    return timeline_media.waveform_range(artifact, start_ms, end_ms, bins)
+
+
+@app.get('/api/projects/{project_id}/timeline-artifacts/{artifact_id}/frames/{index}')
+def get_thumbnail(project_id: str, artifact_id: str, index: int):
+    artifact = timeline_artifact(project_id, artifact_id)
+    if artifact.kind != 'thumbnails':
+        raise Problem('不是缩略图产物', status=404)
+    return Response(timeline_media.thumbnail(artifact, index), media_type='image/jpeg')
 
 
 @app.get('/api/projects/{project_id}/previews/{artifact_id}')

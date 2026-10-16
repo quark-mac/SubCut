@@ -1,4 +1,4 @@
-"""Background full-timeline preview copies. Only validated, atomic outputs are published."""
+"""Shared media job queue, progress and atomic publication; full-timeline preview encoder."""
 from concurrent.futures import ThreadPoolExecutor
 import json
 import os
@@ -65,32 +65,38 @@ class PreviewTasks:
                 self.write(task)
             return task
 
-    def latest(self, project_id):
+    def latest(self, project_id, kind='preview', expected=None):
         folder = self.store.directory(project_id) / 'tasks'
         files = list(folder.glob('*.json'))
-        if not files:
-            return None
-        return self.get(project_id, max(files, key=lambda p: p.stat().st_mtime_ns).stem)
+        for path in sorted(files, key=lambda p: p.stat().st_mtime_ns, reverse=True):
+            task = self.get(project_id, path.stem)
+            if task.get('kind', 'preview') == kind and (expected is None or task['parameters'] == expected):
+                return task
+        return None
 
     def submit(self, project_id, quality):
+        return self.submit_media(project_id, 'preview', parameters(quality))
+
+    def submit_media(self, project_id, kind, expected):
         with self.lock, self.store.lock:
             project = self.store.load(project_id)
             verify_media(project.media)
-            artifact = cached_preview(project, quality)
+            artifact = next((a for a in reversed(project.media_artifacts)
+                             if a.kind == kind and valid_artifact(a, project, expected)), None)
             if artifact:
                 task = {'id': identity(), 'project_id': project_id, 'state': 'succeeded', 'progress': 1,
                         'cached': True, 'artifact_id': artifact.id, 'error': None,
-                        'parameters': artifact.parameters, 'media_identity': project.media.identity}
+                        'kind': kind, 'parameters': artifact.parameters, 'media_identity': project.media.identity}
                 self.write(task)
                 return task
             for task_id in self.active:
                 path = self.task_path(project_id, task_id)
                 if path.is_file():
                     task = self.get(project_id, task_id)
-                    if task['parameters'] == parameters(quality):
+                    if task.get('kind', 'preview') == kind and task['parameters'] == expected and task['media_identity'] == project.media.identity:
                         return task
             task = {'id': identity(), 'project_id': project_id, 'state': 'queued', 'progress': 0,
-                    'parameters': parameters(quality), 'media_identity': project.media.identity,
+                    'kind': kind, 'parameters': expected, 'media_identity': project.media.identity,
                     'artifact_id': None, 'cached': False, 'error': None, 'tools': {}}
             self.write(task)
             self.active.add(task['id'])
@@ -99,9 +105,11 @@ class PreviewTasks:
             return task
 
     def run(self, task, original):
-        folder = self.store.directory(original.id) / 'previews'
-        staging = folder / (task['id'] + '.partial.mp4')
-        output = folder / (task['id'] + '.mp4')
+        kind = task.get('kind', 'preview')
+        folder = self.store.directory(original.id) / ('previews' if kind == 'preview' else 'timeline-media')
+        extension = {'preview': '.mp4', 'waveform': '.json', 'thumbnails': '.zip'}[kind]
+        staging = folder / (task['id'] + '.partial' + extension)
+        output = folder / (task['id'] + extension)
         log_path = self.task_path(original.id, task['id']).with_suffix('.log')
         published = False
         try:
@@ -119,46 +127,12 @@ class PreviewTasks:
                     raise Problem(f'未找到 {name}，请配置 WEBUI_{name.upper()} 或加入 PATH 后重试', code='media_tool_missing') from exc
                 task['tools'][name] = version.splitlines()[0]
             folder.mkdir(exist_ok=True)
-            options = task['parameters']
-            command = [media_tool('ffmpeg'), '-hide_banner', '-loglevel', 'error', '-nostdin', '-y',
-                       '-copyts', '-start_at_zero', '-i', str(source), '-map', '0:v:0', '-map', '0:a:0?',
-                       '-sn', '-dn', '-map_metadata', '-1', '-c:v', 'libx264', '-preset', options['preset'],
-                       '-crf', str(options['crf']), '-pix_fmt', 'yuv420p', '-g', str(options['gop']),
-                       '-vf', f"scale=w='min({options['max_width']},iw)':h=-2:force_divisible_by=2,setsar=1",
-                       '-fps_mode', 'vfr', '-c:a', 'aac', '-b:a', options['audio_bitrate'], '-ar', '48000',
-                       '-af', 'aresample=async=1:first_pts=0', '-t', str(original.media.duration_ms / 1000),
-                       '-movflags', '+faststart', '-progress', 'pipe:1', '-stats_period', '0.1', str(staging)]
-            task['command'] = command
-            self.write(task)
-            with log_path.open('w', encoding='utf-8') as log:
-                with self.lock:
-                    if self.closed:
-                        raise Problem('服务正在停止，请重试', code='task_interrupted')
-                    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=log, text=True, encoding='utf-8')
-                    self.process = process
-                try:
-                    for line in process.stdout:
-                        if line.startswith('out_time_us='):
-                            value = line.strip().split('=', 1)[1]
-                            if value.lstrip('-').isdigit():
-                                task['progress'] = max(task['progress'], min(.99, int(value) / (original.media.duration_ms * 1000)))
-                                with self.lock:
-                                    self.write(task)
-                    if process.wait() != 0:
-                        raise Problem('FFmpeg 生成失败：' + log_path.read_text(encoding='utf-8')[-3000:], code='preview_failed')
-                finally:
-                    if process.poll() is None:
-                        process.terminate()
-                        process.wait(timeout=10)
-                    process.stdout.close()
-                    with self.lock:
-                        self.process = None
-            generated = inspect_media(staging)
-            if (generated['video_codec'] != 'h264' or generated['audio_codec'] != ('aac' if info['audio_codec'] else None)
-                    or abs(generated['duration_ms'] - original.media.duration_ms) > 100
-                    or abs(generated['start_time_ms']) > 50):
-                raise Problem('生成产物的编码、时长或起点校验失败', code='invalid_preview')
-            artifact = MediaArtifact(id=task['id'], kind='preview', path=str(output), media_identity=original.media.identity,
+            if kind != 'preview':
+                from .timeline_media import generate
+                generate(self, task, original, source, info, staging, log_path)
+            else:
+                self.generate_preview(task, original, source, info, staging, log_path)
+            artifact = MediaArtifact(id=task['id'], kind=kind, path=str(output), media_identity=original.media.identity,
                                      parameters=task['parameters'], output_identity=media_identity(staging))
             with self.store.lock:
                 latest = self.store.load(original.id)
@@ -167,14 +141,13 @@ class PreviewTasks:
                     raise Problem('生成期间源媒体发生变化', code='media_changed')
                 os.replace(staging, output)
                 latest.media_artifacts.append(artifact)
-                # Derived-resource publication does not advance the editing revision.
-                # Reload under the same lock as PUT; never save the job's old subtitle snapshot.
+                # Reload under the PUT lock; resource publication never advances editing revision.
                 atomic_write(self.store.directory(original.id) / 'project.json', latest.model_dump_json(indent=2))
                 published = True
             task.update(state='succeeded', progress=1, artifact_id=artifact.id)
         except Exception as exc:
             task.update(state='failed', error=exc.detail if isinstance(exc, Problem) else
-                        {'code': 'preview_failed', 'message': f'预览生成失败，请检查工具、文件及磁盘权限后重试：{exc}'})
+                        {'code': f'{kind}_failed', 'message': f'媒体生成失败，请检查工具、文件及磁盘权限后重试：{exc}'})
         finally:
             staging.unlink(missing_ok=True)
             if not published:
@@ -184,6 +157,50 @@ class PreviewTasks:
                     self.write(task)
                 finally:
                     self.active.discard(task['id'])
+
+    def generate_preview(self, task, original, source, info, staging, log_path):
+        options = task['parameters']
+        command = [media_tool('ffmpeg'), '-hide_banner', '-loglevel', 'error', '-nostdin', '-y',
+                   '-copyts', '-start_at_zero', '-i', str(source), '-map', '0:v:0', '-map', '0:a:0?',
+                   '-sn', '-dn', '-map_metadata', '-1', '-c:v', 'libx264', '-preset', options['preset'],
+                   '-crf', str(options['crf']), '-pix_fmt', 'yuv420p', '-g', str(options['gop']),
+                   '-vf', f"scale=w='min({options['max_width']},iw)':h=-2:force_divisible_by=2,setsar=1",
+                   '-fps_mode', 'vfr', '-c:a', 'aac', '-b:a', options['audio_bitrate'], '-ar', '48000',
+                   '-af', 'aresample=async=1:first_pts=0', '-t', str(original.media.duration_ms / 1000),
+                   '-movflags', '+faststart', '-progress', 'pipe:1', '-stats_period', '0.1', str(staging)]
+        self.execute(task, command, original.media.duration_ms, log_path)
+        generated = inspect_media(staging)
+        if (generated['video_codec'] != 'h264' or generated['audio_codec'] != ('aac' if info['audio_codec'] else None)
+                or abs(generated['duration_ms'] - original.media.duration_ms) > 100
+                or abs(generated['start_time_ms']) > 50):
+            raise Problem('生成产物的编码、时长或起点校验失败', code='invalid_preview')
+
+    def execute(self, task, command, duration_ms, log_path):
+        task['command'] = command
+        self.write(task)
+        with log_path.open('a', encoding='utf-8') as log:
+            with self.lock:
+                if self.closed:
+                    raise Problem('服务正在停止，请重试', code='task_interrupted')
+                process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=log, text=True, encoding='utf-8')
+                self.process = process
+            try:
+                for line in process.stdout:
+                    if line.startswith('out_time_us='):
+                        value = line.strip().split('=', 1)[1]
+                        if value.lstrip('-').isdigit():
+                            task['progress'] = max(task['progress'], min(.99, int(value) / (duration_ms * 1000)))
+                            with self.lock:
+                                self.write(task)
+                if process.wait() != 0:
+                    raise Problem('FFmpeg 生成失败：' + log_path.read_text(encoding='utf-8')[-3000:], code=f'{task.get("kind", "preview")}_failed')
+            finally:
+                if process.poll() is None:
+                    process.terminate()
+                    process.wait(timeout=10)
+                process.stdout.close()
+                with self.lock:
+                    self.process = None
 
     def close(self):
         with self.lock:

@@ -8,6 +8,7 @@ from .errors import Problem
 from .media import verify_media
 from .models import Project
 from .preview import parameters, valid_artifact
+from . import timeline_media
 
 
 def file_status(path: str) -> str:
@@ -28,6 +29,8 @@ def inventory(project: Project, directory: Path):
         valid = artifact.media_identity == project.media.identity and media['status'] == 'available'
         if artifact.kind == 'preview' and Path(artifact.path).is_file():
             valid = valid and valid_artifact(artifact, project, parameters(artifact.parameters.get('quality', 'standard')))
+        elif artifact.kind in ('waveform', 'thumbnails'):
+            valid = valid and valid_artifact(artifact, project, timeline_media.parameters(artifact.kind, artifact.parameters.get('density', 'standard')))
         artifacts.append({**artifact.model_dump(), 'status': file_status(artifact.path) if valid else 'stale'})
     return {
         'project_id': project.id, 'revision': project.revision, 'media': media,

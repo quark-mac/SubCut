@@ -8,6 +8,8 @@ import { ProjectResources } from './ProjectResources';
 import { usePreviewCopy } from './usePreviewCopy';
 import { PreviewCopyControls } from './PreviewCopyControls';
 import { SourceTimeline } from './SourceTimeline';
+import { useTimelineMedia } from './useTimelineMedia';
+import { TimelineMediaControls } from './TimelineMediaControls';
 import { BatchEditor } from './BatchEditor';
 import { AddSubtitleDialog } from './AddSubtitleDialog';
 import { MergeSubtitleDialog } from './MergeSubtitleDialog';
@@ -23,6 +25,8 @@ export function App() {
   const session = useProjectSession();
   const { project, dirty } = session;
   const previewCopy = usePreviewCopy(project);
+  const waveform = useTimelineMedia(project, 'waveform');
+  const thumbnails = useTimelineMedia(project, 'thumbnails');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const anchor = useRef<string | null>(null);
   const selected = selectedIds.size === 1 ? [...selectedIds][0] : null;
@@ -587,7 +591,9 @@ export function App() {
       <aside className="resources panel" aria-label="工程资源">
         <h2>工程资源</h2>
         {project ? <><PreviewCopyControls preview={previewCopy} busy={busy || !!dialog} onGenerate={() => void previewCopy.generate(async () => !!commitDraft() && await session.persist())} />
-          <ProjectResources key={project.id} project={project} busy={busy || session.saving} resourceVersion={previewCopy.resourceVersion}
+          <TimelineMediaControls media={waveform} kind="波形" busy={busy || !!dialog} onGenerate={() => void waveform.generate(async () => !!commitDraft() && await session.persist())} />
+          <TimelineMediaControls media={thumbnails} kind="缩略图" busy={busy || !!dialog} onGenerate={() => void thumbnails.generate(async () => !!commitDraft() && await session.persist())} />
+          <ProjectResources key={project.id} project={project} busy={busy || session.saving} resourceVersion={`${previewCopy.resourceVersion}:${waveform.version}:${thumbnails.version}`}
           onRelocate={() => void showDialog('relocate')} onNewMedia={() => void showDialog('new-media')} />
           </>
           : <p className="muted">新建工程，选定本机视频与字幕（SRT / JSONL / MOSS JSON）；也可从“文件”菜单继续已有工程。</p>}
@@ -701,6 +707,7 @@ export function App() {
         </select>
         <span className="muted">视频轨锁定 · 合法重叠保留</span></div>
       {project ? <SourceTimeline key={project.id} project={project} selected={selectedIds} position={position} busy={busy}
+        waveform={waveform.url} thumbnails={thumbnails.url}
         currentTrack={currentTrack} onTrack={setCurrentTrack}
         onBeginSelect={() => { if (!commitDraft()) return false; timing.current = true; return true; }}
         onSelect={selectIds} onEndSelect={() => { timing.current = false; }}
