@@ -1,6 +1,8 @@
 # WebUI 最终两轴审查与修复
 
-Status: 修复及本轮验收完成，等待独立复审；spec 仍为 ready-for-agent，不标 done。
+Status: done
+
+最终结论：全部任务已集成，最终全套验收通过，Standards / Spec 独立复审均已关闭原发现。下文按执行顺序保留历史记录；最终闭环见文末。
 
 ## 范围与基线
 
@@ -129,3 +131,27 @@ npm --prefix webui/frontend run test:browser
 - 长片与组合链通过，7200秒/4000条/26人，四种实际导出各4000条且存在；本轮打开1388ms、热重开1370ms、搜索96ms、播放输入44ms、显式保存485ms，适合全片挂载列表6行/字幕块1232，已核看本轮长片截图。仍限160×90/1fps合成片、仅清浏览器HTTP缓存而未清OS缓存，不声称高码率电影或两小时连续耐久基准，没有重做或冒充人工音画鉴定。
 - 本轮日志保留3次Windows Proactor ConnectionResetError/WinError10054；相关断言均通过，不描述为零异常日志。原修复红绿和旧失败归档未覆盖。本轮passed JSON、完整日志、票11竞态附件和27个测试改写证据归档在被忽略的 `webui/frontend/.test-workspace/final-review-integration-verified/`，证据保留原相对路径于其evidence/下，实际工程/素材/产物均保留。仅恢复本轮自动改写的已跟踪证据到合并版本，恢复后干净，再仅追加本节并独立提交。
 - 最后检查18761/18762/18763/18764/54150/54151无监听，无WebUI Python/ffmpeg/ffprobe或本轮独立Edge残留；测试工程Explorer窗口0。所有worktree保留、未推送、未启动代理。**集成验证通过，可安排独立两轴复审；Spec暂不done。**
+
+## 2026-10-16 最终独立复审与 tracker 闭环
+
+独立 Standards 与 Spec 审查会话均复用原会话，以 `moyuu/gpt-6.1-sol#high` 完成只读复审。核对集成 HEAD 为 `f75b9241ac18333af141075a3c09a22d14b0ab37`，修复提交 `08a75301223c334bf49079b4493b482c3e343ccc`。复审范围 `git diff 5586f22...HEAD`，沿用整体范围 `git diff 17b1aa8...HEAD` 及原规格、仓库标准；没有改代码或重跑测试。
+
+### Standards 独立结论
+
+- 文档硬违反：0。
+- 原 P2 Duplicated Code / 媒体任务竞态策略分叉：**关闭**。两个媒体 hook 实际共用 `useMediaTask`；上下文 key 变化才推进生命周期代次，刷新不取消保存中的生成意图，POST 前后及读取/轮询均核验代次。依据：`usePreviewCopy.ts:14–15`、`useTimelineMedia.ts:12–14`、`useMediaTask.ts:22–26,34,49,59–80`。
+- 原 P3 可能 Divergent Change / App 混合领域变换：**关闭**。`speakerEditing.ts:7–58` 与 `structureEditing.ts:12–33` 承载纯人物/字幕规则并被 App 实际调用；身份由调用方传入，变换不访问 React、DOM、HTTP，不修改输入。App 保留草稿、选择、历史提交和界面编排。
+- 本次修复范围未发现新增文档硬违反、实质代码味道或确定性回归；共享 hook 有两个实际调用方，提取不是无需求抽象或纯转发层。
+
+### Spec 独立结论
+
+- 原 P2 预览生成意图被刷新吞掉：**关闭**。`useMediaTask.ts:22–41,59–75` 分离上下文和刷新读取；保存结束仍提交，工程/源/参数变化取消，旧 POST、GET、轮询被拒收。核对 `preview.spec.ts:148–219` 的真实保存门禁、刷新、生成、解码及重定位回执隔离，以及对应实际附件。
+- 原 P2 空段正文成功导出坏 SRT：**关闭**。`formats.py:217–220` 只在两个 SRT 分支返回条目位置、text 字段、原因及 JSONL 建议；JSONL 原样保留正文。`app.py:279–281` 在序列化成功后才写文件、登记导出和增加修订。`test_http.py:246–270` 覆盖七种空段、两种 SRT、资源/文件不变及 JSONL 原串保留。
+- 纯变换提取保留全体条目连续性、拆分全文、来源标签、特殊轨身份及归属迁移；App 仍以一次操作提交历史。本次修复范围未发现新增确定性规格问题或范围扩张。
+
+### 完成记录
+
+- Standards：原判断项 2，关闭 2，未关闭 0，新增 0；Spec：原问题 2，关闭 2，未关闭 0，新增 0。
+- 最终集成实际验收沿用上节：后端 HTTP / 真实媒体 / 启动 **42/42**、真实 Edge **84/84**、typecheck/build、17 个 Python 文件编译均通过。独立复审后仅更新 tracker 文档，未改受测代码，未无理由重复全套测试。
+- 主代理确认 `.scratch/webui/issues/` 的 13 票全部 `done`，全部任务和修复分支均已纳入 `feat/webui`；将 `.scratch/webui/spec.md` 标为 `done`。源码变化局限 WebUI，生产流程与保护素材未改动。
+- 所有任务及修复 worktree 保留供检查；未推送远程。安装和启动见 `webui/README.md`，默认入口 `webui/start.cmd`。
