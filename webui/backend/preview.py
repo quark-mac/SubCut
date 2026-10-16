@@ -175,8 +175,10 @@ class PreviewTasks:
                 or abs(generated['start_time_ms']) > 50):
             raise Problem('生成产物的编码、时长或起点校验失败', code='invalid_preview')
 
-    def execute(self, task, command, duration_ms, log_path):
+    def execute(self, task, command, duration_ms, log_path, frame_interval_ms=None):
         task['command'] = command
+        if frame_interval_ms is not None:
+            task.update(progress_source='sampled_frames', processed_frames=0)
         self.write(task)
         with log_path.open('a', encoding='utf-8') as log:
             with self.lock:
@@ -186,10 +188,19 @@ class PreviewTasks:
                 self.process = process
             try:
                 for line in process.stdout:
-                    if line.startswith('out_time_us='):
+                    progress_key = 'frame=' if frame_interval_ms is not None else 'out_time_us='
+                    if line.startswith(progress_key):
                         value = line.strip().split('=', 1)[1]
                         if value.lstrip('-').isdigit():
-                            task['progress'] = max(task['progress'], min(.99, int(value) / (duration_ms * 1000)))
+                            if frame_interval_ms is not None:
+                                # With -copyts, image2's out_time_us can be rebased to the
+                                # first progress report (even dozens of source seconds in).
+                                # Uniform source-time samples have an exact work unit instead.
+                                task['processed_frames'] = int(value)
+                                progress = int(value) * frame_interval_ms / duration_ms
+                            else:
+                                progress = int(value) / (duration_ms * 1000)
+                            task['progress'] = max(task['progress'], min(.99, progress))
                             with self.lock:
                                 self.write(task)
                 if process.wait() != 0:

@@ -146,7 +146,7 @@ npm --prefix webui/frontend run test:browser
 
 同文件的 54 秒/1280×720 夹具验证后台进度与自动保存、晚到任务/保存回执、未提交草稿及工程切换组合；真实请求先完成，回执在公共 HTTP 边界延迟，核对两份工程的实际保存结果。缺工具用独立空闲端口服务和实际可执行文件配置：缺失路径 → 错配真实 ffprobe 导致转码失败 → 安装现有 ffmpeg 到测试配置位置 → UI 重试成功。各服务在测试结束退出。截图和机器可读结果在 `tests/evidence/ticket-11-*`；产物与任务日志保留在 `.test-workspace/preview/` 和 `.test-workspace/projects/<id>/`。单独运行：`npm --prefix webui/frontend run test:browser -- preview.spec.ts`。
 
-`timeline-media.spec.ts` 的 5 项真实 Edge 验收使用已知在 1 / 5 / 8.5 秒出现的 100ms 声音脉冲及红/绿/蓝画面，验证 1× / 2× / 8×、水平滚动、1100 / 1800 / 1440 宽度下，实际 SVG 峰值与 JPEG 图像的位置对齐刻度；波形 SVG 不超过视口宽，图片节点数量受视口限制。另验证 +5 秒 PTS、+500ms 音轨延迟、切换实际兼容副本前后证据不移动、无音轨、重开缓存、旧 GET 晚于新密度任务、晚到任务/自动保存回执与工程切换、真实缺/错工具后的保存和 UI 重试。54 秒/1280×720 原片检查中间进度、活动任务去重及未完成产物的 409。`test_timeline_media.py` 的 5 项 HTTP 检查真实波形/帧像素、延迟音轨与预览重新生成证据的一致性、无音轨、重启复用、参数/源身份/产物完整性失效和并发保存。单独运行：
+`timeline-media.spec.ts` 的 7 项真实 Edge 验收使用已知在 1 / 5 / 8.5 秒出现的 100ms 声音脉冲及红/绿/蓝画面，验证 1× / 2× / 8×、水平滚动、1100 / 1800 / 1440 宽度下，实际 SVG 峰值与 JPEG 图像的位置对齐刻度；波形 SVG 不超过视口宽，图片节点数量受视口限制。另验证 +5 秒 PTS、+500ms 音轨延迟、切换实际兼容副本前后证据不移动、无音轨、重开缓存、旧 GET 晚于新密度任务、晚到任务/自动保存回执与工程切换、真实缺/错工具后的保存和 UI 重试，以及生成等待真实保存回执时同工程刷新不丢弃已点击的生成意图。进度验收分开覆盖：54 秒/1280×720 纯色素材可能不到一轮 UI 查询就处理完，允许直接显示成功；240 秒/1920×1080/25fps 移动 H.264 素材验证至少两个递增的真实中间值、实际进度条、活动任务去重、未完成产物 409。后者只在 HTTP 边界暂缓后续浏览器查询以核对真实快照，worker 始终继续运行；不加入生产延时，不增大原 5 秒观察断言。自建移动原片首次生成后保存在忽略的测试目录复用，各次工程/任务仍独立。`test_timeline_media.py` 的 5 项 HTTP 检查真实波形/帧像素、实际已输出帧数、延迟音轨与预览重新生成证据的一致性、无音轨、重启复用、参数/源身份/产物完整性失效和并发保存。单独运行：
 
 ```powershell
 & $env:WEBUI_PYTHON -m unittest webui.tests.test_timeline_media -v
@@ -154,6 +154,8 @@ npm --prefix webui/frontend run test:browser -- timeline-media.spec.ts
 ```
 
 证据：`tests/evidence/ticket-12-timeline.jpg`（脉冲）、`ticket-12-delayed-preview.jpg`、`ticket-12-retry.jpg`、`ticket-12-alignment.json`（Edge 版本及实际布局/峰值）、`ticket-12-progress.json`。另在 18764 用 OpenChamber 浏览器实际新建、分别生成三种媒体资源、跳到 5 秒、重开复用，截图为 `ticket-12-manual-reopened.jpg`；仅操作自建样本，验收服务结束后停止。
+
+进度修复证据：`ticket-12-progress-diagnosis.json` 保留真实 FFmpeg 原始 frame / out_time_us 对照、原 0→100% 采样遗漏及旧时间算法反证；`ticket-12-running-progress.jpg` 和更新的 `ticket-12-progress.json` 为真实持续进度；`ticket-12-fast-progress.json` 为原 54 秒素材只收到成功回执的闭环。排查与针对性压力复验命令和红绿结果见 `.scratch/webui/issues/12-waveform-and-thumbnails.md`。
 
 ### 手动检查用自建素材
 
@@ -214,6 +216,7 @@ npm --prefix webui/frontend run dev
 - `backend/preview.py` 单 worker 排队执行 FFmpeg，进度来自 `-progress`，任务记录与 stderr 在 `<工程>/tasks/`。先写 `<工程>/previews/<task>.partial.mp4`，成功后检查实际编码/起点/时长、再次核验源身份，原子改名及登记；失败/运行中的文件不进入资源数组或播放接口。服务重启后未完成任务查询标为 failed/`task_interrupted`，允许重试；不自动恢复转码。
 - 资源登记在与 PUT 相同的锁内**重读最新工程，只追加资源**，不递增字幕编辑/导出的 `revision`。PUT 也重读最新资源，只更新编辑字段。这使后台完成不会制造编辑修订冲突或覆盖字幕/人物/导出；客户端资源刷新与字幕保存/历史独立，按工程身份和请求代次丢弃过期播放/任务回执。
 - `backend/timeline_media.py` 在同一任务队列中生成 `<工程>/timeline-media/<task>.json`（零起点、明确 step_ms 的峰值数组）和 `.zip`（manifest.json 的原片采样时间与 JPEG）。WAV / JPEG 中间文件在任务专属临时目录，结束即清理；JSON / ZIP 在原子发布前也先写 `.partial`。资源清单及各读取接口验证源身份、当前版本/密度的全部参数和整个产物摘要。范围接口只回传需要的聚合峰值，解析后的不可变数据采用有界进程缓存；不把全片 PCM 送进浏览器。
+- 缩略图的实时任务会给出 `progress_source: sampled_frames` / `processed_frames`，百分比按 FFmpeg 实际输出帧数 × 采样间隔 / 原片时长计算，验证/打包完成前最多 99%。`-copyts` + image2 的 `out_time_us` 实测可能从首批输出才起算，不能代表已覆盖的原片采样时间；不能为了百分比而移除共同时间基准。预览/波形仍保留既有计时进度路径。快速任务允许在两次 250ms 查询间结束，不保证浏览器看见每个中间状态，也不为显示百分比故意停留；缓存立即成功的任务不要求包含采样帧遥测。
 - `ProjectResources.tsx` 在工程 ID/修订变化或用户刷新时读取公开资源清单；`useProjectSession.persist()` 返回保存是否成功供切换门禁，失败仍保留草稿/历史。`relocate(project)` 只更新媒体与磁盘修订，不重置字幕历史；新工程 `open(project)` 建立新会话。
 
 `SourceTimeline.tsx` 负责原片坐标、缩放/滚动、刻度、轨内错层和 pointer 手势。接收同一 `project / selected: Set<Entry.id> / position`，通过 `onChoose(entry, modifiers?)` 请求选择、`onSeek(integerMilliseconds)` 请求播放定位；自身只持有临时手势，不维护第二份持久字幕。`onBeginEdit(id)` 先校验/提交已有表单并返回有效选择条目数组，暂停但不跳播放头；`onPreview(entries | null)` 同步 App 的临时列表/字段/播放叠加；`onCommitEdit(entries)` 在释放时一次提交整个集合的时间和归属。`onBeginSelect / onSelect(Set<id>) / onEndSelect` 承载框选校验、ID 去重与取消恢复，不调用播放定位或历史。预览不进入 `session.commit`，布局保持提交前轨道高度以免命中目标在手势中移动；释放后重新错层。取消、无变化或无效表单不产生拖动历史。坐标以原始条目整数时间为基准，不使用最小点击宽度反推时长。`selectionEditing.ts` 的共同轨道偏移供键盘与鼠标复用；`BatchEditor.tsx` 展示共同属性，仅暂存明确目标，提交由 App 构造单个完整快照。

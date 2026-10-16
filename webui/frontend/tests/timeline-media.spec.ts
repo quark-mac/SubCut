@@ -10,8 +10,8 @@ const button = (page: Page, name: string) => page.getByRole('button', { name, ex
 async function open(page: Page, name: string) {
   await button(page, '文件').click(); await button(page, '打开工程…').click(); await button(page, name).click();
 }
-async function fixture(page: Page, { incompatible = false, silent = false, delayed = false, large = false, pulses = false }: {
-  incompatible?: boolean; silent?: boolean; delayed?: boolean; large?: boolean; pulses?: boolean;
+async function fixture(page: Page, { incompatible = false, silent = false, delayed = false, large = false, pulses = false, progress = false }: {
+  incompatible?: boolean; silent?: boolean; delayed?: boolean; large?: boolean; pulses?: boolean; progress?: boolean;
 } = {}) {
   const folder = path.join(root, String(Date.now()));
   execFileSync(process.env.WEBUI_PYTHON || 'python', ['-c',
@@ -34,6 +34,17 @@ async function fixture(page: Page, { incompatible = false, silent = false, delay
     const output = path.join(folder, 'large.mkv');
     execFileSync('ffmpeg', ['-v', 'error', '-y', '-stream_loop', '5', '-i', media, '-vf', 'scale=1280:720', '-c:v', 'ffv1', '-c:a', 'pcm_s16le', '-t', '54', output]);
     media = output;
+  }
+  if (progress) {
+    // Flat FFV1 marker frames decode in ~0.17s despite a 54s source duration.
+    // Use genuine moving, compressed 1080p content for observable sustained work.
+    media = path.join(root, 'progress-240s-1080p-v1.mp4');
+    try { await fs.access(media); } catch {
+      const staging = path.join(root, 'progress-240s-1080p-v1.partial.mp4');
+      execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=size=1920x1080:rate=25',
+        '-t', '240', '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '32', '-pix_fmt', 'yuv420p', '-an', staging]);
+      await fs.rename(staging, media);
+    }
   }
   if (!incompatible) {
     const mp4 = path.join(folder, 'direct.mp4');
@@ -242,27 +253,97 @@ test('真实缺工具和错误工具失败仍可编辑，修复工具后 UI 重�
   }
 });
 
-test('真实较长媒体显示中间进度、活动任务去重，未完成产物不供给时间轴', async ({ page }) => {
-  test.setTimeout(60000);
+test('同工程生成等待真实保存回执时刷新状态，不丢弃已经点击的生成意图', async ({ page }) => {
+  const project = await fixture(page);
+  await button(page, '列表字幕 1').click();
+  await page.getByRole('textbox', { name: '字幕正文', exact: true }).fill('生成必须先保存此草稿');
+  let release!: () => void, saved!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const onDisk = new Promise<void>(resolve => { saved = resolve; });
+  await page.route(`**/api/projects/${project.id}`, async route => {
+    if (route.request().method() !== 'PUT') { await route.continue(); return; }
+    const response = await route.fetch(); saved(); await gate; await route.fulfill({ response });
+  });
+  try {
+    await button(page, '生成画面缩略图').click(); await onDisk;
+    const read = page.waitForResponse(r => r.url().includes(`/projects/${project.id}/timeline-media/thumbnails?`));
+    await button(page, '刷新缩略图状态').click(); await read;
+    release();
+    await expect(page.getByRole('status', { name: '缩略图任务状态' })).toContainText('成功');
+    await expect(page.locator('.locked img').first()).toBeVisible();
+    const disk = await (await page.request.get(`/api/projects/${project.id}`)).json();
+    expect(disk.entries[0].text).toBe('生成必须先保存此草稿');
+    expect(disk.media_artifacts).toHaveLength(1);
+  } finally { release(); }
+});
+
+test('54秒原片快速完成可以只回执成功，不要求已经错过的中间状态', async ({ page }) => {
   const project = await fixture(page, { incompatible: true, large: true });
   const observations: { state: string; progress: number }[] = [];
   await page.route(`**/api/projects/${project.id}/tasks/*`, async route => {
+    // Delay only this browser response until the REAL job is done. No synthetic task,
+    // FFmpeg throttle, private-module mock, or production minimum-duration rule.
+    await expect.poll(async () => (await (await page.request.get(route.request().url())).json()).state).toBe('succeeded');
     const response = await route.fetch(); const task = await response.json();
     observations.push({ state: task.state, progress: task.progress });
+    await route.fulfill({ response });
+  });
+  await button(page, '生成画面缩略图').click();
+  await expect(page.getByRole('status', { name: '缩略图任务状态' })).toContainText('成功');
+  await expect(page.locator('.locked img').first()).toBeVisible();
+  expect(observations).toEqual([{ state: 'succeeded', progress: 1 }]);
+  const disk = await (await page.request.get(`/api/projects/${project.id}`)).json();
+  expect(disk.entries).toEqual(project.entries); expect(disk.revision).toBe(1);
+  await expect(button(page, '撤销')).toBeDisabled();
+  await fs.writeFile('../tests/evidence/ticket-12-fast-progress.json', JSON.stringify({ project: project.id, duration_ms: disk.media.duration_ms, observations }, null, 2));
+});
+
+test('真实较长媒体显示中间进度、活动任务去重，未完成产物不供给时间轴', async ({ page }) => {
+  test.setTimeout(60000);
+  const project = await fixture(page, { incompatible: true, progress: true });
+  const began = Date.now();
+  const observations: { state: string; progress: number; processed_frames: number; progress_source: string; requested_ms: number; received_ms: number }[] = [];
+  const intermediate = () => observations.filter(o => o.state === 'running' && o.progress > 0 && o.progress < .99);
+  let release!: () => void, inspected = false;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route(`**/api/projects/${project.id}/tasks/*`, async route => {
+    // Keep two genuine progress responses visible long enough to assert their DOM
+    // rendering. The worker is never paused; later reads still see its real state.
+    if (intermediate().length >= 2 && !inspected) await gate;
+    const requested_ms = Date.now() - began;
+    const response = await route.fetch(); const task = await response.json();
+    observations.push({ state: task.state, progress: task.progress, processed_frames: task.processed_frames,
+      progress_source: task.progress_source, requested_ms, received_ms: Date.now() - began });
     await route.fulfill({ response });
   });
   const submitted = page.waitForResponse(r => r.url().endsWith('/timeline-media/thumbnails') && r.request().method() === 'POST');
   await button(page, '生成画面缩略图').click();
   const task = await (await submitted).json();
-  const duplicate = await (await page.request.post(`/api/projects/${project.id}/timeline-media/thumbnails`, { data: {} })).json();
-  expect(duplicate.id).toBe(task.id);
-  expect((await page.request.get(`/api/projects/${project.id}/timeline-artifacts/${task.id}`)).status()).toBe(409);
-  await expect(page.getByRole('status', { name: '缩略图任务状态' })).toContainText('运行中');
-  await expect(page.locator('.locked img')).toHaveCount(0);
-  await expect.poll(() => observations.some(o => o.state === 'running' && o.progress > 0 && o.progress < 1)).toBe(true);
-  await expect(page.getByRole('status', { name: '缩略图任务状态' })).toContainText('成功', { timeout: 30000 });
-  await expect(page.locator('.locked img').first()).toBeVisible();
-  const disk = await (await page.request.get(`/api/projects/${project.id}`)).json();
-  expect(disk.entries).toEqual(project.entries); expect(disk.revision).toBe(1);
-  await fs.writeFile('../tests/evidence/ticket-12-progress.json', JSON.stringify({ project: project.id, task: task.id, observations, duration_ms: disk.media.duration_ms, cached: disk.media_artifacts }, null, 2));
+  try {
+    const duplicate = await (await page.request.post(`/api/projects/${project.id}/timeline-media/thumbnails`, { data: {} })).json();
+    expect(duplicate.id).toBe(task.id);
+    expect((await page.request.get(`/api/projects/${project.id}/timeline-artifacts/${task.id}`)).status()).toBe(409);
+    await expect(page.getByRole('status', { name: '缩略图任务状态' })).toContainText('运行中');
+    await expect(page.locator('.locked img')).toHaveCount(0);
+    await expect.poll(() => intermediate().length).toBeGreaterThanOrEqual(2);
+    const [first, second] = intermediate();
+    expect(second.processed_frames).toBeGreaterThan(first.processed_frames);
+    expect(second.progress_source).toBe('sampled_frames');
+    expect(second.progress).toBeCloseTo(second.processed_frames / 240, 6);
+    await expect(page.getByRole('progressbar', { name: '缩略图生成进度' })).toHaveAttribute('value', String(second.progress));
+    await page.screenshot({ path: '../tests/evidence/ticket-12-running-progress.jpg' });
+    inspected = true; release();
+    await expect(page.getByRole('status', { name: '缩略图任务状态' })).toContainText('成功', { timeout: 30000 });
+    await expect(page.locator('.locked img').first()).toBeVisible();
+    const completed = await (await page.request.get(`/api/projects/${project.id}/tasks/${task.id}`)).json();
+    expect(completed.processed_frames).toBe(240);
+    const disk = await (await page.request.get(`/api/projects/${project.id}`)).json();
+    expect(disk.entries).toEqual(project.entries); expect(disk.revision).toBe(1);
+    await fs.writeFile('../tests/evidence/ticket-12-progress.json', JSON.stringify({ project: project.id, task: task.id, observations, duration_ms: disk.media.duration_ms, cached: disk.media_artifacts }, null, 2));
+  } finally {
+    inspected = true; release();
+    const completed = await (await page.request.get(`/api/projects/${project.id}/tasks/${task.id}`)).json();
+    await fs.mkdir('.test-workspace/progress-diagnosis', { recursive: true });
+    await fs.writeFile(`.test-workspace/progress-diagnosis/${project.id}.json`, JSON.stringify({ project: project.id, submitted: task, observations, completed }, null, 2));
+  }
 });

@@ -1,0 +1,394 @@
+{
+  "raw_ffmpeg": {
+    "source_task": "79eb9312-4bf5-4b49-adec-f21412e45793",
+    "command": [
+      "ffmpeg",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-nostdin",
+      "-y",
+      "-copyts",
+      "-start_at_zero",
+      "-i",
+      "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\timeline-media\\1792116920783\\large.mkv",
+      "-map",
+      "0:v:0",
+      "-an",
+      "-vf",
+      "fps=1000/1000:start_time=0:round=up,scale=160:90:force_original_aspect_ratio=decrease,pad=160:90:(ow-iw)/2:(oh-ih)/2,setsar=1",
+      "-t",
+      "54.0",
+      "-q:v",
+      "4",
+      "-progress",
+      "pipe:1",
+      "-stats_period",
+      "0.1",
+      "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\projects\\c90bf1f6-4046-4e7f-98ca-f330072112b7\\timeline-media\\79eb9312-4bf5-4b49-adec-f21412e45793-6od9f19y\\%08d.jpg"
+    ],
+    "runs": [
+      {
+        "copyts": true,
+        "images": 54,
+        "elapsed_ms": 172.0,
+        "events": [
+          {
+            "ms": 156.0,
+            "line": "frame=44"
+          },
+          {
+            "ms": 156.0,
+            "line": "out_time_us=0"
+          },
+          {
+            "ms": 156.0,
+            "line": "progress=continue"
+          },
+          {
+            "ms": 172.0,
+            "line": "frame=54"
+          },
+          {
+            "ms": 172.0,
+            "line": "out_time_us=10000000"
+          },
+          {
+            "ms": 172.0,
+            "line": "progress=end"
+          }
+        ]
+      },
+      {
+        "copyts": true,
+        "images": 54,
+        "elapsed_ms": 171.0,
+        "events": [
+          {
+            "ms": 156.0,
+            "line": "frame=49"
+          },
+          {
+            "ms": 156.0,
+            "line": "out_time_us=0"
+          },
+          {
+            "ms": 156.0,
+            "line": "progress=continue"
+          },
+          {
+            "ms": 156.0,
+            "line": "frame=54"
+          },
+          {
+            "ms": 156.0,
+            "line": "out_time_us=5000000"
+          },
+          {
+            "ms": 156.0,
+            "line": "progress=end"
+          }
+        ]
+      },
+      {
+        "copyts": true,
+        "images": 54,
+        "elapsed_ms": 172.0,
+        "events": [
+          {
+            "ms": 156.0,
+            "line": "frame=49"
+          },
+          {
+            "ms": 156.0,
+            "line": "out_time_us=0"
+          },
+          {
+            "ms": 156.0,
+            "line": "progress=continue"
+          },
+          {
+            "ms": 156.0,
+            "line": "frame=54"
+          },
+          {
+            "ms": 156.0,
+            "line": "out_time_us=5000000"
+          },
+          {
+            "ms": 156.0,
+            "line": "progress=end"
+          }
+        ]
+      },
+      {
+        "copyts": false,
+        "images": 54,
+        "elapsed_ms": 172.0,
+        "events": [
+          {
+            "ms": 156.0,
+            "line": "frame=50"
+          },
+          {
+            "ms": 156.0,
+            "line": "out_time_us=50000000"
+          },
+          {
+            "ms": 156.0,
+            "line": "progress=continue"
+          },
+          {
+            "ms": 172.0,
+            "line": "frame=54"
+          },
+          {
+            "ms": 172.0,
+            "line": "out_time_us=54000000"
+          },
+          {
+            "ms": 172.0,
+            "line": "progress=end"
+          }
+        ]
+      },
+      {
+        "copyts": false,
+        "images": 54,
+        "elapsed_ms": 171.0,
+        "events": [
+          {
+            "ms": 156.0,
+            "line": "frame=54"
+          },
+          {
+            "ms": 156.0,
+            "line": "out_time_us=N/A"
+          },
+          {
+            "ms": 156.0,
+            "line": "progress=continue"
+          },
+          {
+            "ms": 156.0,
+            "line": "frame=54"
+          },
+          {
+            "ms": 156.0,
+            "line": "out_time_us=54000000"
+          },
+          {
+            "ms": 156.0,
+            "line": "progress=end"
+          }
+        ]
+      }
+    ]
+  },
+  "missed_intermediate": {
+    "project": "fb101f92-2189-4f16-b973-a0e59b7a403d",
+    "submitted": {
+      "id": "76ad9e31-6a78-4a6f-b943-f4e82d77e39e",
+      "project_id": "fb101f92-2189-4f16-b973-a0e59b7a403d",
+      "state": "queued",
+      "progress": 0,
+      "kind": "thumbnails",
+      "parameters": {
+        "version": 1,
+        "density": "standard",
+        "timebase": "common-source-origin",
+        "interval_ms": 1000,
+        "width": 160,
+        "height": 90,
+        "format": "jpeg",
+        "quality": 4,
+        "sampling": "source-fps-round-up"
+      },
+      "media_identity": "sha256:674863f42bf7ebb3dc1f6ef6e087abb04580421719ab1e2ec1ef149d8dd1c321",
+      "artifact_id": null,
+      "cached": false,
+      "error": null,
+      "tools": {}
+    },
+    "observations": [
+      {
+        "state": "running",
+        "progress": 0,
+        "requested_ms": 375,
+        "received_ms": 381
+      },
+      {
+        "state": "succeeded",
+        "progress": 1,
+        "requested_ms": 643,
+        "received_ms": 648
+      }
+    ],
+    "completed": {
+      "id": "76ad9e31-6a78-4a6f-b943-f4e82d77e39e",
+      "project_id": "fb101f92-2189-4f16-b973-a0e59b7a403d",
+      "state": "succeeded",
+      "progress": 1,
+      "kind": "thumbnails",
+      "parameters": {
+        "version": 1,
+        "density": "standard",
+        "timebase": "common-source-origin",
+        "interval_ms": 1000,
+        "width": 160,
+        "height": 90,
+        "format": "jpeg",
+        "quality": 4,
+        "sampling": "source-fps-round-up"
+      },
+      "media_identity": "sha256:674863f42bf7ebb3dc1f6ef6e087abb04580421719ab1e2ec1ef149d8dd1c321",
+      "artifact_id": "76ad9e31-6a78-4a6f-b943-f4e82d77e39e",
+      "cached": false,
+      "error": null,
+      "tools": {
+        "ffmpeg": "ffmpeg version 9.0.2-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+        "ffprobe": "ffprobe version 9.0.2-full_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers"
+      },
+      "command": [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-nostdin",
+        "-y",
+        "-copyts",
+        "-start_at_zero",
+        "-i",
+        "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-12\\webui\\frontend\\.test-workspace\\timeline-media\\1792117596611\\large.mkv",
+        "-map",
+        "0:v:0",
+        "-an",
+        "-vf",
+        "fps=1000/1000:start_time=0:round=up,scale=160:90:force_original_aspect_ratio=decrease,pad=160:90:(ow-iw)/2:(oh-ih)/2,setsar=1",
+        "-t",
+        "54.0",
+        "-q:v",
+        "4",
+        "-progress",
+        "pipe:1",
+        "-stats_period",
+        "0.1",
+        "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-12\\webui\\frontend\\.test-workspace\\projects\\fb101f92-2189-4f16-b973-a0e59b7a403d\\timeline-media\\76ad9e31-6a78-4a6f-b943-f4e82d77e39e-awm6efmc\\%08d.jpg"
+      ]
+    }
+  },
+  "time_progress_counterfactual": {
+    "project": "f20a8082-20b1-420f-8da0-1dca5215e616",
+    "submitted": {
+      "id": "49288cc1-8aa1-4770-b7ff-ab6cdace02c9",
+      "project_id": "f20a8082-20b1-420f-8da0-1dca5215e616",
+      "state": "queued",
+      "progress": 0,
+      "kind": "thumbnails",
+      "parameters": {
+        "version": 1,
+        "density": "standard",
+        "timebase": "common-source-origin",
+        "interval_ms": 1000,
+        "width": 160,
+        "height": 90,
+        "format": "jpeg",
+        "quality": 4,
+        "sampling": "source-fps-round-up"
+      },
+      "media_identity": "sha256:c9ca89840c77b5ce9385f60e34d7714d5b07a4de009400b0fc87f9f48cda3324",
+      "artifact_id": null,
+      "cached": false,
+      "error": null,
+      "tools": {}
+    },
+    "observations": [
+      {
+        "state": "running",
+        "progress": 0,
+        "processed_frames": 0,
+        "progress_source": "sampled_frames",
+        "requested_ms": 328,
+        "received_ms": 333
+      },
+      {
+        "state": "running",
+        "progress": 0.041666666666666664,
+        "processed_frames": 16,
+        "progress_source": "sampled_frames",
+        "requested_ms": 608,
+        "received_ms": 672
+      },
+      {
+        "state": "running",
+        "progress": 0.175,
+        "processed_frames": 48,
+        "progress_source": "sampled_frames",
+        "requested_ms": 942,
+        "received_ms": 980
+      },
+      {
+        "state": "running",
+        "progress": 0.4083333333333333,
+        "processed_frames": 104,
+        "progress_source": "sampled_frames",
+        "requested_ms": 1458,
+        "received_ms": 1500
+      }
+    ],
+    "completed": {
+      "id": "49288cc1-8aa1-4770-b7ff-ab6cdace02c9",
+      "project_id": "f20a8082-20b1-420f-8da0-1dca5215e616",
+      "state": "running",
+      "progress": 0.4083333333333333,
+      "kind": "thumbnails",
+      "parameters": {
+        "version": 1,
+        "density": "standard",
+        "timebase": "common-source-origin",
+        "interval_ms": 1000,
+        "width": 160,
+        "height": 90,
+        "format": "jpeg",
+        "quality": 4,
+        "sampling": "source-fps-round-up"
+      },
+      "media_identity": "sha256:c9ca89840c77b5ce9385f60e34d7714d5b07a4de009400b0fc87f9f48cda3324",
+      "artifact_id": null,
+      "cached": false,
+      "error": null,
+      "tools": {
+        "ffmpeg": "ffmpeg version 9.0.2-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+        "ffprobe": "ffprobe version 9.0.2-full_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers"
+      },
+      "command": [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-nostdin",
+        "-y",
+        "-copyts",
+        "-start_at_zero",
+        "-i",
+        "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-12\\webui\\frontend\\.test-workspace\\timeline-media\\progress-240s-1080p-v1.mp4",
+        "-map",
+        "0:v:0",
+        "-an",
+        "-vf",
+        "fps=1000/1000:start_time=0:round=up,scale=160:90:force_original_aspect_ratio=decrease,pad=160:90:(ow-iw)/2:(oh-ih)/2,setsar=1",
+        "-t",
+        "240.0",
+        "-q:v",
+        "4",
+        "-progress",
+        "pipe:1",
+        "-stats_period",
+        "0.1",
+        "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-12\\webui\\frontend\\.test-workspace\\projects\\f20a8082-20b1-420f-8da0-1dca5215e616\\timeline-media\\49288cc1-8aa1-4770-b7ff-ab6cdace02c9-z23dgjwl\\%08d.jpg"
+      ],
+      "progress_source": "sampled_frames",
+      "processed_frames": 104
+    }
+  }
+}

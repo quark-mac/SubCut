@@ -122,3 +122,55 @@ npm --prefix webui/frontend run test:browser
 - 服务日志记录两次 Windows asyncio Proactor `ConnectionResetError / WinError 10054`，发生在预览交错和媒体移动附近，对应用例均通过；如实保留，不描述为无错误日志运行。PowerShell 对普通 stderr 的 NativeCommandError 包装不代表 unittest/Uvicorn 自身失败，以原退出码及测试结果为准。
 - 原始失败 `.last-run.json`、error-context、trace、后端/浏览器日志、票 11 本轮竞态 JSON、失败工程/任务快照及 17 个本轮自动重写的已跟踪证据，已归档至被忽略的 `webui/frontend/.test-workspace/ticket-12-integration-failure/`。日志原件为 `.test-workspace/ticket-12-integration-{backend,browser}.log`。仅恢复本轮自动改写的已跟踪证据到合并版本；恢复后工作树干净，再仅追加本段并独立提交。旧票 11 失败/通过归档未覆盖。
 - 最后核查 18761/18762/18763/18764 均无监听，无 WebUI Python、ffmpeg/ffprobe 残留；未重启演示服务。保留全部工作树、未推送、未启动其他代理。**票 12 已合入但集成验收未通过，被上述进度回归阻塞；顶部 done 是原任务工作树验收状态，不代表本轮集成全绿。**
+
+### 2026-10-16 恢复原会话修复集成阻塞
+
+- 工作树 `ticket-12` / `feat/webui-12` 恢复时干净，`git merge --no-edit feat/webui` 从 `b522d89` 快进到 `f0426cf6a6512f7ac28100a819cd10a8b31b2aa9`，包含原实现及完整失败 Comments。票恢复 in-progress，不以此前工作树通过覆盖集成失败。
+- 加载 diagnosing-bugs / tdd；继续使用已确认的真实 HTTP / 真实媒体 / Edge 接缝。先重放失败 trace、建立可反映“遗漏 running 且 0<progress<1”的反馈，再区分生成、轮询与监听问题。不放宽超时、不为了测试拖慢生产任务，不派生代理、不推送、不合入集成。
+
+### 集成进度阻塞：反馈、根因和反证
+
+- 原归档 `failed-test-task.json`、error-context 及日志已读取，原件只读保留。归档的 `trace.zip` 有 ZIP 本地头但无有效中央目录，Python `zipfile` 无法打开；没有据此编造网络事件。转而用真实 Edge 在任务 HTTP 边界记录请求/接收毫秒及真实 JSON，失败也在 finally 保存，替代此前仅成功后才写证据的问题。
+- 原命令 `npm run test:browser -- timeline-media.spec.ts -g '真实较长媒体' --repeat-each=8` 在前 4 次已有 3 次失败，整条排查命令在 120 秒外部上限被中止，**不计为完整测试通过/完整次数**。后续加边界观测后用 `--repeat-each=12 --trace off` 得到 **10 passed / 2 failed**（1.7m）：一次是本次相同的 5 秒中间进度断言，另一次点击后没有 POST，卡在 60 秒 waitForResponse。关闭 trace 仅用于排查归档/收尾问题，不改变断言；最终全套仍使用默认 trace 配置。
+- 同一进度失败的真实项目 `fb101f92-2189-4f16-b973-a0e59b7a403d`：375–381ms 的回执为 running/0，643–648ms 已 succeeded/1；之后轮询停止。此时再等待 5 秒不可能补回漏过的中间状态。监听器确实覆盖了该任务的全部实际 UI 读取，不是因其只监听了错误 task ID 或在成功后才安装。
+- 先列出并逐一验证三个预测：①实际工作窗口不足 250ms 导致采样遗漏，改用真实持续解码工作量应能观察多个值；②生成器的时间进度失真，直接记录真实 FFmpeg 与帧数应看见差异；③初始化/刷新推进请求代次会丢弃生成意图，应可在保存回执等待中用同工程刷新确定性复现。不是仅看到一次成功便认定某一假设成立。
+- **生成进度根因**：只重放失败任务的真实 FFmpeg 命令（输出改为本工作树独立临时目录，原媒体不变）。54 秒/1280×720 纯色 FFV1 的 FFmpeg 实际只需约 **0.17 秒**，输出 54 张 JPEG；带 `-copyts -start_at_zero` 时，首批已经输出 **44 / 49 张**而 `out_time_us=0`，最终 frame=54 时 out_time_us 仍只有 5–10 秒，另一些运行甚至为 0。仅在 CLI 对照实验移除这两个标志，frame=50/54 时才对应 out_time_us=50/54 秒。此组合的 image2 时间计数不能当作源时间采样完成度。**最终实现保留原全部 FFmpeg 时间标志/采样/编码参数**，没有通过移除共同原片时间基准来修百分比。
+- **UI 意图根因**：`generate()` 在等待有效草稿保存前捕获 epoch，保存期间同工程刷新（或初始元数据 effect）会推进 epoch；原判断将其当作换工程而无声 return，因而没有 POST。新增真实 PUT 已落盘、仅延迟回执的用例，刷新缩略图状态后释放保存回执，旧代码确定性失败：5 秒内没有“缩略图任务状态”节点。修复后先按工程/源身份/路径/密度 key 判断意图是否仍有效，保存通过后再捕获当前 epoch 用于 POST 回执；更换工程/源/参数仍取消旧意图，POST 前作废旧 GET 的 read 代次保护不变。
+- **修复**：仅缩略图把 FFmpeg `frame=` 作为已完成工作量，`processed_frames × interval_ms / duration_ms` 为真实源时间采样进度；任务附带 `progress_source: sampled_frames` 和 `processed_frames` 便于公共 API 核对，成功发布前仍最多 99%。预览及波形的既有计时分支未改，未增加 sleep/最短任务时长/人为 FFmpeg 限速，UI 250ms 轮询也未变。
+
+### 新验收设计与明确红→绿
+
+- HTTP 现有真实帧验收增加 `processed_frames == 9` 及实际进度来源核对。`D:\whisper-diarization\env\python.exe -m unittest webui.tests.test_timeline_media.TimelineMediaHTTPTests.test_thumbnails_are_actual_frames_at_explicit_source_times -v`：先 **None != sampled_frames** 红（1.480s），实现后通过（1.786s）。后端测试仍共 38 项。
+- 同工程保存期间刷新回归：`npm run test:browser -- timeline-media.spec.ts -g '同工程生成等待' --trace off`，先缺少任务状态失败（6.8s），修复后 `--repeat-each=5` **5/5 通过**（18.0s），真实保存文本和产物归属均核对。
+- 进度验收不再把“媒体时长 54 秒”当作“处理一定足够慢”。保留原 54 秒纯色源为**快速完成闭环**：只延迟浏览器自己的首次任务回执，直到同一个真实任务已成功，然后交付实际成功响应；断言可以没有任何中间状态、缩略图仍加载、字幕/修订/历史不变。不创建虚假任务、不暂停 worker。
+- **持续工作闭环**另用 FFmpeg 生成 240 秒/1920×1080/25fps 移动 testsrc2 H.264。首次生成约数秒，保存在忽略的测试目录供后续复用，所有工程/任务全新。真实任务一般持续数秒，要求两个不同的递增 running 百分比、与真实输出帧数/240 的比例一致、UI 进度条准确显示同一个真实回执；只在两个真实快照之后暂缓下一次浏览器请求便于核对 DOM，worker 不停。继续检查活动去重、未完成 409、成功发布、240 张实际输出帧及原字幕/修订不变，5 秒观察断言不变。
+- **反证旧算法**：在上述新持续工作回归中仅暂时恢复旧 out_time_us 计算、保留真实帧数观测（没有更换素材或改断言），`npm run test:browser -- timeline-media.spec.ts -g '真实较长媒体' --trace off` 于 2.7s 明确跑红：已处理 48/240 帧应为 **0.2**，旧算法返回 **0.175**。恢复正确帧数算法后通过，临时对照代码不保留。这证明不是仅用慢素材迁就旧算法。
+- 新三场景分别重复 8 次：`npm run test:browser -- timeline-media.spec.ts -g '真实较长媒体|54秒原片快速完成|同工程生成等待' --repeat-each=8 --trace off`，**24/24 通过，1.5m，无跳过/失败重试**。首次新增长源的针对性运行 **2/2 通过，17.6s**（含冷生成），不只依赖已缓存夹具。
+- 新证据 `webui/tests/evidence/ticket-12-progress-diagnosis.json` 含原采样遗漏 JSON、真实 CLI frame/out_time_us 对照及旧时间算法反证；更新的 `ticket-12-progress.json` 记录真实持续进度（含帧数、来源及请求/接收毫秒），`ticket-12-fast-progress.json` 记录原 54 秒素材的纯成功回执闭环，`ticket-12-running-progress.jpg` 为实际 UI 百分比截图。临时 CLI 探针已删除，原始原件和排查 JSON 保留在忽略目录；调试 console 前缀已移除。
+
+### 修复后全量验收与收尾
+
+命令环境、checkout root / frontend cwd 与本票前述一致；`WEBUI_PYTHON=D:\whisper-diarization\env\python.exe`、`WEBUI_BROWSER=msedge`，不创建其他环境、不启动其他代理。
+
+```powershell
+# frontend cwd
+npm run typecheck
+# 通过
+npm run build
+# 通过，47 modules；JS 258.59 kB / gzip 83.02 kB
+# root cwd
+& D:\whisper-diarization\env\python.exe -m unittest discover -s webui/tests -p 'test_*.py' -v
+# 38/38 通过，32.554s，无跳过
+$Files = Get-ChildItem webui -Recurse -Filter *.py | Where-Object { $_.FullName -notmatch 'node_modules|workspace' }
+& D:\whisper-diarization\env\python.exe -m py_compile $Files.FullName
+# 16 个文件通过
+# frontend cwd，保留原退出码
+npm run test:browser 2>&1 | Tee-Object -FilePath '.test-workspace/ticket-12-progress-fix-browser.log'
+exit $LASTEXITCODE
+# 76/76 通过，4.4m；无跳过、无失败重试，使用默认 trace 配置。
+```
+
+- 最终全量含票 11 旧 GET / 新质量任务回归，及本票旧 GET / 新密度、晚到保存 / 换工程回归，均通过。最终持续进度真实回执从 18/240（7.5%）、50/240（20.833%）递增至 216/240（90%），240 帧后仍 99% 等待验证/发布，最终成功 100%；截图已实际查看，为“运行中 · 21%”，未完成视频轨没有挂载缩略图。日志留在忽略的 `webui/frontend/.test-workspace/ticket-12-progress-fix-browser.log`。
+- 全量及部分诊断运行仍打印 Windows asyncio `WinError 10054`（浏览器取消/关闭连接时），没有造成断言失败。PowerShell 将 npm 转发的服务 stderr 标成 `NativeCommandError`，实际 npm / Playwright 退出码为 0；未隐藏这些输出，也未据此误报失败或重试。
+- 本轮测试前没有用户未提交改动。全量重写的票 05–11 证据仅恢复本轮生成变化，本提交保留票 12 更新/新增证据，不修改其他票和生产模块。未改变测试超时、生产最短时长或 FFmpeg 时间基准；修复范围限于 WebUI、README、本票。
+- 最后核查 18761/18762/18763/18764 均无监听，无属于本工作树的 WebUI Python / ffmpeg / ffprobe 残留。恢复 done 表示本修复工作树针对 `f0426cf` 的规定验收全绿；**不声称修复已经合入集成**。唯一写入者，未派生代理、未合入 `feat/webui`、未推送，保留工作树供集成人复验。

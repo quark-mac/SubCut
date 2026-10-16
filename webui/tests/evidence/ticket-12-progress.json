@@ -1,27 +1,95 @@
 {
-  "project": "b59ef389-8d36-4534-9788-5d6a0c55b180",
-  "task": "6316a67f-e449-4d4a-bca2-c12b29c02124",
+  "project": "f399782d-7f71-423e-8600-e4eb60b08d97",
+  "task": "54b8ea57-a7a6-4e1f-a31c-66dd5289a9a9",
   "observations": [
     {
       "state": "running",
-      "progress": 0
+      "progress": 0,
+      "processed_frames": 0,
+      "progress_source": "sampled_frames",
+      "requested_ms": 308,
+      "received_ms": 313
     },
     {
       "state": "running",
-      "progress": 0.018518518518518517
+      "progress": 0.075,
+      "processed_frames": 18,
+      "progress_source": "sampled_frames",
+      "requested_ms": 574,
+      "received_ms": 595
+    },
+    {
+      "state": "running",
+      "progress": 0.20833333333333334,
+      "processed_frames": 50,
+      "progress_source": "sampled_frames",
+      "requested_ms": 867,
+      "received_ms": 894
+    },
+    {
+      "state": "running",
+      "progress": 0.4375,
+      "processed_frames": 105,
+      "progress_source": "sampled_frames",
+      "requested_ms": 1517,
+      "received_ms": 1539
+    },
+    {
+      "state": "running",
+      "progress": 0.5916666666666667,
+      "processed_frames": 142,
+      "progress_source": "sampled_frames",
+      "requested_ms": 1814,
+      "received_ms": 1833
+    },
+    {
+      "state": "running",
+      "progress": 0.7416666666666667,
+      "processed_frames": 178,
+      "progress_source": "sampled_frames",
+      "requested_ms": 2115,
+      "received_ms": 2139
+    },
+    {
+      "state": "running",
+      "progress": 0.9,
+      "processed_frames": 216,
+      "progress_source": "sampled_frames",
+      "requested_ms": 2409,
+      "received_ms": 2429
+    },
+    {
+      "state": "running",
+      "progress": 0.99,
+      "processed_frames": 240,
+      "progress_source": "sampled_frames",
+      "requested_ms": 2703,
+      "received_ms": 2709
+    },
+    {
+      "state": "running",
+      "progress": 0.99,
+      "processed_frames": 240,
+      "progress_source": "sampled_frames",
+      "requested_ms": 2966,
+      "received_ms": 2970
     },
     {
       "state": "succeeded",
-      "progress": 1
+      "progress": 1,
+      "processed_frames": 240,
+      "progress_source": "sampled_frames",
+      "requested_ms": 3235,
+      "received_ms": 3238
     }
   ],
-  "duration_ms": 54000,
+  "duration_ms": 240000,
   "cached": [
     {
-      "id": "6316a67f-e449-4d4a-bca2-c12b29c02124",
+      "id": "54b8ea57-a7a6-4e1f-a31c-66dd5289a9a9",
       "kind": "thumbnails",
-      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-12\\webui\\frontend\\.test-workspace\\projects\\b59ef389-8d36-4534-9788-5d6a0c55b180\\timeline-media\\6316a67f-e449-4d4a-bca2-c12b29c02124.zip",
-      "media_identity": "sha256:e50964cc5e5bb6a784d8d27058bb3b3201d1a4298ed93b65046d12e0696450b3",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-12\\webui\\frontend\\.test-workspace\\projects\\f399782d-7f71-423e-8600-e4eb60b08d97\\timeline-media\\54b8ea57-a7a6-4e1f-a31c-66dd5289a9a9.zip",
+      "media_identity": "sha256:c9ca89840c77b5ce9385f60e34d7714d5b07a4de009400b0fc87f9f48cda3324",
       "parameters": {
         "version": 1,
         "density": "standard",
@@ -33,7 +101,7 @@
         "quality": 4,
         "sampling": "source-fps-round-up"
       },
-      "output_identity": "sha256:fcc06e0ff7f271c7cd218572fa51f12388f915d52c7100dd4a11e6a388c91d43"
+      "output_identity": "sha256:e4e476a8f4cd6f93394a4c98013fb3c9339fd5d5734e8dc0defedcbc49f41772"
     }
   ]
 }

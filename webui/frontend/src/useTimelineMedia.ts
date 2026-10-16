@@ -45,11 +45,16 @@ export function useTimelineMedia(project: Project | null, kind: 'waveform' | 'th
   }, [id, task]);
 
   async function generate(before: () => Promise<boolean>) {
-    const session = epoch.current, owner = id, capture = key;
+    let session = epoch.current;
+    const owner = id, capture = key;
     if (!owner) return;
     setSubmitting(true); setError('');
     try {
-      if (!await before() || session !== epoch.current || currentKey.current !== capture) return;
+      if (!await before() || currentKey.current !== capture) return;
+      // Saving can outlive the initial metadata effect or a same-project refresh.
+      // Keep that generation intent; only changing its project/source/options cancels it.
+      session = epoch.current;
+      setSubmitting(true);
       // A GET captured before this POST is never allowed to replace its acknowledged task.
       read.current++;
       const next = await api<MediaTask>(`/projects/${owner}/timeline-media/${kind}`, 'POST', { density });

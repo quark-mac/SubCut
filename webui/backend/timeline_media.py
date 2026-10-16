@@ -65,7 +65,7 @@ def generate_thumbnails(tasks, task, project, source, staging, log_path):
                    '-vf', f"fps=1000/{interval}:start_time=0:round=up,scale={options['width']}:{options['height']}:force_original_aspect_ratio=decrease,pad={options['width']}:{options['height']}:(ow-iw)/2:(oh-ih)/2,setsar=1",
                    '-t', str(project.media.duration_ms / 1000), '-q:v', str(options['quality']),
                    '-progress', 'pipe:1', '-stats_period', '0.1', str(folder / '%08d.jpg')]
-        tasks.execute(task, command, project.media.duration_ms, log_path)
+        tasks.execute(task, command, project.media.duration_ms, log_path, frame_interval_ms=interval)
         images = sorted(folder.glob('*.jpg'))
         if not images:
             raise Problem('没有生成有效缩略图', code='thumbnails_failed')

@@ -45,6 +45,8 @@ class TimelineMediaHTTPTests(unittest.TestCase):
         self.assertEqual(response.status_code, 202, response.text)
         done, _ = self.finish(url, response.json())
         self.assertEqual(done['state'], 'succeeded', done)
+        self.assertEqual(done.get('progress_source'), 'sampled_frames')
+        self.assertEqual(done.get('processed_frames'), 9)
         result = self.client.get(url + '/timeline-media/thumbnails').json()
         manifest = self.client.get(result['url']).json()
         self.assertEqual(manifest['duration_ms'], 9000)
