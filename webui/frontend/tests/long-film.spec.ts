@@ -8,6 +8,7 @@ const root = path.resolve('.test-workspace/long-film');
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 async function open(page: Page, name: string) {
   await button(page, '文件').click(); await button(page, '打开工程…').click(); await button(page, name).click();
+  await button(page, '工程轨序').click();
 }
 async function longMedia() {
   await fs.mkdir(root, { recursive: true });
@@ -19,6 +20,26 @@ async function longMedia() {
   }
   return media;
 }
+
+test('长片30秒视窗居中播放头，手动滚走后重复点击仍可找回', async ({ page }) => {
+  const media = await longMedia();
+  const response = await page.request.post('/api/projects', {data:{name:`30秒-${Date.now()}`,media_path:media,subtitle_path:path.resolve('.test-workspace/inputs/来源.srt')}});
+  const project = await response.json();
+  await page.goto('/'); await open(page, project.name);
+  await page.getByLabel('跳转时间', {exact:true}).fill('01:00:00'); await button(page,'跳转').click();
+  const viewport = page.getByRole('region',{name:'时间轴轨道滚动区'});
+  const centered = async () => {
+    const box = (await viewport.boundingBox())!;
+    const head = (await page.getByRole('button',{name:'拖动播放头'}).boundingBox())!;
+    return Math.abs(head.x + head.width / 2 - (box.x + 150 + (box.width - 150) / 2));
+  };
+  await button(page,'30 秒视窗').click();
+  await expect.poll(centered).toBeLessThan(10);
+  await viewport.evaluate(el => {el.scrollLeft=0;});
+  await button(page,'30 秒视窗').click();
+  await expect.poll(centered).toBeLessThan(10);
+  expect(await (await page.request.get(`/api/projects/${project.id}`)).json()).toEqual(project);
+});
 
 test('两小时4000条26人物可见范围、滚动缩放及完整编辑保存导出', async ({ page, browser, context }) => {
   test.setTimeout(180000);
@@ -41,7 +62,8 @@ test('两小时4000条26人物可见范围、滚动缩放及完整编辑保存�
   const coldLoadMs = Date.now() - start;
   // Public DOM: rendering is bounded, while the complete document stays intact.
   expect(await page.locator('.subtitle-row').count()).toBeLessThan(80);
-  expect(await page.locator('.clip').count()).toBeLessThan(2000);
+  // Taller viewport exposes more lanes, but never both complete 4000-entry views.
+  expect(await page.locator('.clip').count()).toBeLessThan(3000);
   const fitRendered = { rows: await page.locator('.subtitle-row').count(), clips: await page.locator('.clip').count() };
   const fitSamples = await page.evaluateHandle(() => {
     const frames: number[] = [], tasks: number[] = []; let running = true, previous = performance.now();
@@ -189,7 +211,11 @@ test('长片重叠错层可命中，虚拟卸载后的跨视窗框选和双视�
   await page.mouse.move(splitter.x + 200, splitter.y + 3); await page.mouse.down(); await page.mouse.move(splitter.x + 200, splitter.y - 180); await page.mouse.up();
   const tracks = page.getByRole('region', { name: '时间轴轨道滚动区' });
   await page.getByLabel('时间轴缩放', { exact: true }).fill('8');
-  await tracks.evaluate(e => { e.scrollLeft = 3500 / 7200 * e.querySelector<HTMLElement>('.track-body')!.clientWidth - 200; e.scrollTop = 90; });
+  await tracks.evaluate(e => {
+    e.scrollLeft = 3500 / 7200 * e.querySelector<HTMLElement>('.track-body')!.clientWidth - 200;
+    // Leave blank overview space below the sticky ruler; video height is now adjustable.
+    e.scrollTop = e.querySelector<HTMLElement>('.track')!.offsetHeight - 20;
+  });
   const first = button(page, '字幕总览：框选长片 2001'), second = button(page, '字幕总览：框选长片 2002');
   await first.click(); await expect(page.getByLabel('字幕正文')).toHaveValue('框选长片 2001');
   await second.click(); await expect(page.getByLabel('字幕正文')).toHaveValue('框选长片 2002');

@@ -4,12 +4,14 @@ import { api, type ExportOptions, type Project } from './api';
 // History contains editing content only. Disk revision/export receipts never rewind.
 type Content = Pick<Project, 'name' | 'entries' | 'speakers' | 'subtitle_sources'>;
 const content = ({ name, entries, speakers, subtitle_sources }: Project): Content => ({ name, entries, speakers, subtitle_sources });
+type History = { content: Content; trackOrder?: { restore: string[]; opposite: string[] } };
 
 export function useProjectSession() {
   const [project, render] = useState<Project | null>(null);
   const current = useRef<Project | null>(null);
-  const past = useRef<Content[]>([]);
-  const future = useRef<Content[]>([]);
+  const past = useRef<History[]>([]);
+  const future = useRef<History[]>([]);
+  const restoredTrackOrder = useRef<string[] | null>(null);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -34,24 +36,28 @@ export function useProjectSession() {
     queue.current = Promise.resolve(); pending.current = 0; setSaving(false); setSaveError('');
     setExportError('');
     past.current = []; future.current = [];
+    restoredTrackOrder.current = null;
     update(next); setDirty(false);
   }
 
-  function commit(next: Project) {
+  function commit(next: Project, trackOrder?: { before: string[]; after: string[] }) {
     const before = current.current;
-    if (!before || JSON.stringify(content(before)) === JSON.stringify(content(next))) return before;
-    past.current.push(content(before)); future.current = [];
+    if (!before || (JSON.stringify(content(before)) === JSON.stringify(content(next)) && (!trackOrder || trackOrder.before.join() === trackOrder.after.join()))) return before;
+    past.current.push({ content: content(before), trackOrder: trackOrder && { restore: trackOrder.before, opposite: trackOrder.after } }); future.current = [];
     changed(next);
     return next;
   }
 
   function travel(redo: boolean) {
+    restoredTrackOrder.current = null;
     const before = current.current;
     const source = redo ? future.current : past.current;
     const target = redo ? past.current : future.current;
     if (!before || !source.length) return before;
-    target.push(content(before));
-    const next = { ...before, ...source.pop()! };
+    const step = source.pop()!;
+    target.push({ content: content(before), trackOrder: step.trackOrder && { restore: step.trackOrder.opposite, opposite: step.trackOrder.restore } });
+    restoredTrackOrder.current = step.trackOrder?.restore ?? null;
+    const next = { ...before, ...step.content };
     changed(next);
     return next;
   }
@@ -142,6 +148,7 @@ export function useProjectSession() {
   }
 
   return { project, dirty, saving, saveError, exportError, open, commit, travel, persist, relocate, pauseAutosave, resumeAutosave,
+    getRestoredTrackOrder: () => restoredTrackOrder.current,
     isSaving: () => pending.current > 0,
     getProject: () => current.current, canUndo: past.current.length > 0, canRedo: future.current.length > 0 };
 }

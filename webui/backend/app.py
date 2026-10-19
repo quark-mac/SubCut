@@ -1,6 +1,7 @@
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -8,10 +9,11 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from .errors import Problem
+from .file_picker import pick_file
 from .formats import EXPORT_TYPES, read_subtitles, validate_entries, validate_sources, write_subtitles
 from .media import inspect_media, local_file, probe_media, verify_media
 from .resources import inventory, open_folder
-from .models import CopyRequest, CreateRequest, Export, ExportRequest, ImportRequest, NewMediaRequest, PreviewRequest, Project, RelocateRequest, SaveRequest, SubtitleSource, TimelineMediaRequest, identity
+from .models import CopyRequest, CreateRequest, Export, ExportRequest, FilePickerRequest, ImportRequest, NewMediaRequest, PreviewRequest, Project, RelocateRequest, SaveRequest, SubtitleSource, TimelineMediaRequest, identity
 from .preview import PreviewTasks, cached_preview, parameters, valid_artifact
 from .storage import Store, atomic_write
 from .speakers import validate_speakers
@@ -61,6 +63,14 @@ async def io_handler(request: Request, exc: OSError):
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+
+@app.post('/api/files/pick')
+def select_local_file(body: FilePickerRequest, request: Request):
+    origin = request.headers.get('origin')
+    if request.headers.get('sec-fetch-site') == 'cross-site' or (origin and urlsplit(origin).netloc != request.url.netloc):
+        raise Problem('请从本机 WebUI 打开文件选择窗口', status=403, code='file_picker_origin')
+    return {'path': pick_file(body)}
 
 
 def import_subtitles(body: ImportRequest):

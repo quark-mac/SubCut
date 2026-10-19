@@ -244,8 +244,7 @@ test('2× 与 8× 缩放横纵滚动后按原片毫秒拖动，手势中滚动�
   const viewport = page.getByRole('region', { name: '时间轴轨道滚动区' });
   for (const level of [1, 3]) {
     await zoom.focus();
-    await zoom.press('Home');
-    for (let i = 0; i < level; i++) await zoom.press('ArrowRight');
+    await zoom.fill(String(level));
     await expect(page.getByLabel('缩放倍率')).toHaveText(`${2 ** level}×`);
     await viewport.hover();
     await page.mouse.wheel(10000, 1000);

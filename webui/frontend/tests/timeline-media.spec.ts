@@ -9,6 +9,11 @@ const root = path.resolve('.test-workspace/timeline-media');
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 async function open(page: Page, name: string) {
   await button(page, '文件').click(); await button(page, '打开工程…').click(); await button(page, name).click();
+  await page.getByRole('checkbox', { name: '音频波形', exact: true }).check();
+  // Keep one-second samples visible for the alignment probes; height is now user adjustable.
+  const handle = (await page.getByRole('separator', { name: '调整轨道高度 🔒 视频轨', exact: true }).boundingBox())!;
+  await page.mouse.move(handle.x + 40, handle.y + 3); await page.mouse.down();
+  await page.mouse.move(handle.x + 40, handle.y - 23); await page.mouse.up();
 }
 async function fixture(page: Page, { incompatible = false, silent = false, delayed = false, large = false, pulses = false, progress = false }: {
   incompatible?: boolean; silent?: boolean; delayed?: boolean; large?: boolean; pulses?: boolean; progress?: boolean;
@@ -64,7 +69,7 @@ test('真实原片生成、缓存与视频轨可见范围在多个缩放滚动�
   await expect(page.getByRole('status', { name: '波形任务状态' })).toContainText('成功');
   await button(page, '生成画面缩略图').click();
   await expect(page.getByRole('status', { name: '缩略图任务状态' })).toContainText('成功');
-  const locked = page.locator('.track-body.locked');
+  const locked = page.locator('.timeline-content');
   await expect(locked.getByRole('img', { name: '音频波形', exact: true })).toBeVisible();
   await expect(locked.locator('img').first()).toBeVisible();
   await expect.poll(() => locked.locator('rect[data-time-ms="5000"]').getAttribute('data-peak')).toMatch(/^0\.[34]/);
@@ -85,12 +90,12 @@ test('真实原片生成、缓存与视频轨可见范围在多个缩放滚动�
     await page.getByRole('region', { name: '时间轴轨道滚动区' }).evaluate(el => { el.scrollLeft = (el.scrollWidth - el.clientWidth) * .6; });
     await expect.poll(() => locked.locator('svg rect').count()).toBeGreaterThan(0);
     await expect.poll(async () => locked.evaluate(el => {
-      const track = el.getBoundingClientRect(), viewport = document.querySelector('.tracks')!;
+      const track = el.querySelector('.track-body.locked')!.getBoundingClientRect(), viewport = document.querySelector('.tracks')!;
       const last = el.querySelector('svg rect:last-child') as SVGElement;
       return Number(last.dataset.timeMs) <= (viewport.scrollLeft + viewport.clientWidth - 150) / track.width * 9000;
     })).toBe(true);
     const observed = await locked.evaluate(el => {
-      const track = el.getBoundingClientRect();
+      const track = el.querySelector('.track-body.locked')!.getBoundingClientRect();
       const ruler = document.querySelector('.ruler')!.getBoundingClientRect();
       return { width: track.width, left: track.left, rulerLeft: ruler.left,
         images: [...el.querySelectorAll('img')].map(img => ({ ms: Number(img.dataset.timeMs), left: img.getBoundingClientRect().left, loaded: img.complete && img.naturalWidth > 0 })),
@@ -135,7 +140,7 @@ test('非零 PTS 与延迟音轨使用原片零点，预览切换不移动波形
     await expect(bar).toHaveCount(1);
     expect(Number(await bar.getAttribute('data-peak')) > .3).toBe(audible);
   }
-  const before = await page.locator('.locked').evaluate(el => [...el.querySelectorAll('img')].map(img => ({ time: img.dataset.timeMs, src: img.src, left: img.getBoundingClientRect().left })));
+  const before = await page.locator('.locked').first().evaluate(el => [...el.querySelectorAll('img')].map(img => ({ time: img.dataset.timeMs, src: img.src, left: img.getBoundingClientRect().left })));
   await button(page, '生成预览副本').click();
   await expect(page.getByRole('status', { name: '浏览器解码状态' })).toContainText('已解码');
   await page.getByLabel('跳转时间', { exact: true }).fill('5'); await button(page, '跳转').click();
@@ -148,7 +153,7 @@ test('非零 PTS 与延迟音轨使用原片零点，预览切换不移动波形
     });
   });
   for (const pixel of pixels) { expect(pixel[1]).toBeGreaterThan(240); expect(pixel[0]).toBeLessThan(10); }
-  expect(await page.locator('.locked').evaluate(el => [...el.querySelectorAll('img')].map(img => ({ time: img.dataset.timeMs, src: img.src, left: img.getBoundingClientRect().left })))).toEqual(before);
+  expect(await page.locator('.locked').first().evaluate(el => [...el.querySelectorAll('img')].map(img => ({ time: img.dataset.timeMs, src: img.src, left: img.getBoundingClientRect().left })))).toEqual(before);
   await expect(button(page, '撤销')).toBeDisabled();
   expect((await (await page.request.get(`/api/projects/${project.id}`)).json()).entries).toEqual(project.entries);
   await page.screenshot({ path: '../tests/evidence/ticket-12-delayed-preview.jpg' });

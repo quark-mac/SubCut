@@ -7,6 +7,7 @@ async function openProject(page: Page, name: string) {
   await page.getByRole('button', { name: '文件', exact: true }).click();
   await page.getByRole('button', { name: '打开工程…' }).click();
   await page.getByRole('button', { name, exact: true }).click();
+  await page.getByRole('button', { name: '工程轨序', exact: true }).click();
 }
 
 async function fixture(page: Page) {

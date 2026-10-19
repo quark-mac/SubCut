@@ -347,7 +347,7 @@ test('撤销整体替换清除失效的多选身份，继续选择不会出现�
 test('双视图框选在 2× 吸附移动只改每条一次，取消和空目标不写历史', async ({ page }) => {
   const project = await fixture(page);
   await page.getByLabel('时间轴缩放', { exact: true }).focus();
-  await page.keyboard.press('ArrowRight');
+  await page.getByLabel('时间轴缩放', { exact: true }).fill('1');
   await expect(page.getByLabel('缩放倍率')).toHaveText('2×');
   const viewport = page.getByRole('region', { name: '时间轴轨道滚动区' });
   await viewport.hover();

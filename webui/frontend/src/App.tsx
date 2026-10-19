@@ -4,6 +4,8 @@ import { useProjectSession } from './useProjectSession';
 import { useAudition } from './useAudition';
 import { WorkspaceSplitter } from './WorkspaceSplitter';
 import { WorkspaceHelp } from './WorkspaceHelp';
+import { FilePathField } from './FilePathField';
+import { bySubtitleCount, visibleSpeakers } from './trackOrder';
 import { ProjectResources } from './ProjectResources';
 import { usePreviewCopy } from './usePreviewCopy';
 import { PreviewCopyControls } from './PreviewCopyControls';
@@ -27,6 +29,8 @@ const exportLabels: Record<ExportFormat, string> = { 'speaker-srt': '说话人 S
 export function App() {
   const session = useProjectSession();
   const { project, dirty } = session;
+  const [trackOrder, setTrackOrder] = useState<string[]>([]);
+  const trackSpeakers = useMemo(() => visibleSpeakers(project?.speakers ?? [], trackOrder), [project?.speakers, trackOrder]);
   const previewCopy = usePreviewCopy(project);
   const waveform = useTimelineMedia(project, 'waveform');
   const thumbnails = useTimelineMedia(project, 'thumbnails');
@@ -37,11 +41,14 @@ export function App() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [fieldError, setFieldError] = useState<{ field: keyof Draft; message: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [picking, setPicking] = useState(false);
   const [error, setError] = useState('');
   const [dialog, setDialog] = useState<'new' | 'replace' | 'open' | 'help' | 'save-as' | 'relocate' | 'new-media' | null>(null);
   const [menu, setMenu] = useState<'file' | 'edit' | 'view' | null>(null);
   const workspace = useRef<HTMLElement>(null);
-  const [layout, setLayout] = useState({ left: 18, right: 29, bottom: 300 });
+  const defaultLayout = () => ({ left: 20, right: 29, bottom: Math.round(window.innerHeight * .4) });
+  const [layout, setLayout] = useState(defaultLayout);
+  const [resourcesVisible, setResourcesVisible] = useState(true);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [name, setName] = useState('新建校对工程');
   const [mediaPath, setMediaPath] = useState('');
@@ -154,8 +161,12 @@ export function App() {
 
   function reorderSpeakers(source: string, target: string) {
     const snapshot = commitDraft();
-    const next = snapshot && reorderSpeaker(snapshot, source, target);
-    if (next) commitSpeakers(next);
+    const next = snapshot && reorderSpeaker({ ...snapshot, speakers: visibleSpeakers(snapshot.speakers, trackOrder) }, source, target);
+    if (next) {
+      const after = next.speakers.map(s => s.id);
+      session.commit(next, { before: trackSpeakers.map(s => s.id), after });
+      setTrackOrder(after); setSpeakerDraft(null); setSpeakerError(''); setError('');
+    }
   }
 
   function mergeSpeakers(source: string, target: string): boolean {
@@ -201,6 +212,7 @@ export function App() {
   }
 
   function accept(project: Project) {
+    setTrackOrder(bySubtitleCount(project));
     audition.cancel(true); setJump(''); setJumpError('');
     setSearch(''); setSpeakerFilter('');
     video.current?.pause();
@@ -304,7 +316,7 @@ export function App() {
   function moveSpeaker(offset: number) {
     const snapshot = commitDraft();
     if (!snapshot) return;
-    const changes = offsetSpeakers(snapshot.entries.filter(e => selectedIds.has(e.id)), snapshot.speakers, offset);
+    const changes = offsetSpeakers(snapshot.entries.filter(e => selectedIds.has(e.id)), visibleSpeakers(snapshot.speakers, trackOrder), offset);
     if (!changes?.length) return;
     const byId = new Map(changes.map(e => [e.id, e]));
     const next = { ...snapshot, entries: snapshot.entries.map(e => byId.get(e.id) ?? e) };
@@ -379,6 +391,8 @@ export function App() {
   function history(redo: boolean) {
     if (!commitDraft()) return;
     const next = session.travel(redo);
+    const restoredOrder = session.getRestoredTrackOrder();
+    if (restoredOrder) setTrackOrder(restoredOrder);
     const ids = new Set(next?.entries.filter(e => selectedIds.has(e.id)).map(e => e.id));
     setSelectedIds(ids);
     if (!next?.entries.some(e => e.id === anchor.current)) anchor.current = null;
@@ -409,6 +423,22 @@ export function App() {
       catch (reason) { report(reason); session.resumeAutosave(); }
       finally { setBusy(false); }
     } else { setPreview(null); setDialog(kind); }
+  }
+
+  async function chooseFile(kind: 'media' | 'subtitle') {
+    if (busy) return;
+    setBusy(true); setPicking(true); setError('');
+    try {
+      const result = await api<{ path: string | null }>('/files/pick', 'POST', {
+        kind, format: importFormat, current_path: kind === 'media' ? mediaPath : subtitlePath,
+      });
+      if (result.path !== null) {
+        if (kind === 'media') setMediaPath(result.path);
+        else setSubtitlePath(result.path);
+        setPreview(null);
+      }
+    } catch (reason) { report(reason); }
+    finally { setPicking(false); setBusy(false); }
   }
 
   async function projectAction() {
@@ -497,12 +527,12 @@ export function App() {
     const left = element.querySelector('.resources')!.getBoundingClientRect().width;
     const right = element.querySelector('.editor')!.getBoundingClientRect().width;
     const bottom = element.parentElement!.querySelector('.timeline')!.getBoundingClientRect().height;
-    const maxBottom = bottom + element.clientHeight - 360;
+    const maxBottom = bottom + element.clientHeight - 220;
     const original = layout;
     return {
       move: (delta: number) => setLayout(panel === 'bottom' ? { ...original, bottom: Math.max(180, Math.min(maxBottom, bottom - delta)) }
-        : { ...original, left: (panel === 'left' ? Math.max(140, Math.min(width - right - 300, left + delta)) : left) / width * 100,
-          right: (panel === 'right' ? Math.max(300, Math.min(width - left - 300, right - delta)) : right) / width * 100 }),
+        : { ...original, left: resourcesVisible ? (panel === 'left' ? Math.max(140, Math.min(width - right - 300, left + delta)) : left) / width * 100 : original.left,
+          right: (panel === 'right' ? Math.max(280, Math.min(width - (resourcesVisible ? left : original.left / 100 * width) - 260, right - delta)) : right) / width * 100 }),
       cancel: () => setLayout(original),
     };
   }
@@ -537,7 +567,8 @@ export function App() {
           <button disabled={!project} onClick={() => { if (commitDraft()) { setEditorTab('speakers'); setMenu(null); } }}>说话人管理页签</button>
           <button aria-pressed={showSubtitles} onClick={() => { setShowSubtitles(!showSubtitles); setMenu(null); }}>显示工作字幕</button>
           <button aria-pressed={showSpeakerNames} onClick={() => { setShowSpeakerNames(!showSpeakerNames); setMenu(null); }}>显示人物名称</button>
-          <button onClick={() => { setLayout({ left: 18, right: 29, bottom: 300 }); setMenu(null); }}>重置面板布局</button>
+           <button aria-pressed={resourcesVisible} onClick={() => { setResourcesVisible(!resourcesVisible); setMenu(null); }}>显示资源面板</button>
+           <button onClick={() => { setLayout(defaultLayout()); setResourcesVisible(true); setMenu(null); }}>重置面板布局</button>
         </div>}
       </div>
       <button onClick={() => void showDialog('help')}>帮助</button>
@@ -566,8 +597,8 @@ export function App() {
       }}>放弃修改并重开磁盘版本</button>}
       {session.exportError && <button onClick={() => void persist(true)}>重试导出</button>}
       {error && <button aria-label="关闭错误" onClick={() => setError('')}>×</button>}</div>}
-    <main className="workspace" ref={workspace} style={{ gridTemplateColumns: `minmax(140px, ${layout.left}fr) 7px minmax(300px, ${100 - layout.left - layout.right}fr) 7px minmax(300px, ${layout.right}fr)` }}>
-      <aside className="resources panel" aria-label="工程资源">
+    <main className={`workspace ${resourcesVisible ? '' : 'resources-hidden'}`} ref={workspace} style={{ gridTemplateColumns: resourcesVisible ? `minmax(150px, ${layout.left}fr) 7px minmax(260px, ${100 - layout.left - layout.right}fr) 7px minmax(280px, ${layout.right}fr)` : `0px 0px minmax(260px, ${100 - layout.right}fr) 7px minmax(280px, ${layout.right}fr)` }}>
+      <aside className="resources panel" aria-label="工程资源" hidden={!resourcesVisible}>
         <h2>工程资源</h2>
         {project ? <><PreviewCopyControls preview={previewCopy} busy={busy || !!dialog} onGenerate={() => void previewCopy.generate(async () => !!commitDraft() && await session.persist())} />
           <TimelineMediaControls media={waveform} kind="波形" busy={busy || !!dialog} onGenerate={() => void waveform.generate(async () => !!commitDraft() && await session.persist())} />
@@ -613,10 +644,10 @@ export function App() {
       <WorkspaceSplitter label="调整编辑面板宽度" onBegin={() => beginResize('right')} />
       <section className="editor panel" aria-label="字幕编辑器">
         <div className="editor-tabs" role="tablist" aria-label="编辑页签">
-          <button role="tab" aria-selected={editorTab === 'subtitles'} onClick={() => { if (commitDraft()) setEditorTab('subtitles'); }}>字幕</button>
+          <button role="tab" aria-label="字幕" aria-selected={editorTab === 'subtitles'} onClick={() => { if (commitDraft()) setEditorTab('subtitles'); }}>字幕 · {entries.length}</button>
           <button role="tab" aria-selected={editorTab === 'speakers'} onClick={() => { if (commitDraft()) setEditorTab('speakers'); }}>说话人</button>
         </div>
-        {editorTab === 'speakers' ? project ? <SpeakerManager project={project} draft={speakerDraft} error={speakerError} busy={busy}
+        {editorTab === 'speakers' ? project ? <SpeakerManager project={{ ...project, speakers: trackSpeakers }} draft={speakerDraft} error={speakerError} busy={busy}
           onEdit={value => {
             const snapshot = commitDraft();
             if (snapshot) { setSpeakerDraft(value.id ? snapshot.speakers.find(s => s.id === value.id)! : value); setSpeakerError(''); }
@@ -632,7 +663,7 @@ export function App() {
           <select aria-label="筛选说话人" value={project?.speakers.some(s => s.id === speakerFilter) ? speakerFilter : ''} onChange={event => setSpeakerFilter(event.target.value)}>
             <option value="">全部说话人</option>{project?.speakers.map(s => <option key={s.id} value={s.id}>{speakerName(s.id)}</option>)}
           </select>
-          <button onClick={() => { setSearch(''); setSpeakerFilter(''); }} disabled={!search && !speakerFilter}>清除筛选</button>
+          <button aria-label="清除筛选" title="清除筛选" onClick={() => { setSearch(''); setSpeakerFilter(''); }} disabled={!search && !speakerFilter}>×</button>
         </div>
         <SubtitleList entries={entries} speakers={project?.speakers ?? []} selected={selectedIds} active={activeIds}
           search={search} speakerFilter={speakerFilter} busy={busy} onChoose={choose} onListen={listen} />
@@ -663,7 +694,7 @@ export function App() {
       </section>
     </main>
     <WorkspaceSplitter label="调整上下分区高度" horizontal onBegin={() => beginResize('bottom')} />
-    <section className="timeline panel" aria-label="原片时间轴" style={{ height: `clamp(180px, ${layout.bottom}px, calc(100% - 500px))` }}>
+    <section className="timeline panel" aria-label="原片时间轴" style={{ height: `clamp(210px, ${layout.bottom}px, calc(100% - 310px))` }}>
       <div className="timeline-toolbar"><h2>时间轴</h2>
         <button disabled={busy || (!session.canUndo && !draftChanged && !speakerChanged)} onClick={() => history(false)}>撤销</button>
         <button disabled={busy || !session.canRedo || draftChanged || speakerChanged} onClick={() => history(true)}>重做</button>
@@ -677,7 +708,12 @@ export function App() {
         </select>
         <span className="muted">视频轨锁定 · 合法重叠保留</span></div>
       {project ? <SourceTimeline key={project.id} project={project} selected={selectedIds} position={position} busy={busy}
-        waveform={waveform.url} thumbnails={thumbnails.url}
+        waveform={waveform.url} thumbnails={thumbnails.url} thumbnailVersion={thumbnails.version} speakers={trackSpeakers}
+        onSort={() => { const snapshot = commitDraft(); if (snapshot) setTrackOrder(bySubtitleCount(snapshot)); }}
+        onStoredOrder={() => setTrackOrder(project.speakers.map(s => s.id))}
+        onGenerateThumbnails={() => void thumbnails.generate(async () => !!commitDraft() && await session.persist())}
+        onGenerateWaveform={() => void waveform.generate(async () => !!commitDraft() && await session.persist())}
+        generatingThumbnails={thumbnails.busy} generatingWaveform={waveform.busy}
         currentTrack={currentTrack} onTrack={setCurrentTrack}
         onBeginSelect={() => { if (!commitDraft()) return false; timing.current = true; return true; }}
         onSelect={selectIds} onEndSelect={() => { timing.current = false; }}
@@ -689,17 +725,18 @@ export function App() {
       <header><h2 id="dialog-title">{{ new: '新建编辑工程', replace: '整体替换工作字幕', open: '打开工程', help: '使用帮助', 'save-as': '工程另存为', relocate: '重新定位同一原片', 'new-media': '用新视频建立工程' }[dialog]}</h2>
         <button disabled={busy} aria-label="关闭对话框" onClick={() => { setDialog(null); if (dialog !== 'help') session.resumeAutosave(); }}>×</button></header>
       {error && <p role="alert" className="error">{error}</p>}
+      {picking && <p role="status" className="hint">请在系统文件选择窗口中选择文件或取消。如果窗口在后台，请切换到该窗口。</p>}
       {(dialog === 'save-as' || dialog === 'relocate' || dialog === 'new-media') && <>
         <p className="hint">{dialog === 'relocate' ? '仅接受内容身份完全相同的原片。移动、重命名可恢复，重新编码或换片请新建工程。' : '复制完整工作字幕、人物配置与来源关系，产生独立工程。原视频按路径引用；已有导出与缓存留在原工程。'}</p>
         {dialog !== 'relocate' && <label>副本工程名称<input disabled={busy} value={name} onChange={event => setName(event.target.value)} /></label>}
-        {dialog !== 'save-as' && <label>新视频绝对路径<input disabled={busy} value={mediaPath} onChange={event => setMediaPath(event.target.value)} /></label>}
+        {dialog !== 'save-as' && <FilePathField label="新视频绝对路径" button="选择视频…" disabled={busy} value={mediaPath} onChange={setMediaPath} onPick={() => void chooseFile('media')} />}
         {dialog === 'new-media' && <p className="hint">带入当前字幕副本，按新原片时长验证全部字幕。越界失败不会修改当前工程。</p>}
         <button disabled={busy || (dialog !== 'relocate' && !name.trim()) || (dialog !== 'save-as' && !mediaPath.trim())} onClick={() => void projectAction()}>{dialog === 'relocate' ? '验证并重新定位' : '创建独立副本'}</button>
       </>}
       {(dialog === 'new' || dialog === 'replace') && <>
         <p className="muted">视频和字幕保留在原路径，校对结果保存为独立工程。原片不兼容时可在资源区生成保持原片时间的预览副本。</p>
         {dialog === 'new' && <label>工程名称<input value={name} disabled={busy} onChange={event => setName(event.target.value)} /></label>}
-        <label>视频绝对路径<input value={mediaPath} disabled={busy || dialog === 'replace'} placeholder="D:\视频\短片.mp4" onChange={event => { setMediaPath(event.target.value); setPreview(null); }} /></label>
+        <FilePathField label="视频绝对路径" button="选择视频…" value={mediaPath} disabled={busy || dialog === 'replace'} onChange={value => { setMediaPath(value); setPreview(null); }} onPick={() => void chooseFile('media')} />
         <label>导入格式<select value={importFormat} disabled={busy} onChange={event => { setImportFormat(event.target.value as ImportFormat); setPreview(null); }}>
           <option value="plain-srt">普通 SRT · 全文保留，未标注 ?</option>
           <option value="speaker-srt">本项目 SRT · [Speaker] 与已知元标签</option>
@@ -707,7 +744,7 @@ export function App() {
           <option value="normalized-jsonl">本项目 normalized JSONL</option>
           <option value="moss-json">MOSS JSON · 五字段数组</option>
         </select></label>
-        <label>字幕绝对路径<input value={subtitlePath} disabled={busy} placeholder="D:\字幕\来源.srt" onChange={event => { setSubtitlePath(event.target.value); setPreview(null); }} /></label>
+        <FilePathField label="字幕绝对路径" button="选择字幕…" value={subtitlePath} disabled={busy} onChange={value => { setSubtitlePath(value); setPreview(null); }} onPick={() => void chooseFile('subtitle')} />
         <p className="hint">UTF-8 字幕。普通 SRT 不猜测人物；项目 SRT 仅解析前置 MULTI / MERGED，未知花括号起保留正文；MOSS SRT 按首个 ASCII 冒号加空格解析。JSON 时间为秒。替换可一步撤销。</p>
         <button disabled={busy || !mediaPath || !subtitlePath} onClick={() => void importAction(false)}>{busy ? '处理中…' : '解析预览'}</button>
         {preview && <div className="import-preview"><h3>预览 · {preview.entries.length} 条</h3>

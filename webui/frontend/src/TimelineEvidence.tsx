@@ -3,8 +3,8 @@ import { api, timeLabel } from './api';
 
 interface Waveform { duration_ms: number; has_audio: boolean; peaks: { start_ms: number; end_ms: number; peak: number }[] }
 interface Thumbnails { interval_ms: number; frames: { time_ms: number; url: string }[] }
-export const TimelineEvidence = memo(function TimelineEvidence({ waveform, thumbnails, duration, width, scrollLeft, viewportWidth }: {
-  waveform: string | null; thumbnails: string | null; duration: number; width: number; scrollLeft: number; viewportWidth: number;
+export const TimelineEvidence = memo(function TimelineEvidence({ waveform, thumbnails, duration, width, scrollLeft, viewportWidth, height, kind }: {
+  waveform: string | null; thumbnails: string | null; duration: number; width: number; scrollLeft: number; viewportWidth: number; height: number; kind: 'video' | 'waveform';
 }) {
   const [wave, setWave] = useState<{ url: string; value: Waveform } | null>(null);
   const [images, setImages] = useState<{ url: string; value: Thumbnails } | null>(null);
@@ -31,7 +31,8 @@ export const TimelineEvidence = memo(function TimelineEvidence({ waveform, thumb
   const waveData = wave?.url === waveform ? wave.value : null;
   const imageData = images?.url === thumbnails ? images.value : null;
   // Only decode images needed for this viewport. Sampling times never depend on CSS widths.
-  const stride = imageData ? Math.max(1, Math.ceil(100 / (imageData.interval_ms / duration * width))) : 1;
+  const tileWidth = height * 16 / 9;
+  const stride = imageData ? Math.max(1, Math.ceil(tileWidth / (imageData.interval_ms / duration * width))) : 1;
   const shown = imageData?.frames.filter((frame, index) => index % stride === 0 &&
     frame.time_ms + imageData.interval_ms * stride > start && frame.time_ms < end) ?? [];
   const first = waveData?.peaks[0]?.start_ms ?? start;
@@ -39,13 +40,13 @@ export const TimelineEvidence = memo(function TimelineEvidence({ waveform, thumb
   return <div className="timeline-evidence" aria-label="原片时间媒体证据">
     {shown.map(frame => <img key={frame.time_ms} src={frame.url} data-time-ms={frame.time_ms} alt={`原片缩略图 ${timeLabel(frame.time_ms)}`}
       title={`采样于原片 ${timeLabel(frame.time_ms)}`} draggable={false}
-      style={{ left: frame.time_ms / duration * width, width: Math.min(160, imageData!.interval_ms * stride / duration * width, width - frame.time_ms / duration * width) }} />)}
-    {waveData?.has_audio && <svg role="img" aria-label="音频波形" width={Math.min(viewportWidth, width - svgLeft)} height="32" style={{ left: svgLeft }}>
+      style={{ left: frame.time_ms / duration * width, width: Math.min(tileWidth, imageData!.interval_ms * stride / duration * width, width - frame.time_ms / duration * width) }} />)}
+    {waveData?.has_audio && <svg role="img" aria-label="音频波形" width={Math.min(viewportWidth, width - svgLeft)} height={height - 4} style={{ left: svgLeft }}>
       {waveData.peaks.map(p => <rect key={p.start_ms} data-time-ms={p.start_ms} data-peak={p.peak}
-        x={p.start_ms / duration * width - svgLeft} y={16 - p.peak * 15} width={Math.max(.5, (p.end_ms - p.start_ms) / duration * width)} height={Math.max(1, p.peak * 30)} />)}
+        x={p.start_ms / duration * width - svgLeft} y={(height - 4) / 2 - p.peak * (height - 8) / 2} width={Math.max(.5, (p.end_ms - p.start_ms) / duration * width)} height={Math.max(1, p.peak * (height - 8))} />)}
     </svg>}
     {waveData && !waveData.has_audio && <span className="evidence-message" style={{ left: scrollLeft + 8 }}>无音轨 · 空波形</span>}
     {(waveError || imageError) && <span role="status" className="evidence-message" style={{ left: scrollLeft + 8 }}>时间轴资源加载失败，可刷新波形/缩略图状态重试：{waveError || imageError}</span>}
-    {!waveform && !thumbnails && <span className="evidence-message" style={{ left: scrollLeft + 8 }}>原片 · {timeLabel(duration)} · 锁定 · 可在资源区生成波形和缩略图</span>}
+    {!waveform && !thumbnails && <span className="evidence-message" style={{ left: scrollLeft + 8 }}>{kind === 'waveform' ? '音频波形未生成 · 点击上方“生成波形”' : '原片 · 缩略图未生成或已隐藏 · 点击上方“生成缩略图”'}</span>}
   </div>;
 });

@@ -88,6 +88,12 @@ class ImportRequest(Model):
     preview_fingerprint: str | None = None
 
 
+class FilePickerRequest(Model):
+    kind: Literal['media', 'subtitle']
+    format: Literal['plain-srt', 'speaker-srt', 'moss-srt', 'normalized-jsonl', 'moss-json'] = 'plain-srt'
+    current_path: str = Field(default='', max_length=32768)
+
+
 class CreateRequest(ImportRequest):
     name: str
 

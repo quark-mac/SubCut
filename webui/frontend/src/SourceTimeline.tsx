@@ -1,7 +1,9 @@
-import { useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { ordered, timeLabel, type Entry, type Project } from './api';
 import { offsetSpeakers } from './selectionEditing';
 import { TimelineEvidence } from './TimelineEvidence';
+import { WorkspaceSplitter } from './WorkspaceSplitter';
+import { ScrubPreview } from './ScrubPreview';
 
 interface Props {
   project: Project;
@@ -11,6 +13,14 @@ interface Props {
   currentTrack: string;
   waveform: string | null;
   thumbnails: string | null;
+  thumbnailVersion: string;
+  speakers: Project['speakers'];
+  onSort: () => void;
+  onStoredOrder: () => void;
+  onGenerateThumbnails: () => void;
+  onGenerateWaveform: () => void;
+  generatingThumbnails: boolean;
+  generatingWaveform: boolean;
   onTrack: (id: string) => void;
   onChoose: (entry: Entry, modifiers?: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) => void;
   onSeek: (milliseconds: number) => void;
@@ -41,10 +51,16 @@ interface EditGesture {
   targets: number[];
 }
 
-export function SourceTimeline({ project, selected, position, busy, currentTrack, waveform, thumbnails, onTrack, onChoose, onListen, onSeek, onBeginEdit, onPreview, onCommitEdit, onBeginSelect, onSelect, onEndSelect }: Props) {
+export function SourceTimeline({ project, selected, position, busy, currentTrack, waveform, thumbnails, thumbnailVersion, speakers, onSort, onStoredOrder, onGenerateThumbnails, onGenerateWaveform, generatingThumbnails, generatingWaveform, onTrack, onChoose, onListen, onSeek, onBeginEdit, onPreview, onCommitEdit, onBeginSelect, onSelect, onEndSelect }: Props) {
   const viewport = useRef<HTMLDivElement>(null);
   const ruler = useRef<HTMLDivElement>(null);
-  const gesture = useRef<{ pointer: number; start: number } | null>(null);
+  const gesture = useRef<{ pointer: number; start: number; scroll: number; clientX: number } | null>(null);
+  const [scrubbing, setScrubbing] = useState(false);
+  const [showOverview, setShowOverview] = useState(true);
+  const [showThumbnails, setShowThumbnails] = useState(true);
+  const [showWaveform, setShowWaveform] = useState(false);
+  const [follow, setFollow] = useState(true);
+  const [heights, setHeights] = useState<Record<string, number>>({});
   const edit = useRef<EditGesture | null>(null);
   const box = useRef<{ pointer: number; x: number; y: number; clientX: number; clientY: number; original: Set<string>; additive: boolean } | null>(null);
   const [marquee, setMarquee] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
@@ -55,7 +71,7 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
   const [invalidTrack, setInvalidTrack] = useState(false);
   const suppressClick = useRef(false);
   const clickedEntry = useRef<string | null>(null);
-  const zoomAnchor = useRef<number | null>(null);
+  const zoomAnchor = useRef<{ time: number; x: number } | null>(null);
   const [fitWidth, setFitWidth] = useState(1000);
   const [viewportHeight, setViewportHeight] = useState(300);
   const [scrollTop, setScrollTop] = useState(0);
@@ -71,12 +87,22 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(element);
-    return () => observer.disconnect();
+    // Edge can interpret a horizontal wheel at the left boundary as browser
+    // Back even with CSS overscroll containment. Own horizontal timeline pan.
+    const pan = (event: WheelEvent) => {
+      if (event.ctrlKey || (!event.deltaX && !event.shiftKey)) return;
+      event.preventDefault();
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? element.clientWidth : 1;
+      element.scrollLeft += (event.deltaX || event.deltaY) * unit;
+      if (event.deltaX && !event.shiftKey) element.scrollTop += event.deltaY * (event.deltaMode === 2 ? element.clientHeight : unit);
+    };
+    element.addEventListener('wheel', pan, { passive: false });
+    return () => { observer.disconnect(); element.removeEventListener('wheel', pan); };
   }, []);
 
   useLayoutEffect(() => {
     if (zoomAnchor.current !== null) {
-      viewport.current!.scrollLeft = zoomAnchor.current * width - fitWidth / 2;
+      viewport.current!.scrollLeft = zoomAnchor.current.time * width - zoomAnchor.current.x;
       zoomAnchor.current = null;
     }
   }, [width, fitWidth]);
@@ -84,17 +110,54 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
   function changeZoom(next: number) {
     if (next === zoom) return;
     // Keep the visible center at the same source time; fitting resets to the source start.
-    zoomAnchor.current = next === 0 ? 0 : (viewport.current!.scrollLeft + fitWidth / 2) / width;
-    setZoom(next);
+    const x = position / duration * width - viewport.current!.scrollLeft;
+    zoomAnchor.current = next === 0 ? { time: 0, x: 0 } : x >= 0 && x <= fitWidth
+      ? { time: position / duration, x } : { time: position / duration, x: fitWidth / 2 };
+    setZoom(Math.max(0, Math.min(maxZoom, next)));
   }
+
+  function focusThirtySeconds() {
+    const next = Math.max(0, Math.min(maxZoom, Math.log2(duration / 30000)));
+    if (next === zoom) viewport.current!.scrollLeft = Math.max(0, position / duration * width - fitWidth / 2);
+    else {
+      zoomAnchor.current = { time: position / duration, x: fitWidth / 2 };
+      setZoom(next);
+    }
+  }
+
+  useLayoutEffect(() => {
+    if (!follow || gesture.current || edit.current || box.current) return;
+    const element = viewport.current!;
+    const x = position / duration * width;
+    if (x < element.scrollLeft + 16 || x > element.scrollLeft + fitWidth - 16) element.scrollLeft = Math.max(0, x - fitWidth * .25);
+  }, [position, follow, fitWidth]);
+
+  useEffect(() => {
+    if (!scrubbing) return;
+    let frame = 0, previous = 0;
+    const advance = (now: number) => {
+      const current = gesture.current, element = viewport.current;
+      if (!current || !element) return;
+      const rect = element.getBoundingClientRect(), left = rect.left + labelWidth, right = rect.left + element.clientWidth;
+      const edge = current.clientX < left + 36 ? -Math.min(1, (left + 36 - current.clientX) / 36)
+        : current.clientX > right - 36 ? Math.min(1, (current.clientX - right + 36) / 36) : 0;
+      if (edge) {
+        element.scrollLeft += edge * Math.min(32, previous ? now - previous : 16) * .8;
+        seekAt(current.clientX);
+      }
+      previous = now; frame = requestAnimationFrame(advance);
+    };
+    frame = requestAnimationFrame(advance);
+    return () => cancelAnimationFrame(frame);
+  }, [scrubbing, width, duration]);
 
   // Preview overlays never relayout rows under the pointer; commit recalculates overlap lanes.
   const tracks = useMemo(() => {
     const entries = ordered(project.entries);
-    const speakers = [...project.speakers].sort((a, b) => a.order - b.order);
     return [
       { id: 'video', label: '🔒 视频轨', entries: [] as Entry[], color: undefined },
-      { id: 'overview', label: '字幕总览', entries, color: undefined },
+      ...(showWaveform ? [{ id: 'waveform', label: '音频波形', entries: [] as Entry[], color: undefined }] : []),
+      ...(showOverview ? [{ id: 'overview', label: '字幕总览', entries, color: undefined }] : []),
       ...speakers.map(s => ({ id: s.id, label: speakerLabel(s.label), color: s.color, entries: entries.filter(e => e.speaker_id === s.id) })),
     ].map(track => {
       const ends: number[] = [];
@@ -107,9 +170,11 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
         ends[lane] = end;
         return { entry, lane, left: start, width: end - start };
       });
-      return { ...track, blocks, height: track.id === 'video' ? 90 : Math.max(46, ends.length * 35 + 8) };
+      const minimum = track.id === 'video' || track.id === 'waveform' ? 48 : Math.max(46, ends.length * 35 + 8);
+      const height = Math.max(minimum, heights[track.id] ?? (track.id === 'video' ? 80 : track.id === 'waveform' ? 100 : minimum));
+      return { ...track, blocks, minimum, height, laneHeight: (height - 8) / Math.max(1, ends.length) };
     });
-  }, [project.entries, project.speakers, duration, width]);
+  }, [project.entries, speakers, duration, width, showWaveform, showOverview, heights]);
 
   const colors = useMemo(() => new Map(project.speakers.map(s => [s.id, s.color])), [project.speakers]);
   const tickStep = useMemo(() => {
@@ -133,9 +198,9 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
         const entry = previewById.get(block.entry.id) ?? block.entry;
         const left = Math.min(entry.start_ms / duration * width, width - 4);
         const right = Math.max(entry.end_ms / duration * width, left + 4);
-        const y = trackTop + block.lane * 35 + 4;
+        const y = trackTop + block.lane * track.laneHeight + 4;
         return left <= scrollLeft + fitWidth + 100 && right >= scrollLeft - 100 &&
-          y <= scrollTop + viewportHeight + 35 && y + 28 >= scrollTop - 35;
+          y <= scrollTop + viewportHeight + track.laneHeight && y + track.laneHeight - 7 >= scrollTop - track.laneHeight;
       });
       return { ...track, blocks };
     });
@@ -144,16 +209,24 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
   const lastTick = Math.min(Math.floor(duration / tickStep), Math.ceil((scrollLeft + fitWidth) / width * duration / tickStep));
   const ticks = Array.from({ length: Math.max(0, lastTick - firstTick + 1) }, (_, i) => (firstTick + i) * tickStep);
 
+  function seekAt(clientX: number) {
+    const bounds = viewport.current!.getBoundingClientRect();
+    const rect = ruler.current!.getBoundingClientRect();
+    const x = Math.max(bounds.left + labelWidth, Math.min(bounds.left + viewport.current!.clientWidth, clientX));
+    onSeek(Math.max(0, Math.min(duration, Math.round((x - rect.left) / rect.width * duration))));
+  }
+
   function seekPointer(event: PointerEvent<HTMLDivElement>) {
-    const rect = event.currentTarget.getBoundingClientRect();
-    onSeek(Math.max(0, Math.min(duration, Math.round((event.clientX - rect.left) / rect.width * duration))));
+    if (gesture.current) gesture.current.clientX = event.clientX;
+    seekAt(event.clientX);
   }
 
   function finish(cancel: boolean) {
     const current = gesture.current;
     if (!current) return;
     gesture.current = null;
-    if (cancel) onSeek(current.start);
+    setScrubbing(false);
+    if (cancel) { onSeek(current.start); viewport.current!.scrollLeft = current.scroll; }
     if (ruler.current?.hasPointerCapture(current.pointer)) ruler.current.releasePointerCapture(current.pointer);
   }
 
@@ -220,7 +293,7 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
           speaker_id: current.entries.length === 1 ? speaker?.id ?? e.speaker_id : e.speaker_id });
     let rejected = false;
     if (current.mode === 'move' && speaker && current.entries.length > 1) {
-      const tracks = [...project.speakers].sort((a, b) => a.order - b.order);
+      const tracks = speakers;
       const offset = tracks.findIndex(s => s.id === speaker.id) - tracks.findIndex(s => s.id === current.entry.speaker_id);
       const shifted = offsetSpeakers(current.next, tracks, offset);
       rejected = !shifted;
@@ -277,8 +350,8 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
       let trackTop = 30;
       for (const track of tracks) {
         for (const block of track.blocks) {
-          const x = labelWidth + block.left, y = trackTop + 1 + block.lane * 35 + 4;
-          if (x <= right && x + block.width >= left && y <= bottom && y + 28 >= top) ids.add(block.entry.id);
+          const x = labelWidth + block.left, y = trackTop + 1 + block.lane * track.laneHeight + 4;
+          if (x <= right && x + block.width >= left && y <= bottom && y + track.laneHeight - 7 >= top) ids.add(block.entry.id);
         }
         trackTop += track.height + 1;
       }
@@ -299,10 +372,21 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
     <div className="timeline-navigation">
       <button aria-pressed={snapping} disabled={!!preview} onClick={() => setSnapping(!snapping)}
         title="吸附到播放头或其他字幕边界（8 像素内）">吸附</button>
-      <label>缩放 <input aria-label="时间轴缩放" type="range" min="0" max={maxZoom} step="1" value={zoom} disabled={!!preview}
+      <button aria-label="缩小时间轴" disabled={!!preview || zoom <= 0} onClick={() => changeZoom(zoom - .125)}>−</button>
+      <label>缩放 <input aria-label="时间轴缩放" type="range" min="0" max={maxZoom} step="0.125" value={zoom} disabled={!!preview}
         onChange={event => changeZoom(Number(event.target.value))} /></label>
-      <output aria-label="缩放倍率">{2 ** zoom}×</output>
+      <button aria-label="放大时间轴" disabled={!!preview || zoom >= maxZoom} onClick={() => changeZoom(zoom + .125)}>＋</button>
+      <output aria-label="缩放倍率">{Number((2 ** zoom).toFixed(2))}×</output>
       <button onClick={() => changeZoom(0)} disabled={!!preview}>适合全片</button>
+      <button onClick={focusThirtySeconds} disabled={!!preview} title="以播放头为中心查看约 30 秒，适合长片逐句校对">30 秒视窗</button>
+      <label><input type="checkbox" checked={follow} onChange={e => setFollow(e.target.checked)} />跟随播放头</label>
+      <label><input type="checkbox" checked={showOverview} disabled={!!preview || busy} onChange={e => setShowOverview(e.target.checked)} />字幕总览</label>
+      <label><input type="checkbox" checked={showThumbnails} onChange={e => setShowThumbnails(e.target.checked)} />视频缩略图</label>
+      <label><input type="checkbox" checked={showWaveform} disabled={!!preview || busy} onChange={e => setShowWaveform(e.target.checked)} />音频波形</label>
+      <button disabled={busy || !!preview} onClick={onSort}>按字幕数排序</button>
+      <button disabled={busy || !!preview} onClick={onStoredOrder} title="恢复工程保存的人物顺序">工程轨序</button>
+      {showThumbnails && !thumbnails && <button disabled={busy || generatingThumbnails} onClick={onGenerateThumbnails}>{generatingThumbnails ? '缩略图生成中…' : '生成缩略图'}</button>}
+      {showWaveform && !waveform && <button disabled={busy || generatingWaveform} onClick={onGenerateWaveform}>{generatingWaveform ? '波形生成中…' : '生成波形'}</button>}
       <span>{invalidTrack ? '轨道越界 · 整次移动不执行' : preview ? `预览 ${preview.length} 条 · ${timeLabel(preview[0].start_ms)} → ${timeLabel(preview[0].end_ms)}${snapTime !== null ? ' · 已吸附' : ''} · 松开提交 / Esc 取消` : '拖动字幕或两端调整 · 空白框选 · Ctrl/Shift 多选 · 拖动刻度定位'}</span>
     </div>
     <div className="tracks" ref={viewport} role="region" aria-label="时间轴轨道滚动区" tabIndex={0}
@@ -337,7 +421,8 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
             onPointerDown={event => {
               if (busy || event.button !== 0 || gesture.current) return;
               event.preventDefault(); event.currentTarget.focus({ preventScroll: true });
-              gesture.current = { pointer: event.pointerId, start: position };
+               gesture.current = { pointer: event.pointerId, start: position, scroll: viewport.current!.scrollLeft, clientX: event.clientX };
+               setScrubbing(true);
               event.currentTarget.setPointerCapture(event.pointerId); seekPointer(event);
             }}
             onPointerMove={event => { if (gesture.current?.pointer === event.pointerId) seekPointer(event); }}
@@ -357,9 +442,9 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
           <button className="track-label" style={{ color: track.color }} title={track.label} aria-label={`选择轨道 ${track.label}`}
             aria-pressed={currentTrack === track.id} disabled={busy || !!preview}
             onClick={() => onTrack(project.speakers.some(s => s.id === track.id) ? track.id : '')}>{track.label}</button>
-          <div className={`track-body ${track.id === 'video' ? 'locked' : ''}`} style={{ height: track.height }}>
-            {track.id === 'video' && <TimelineEvidence waveform={waveform} thumbnails={thumbnails}
-              duration={duration} width={width} scrollLeft={scrollLeft} viewportWidth={fitWidth} />}
+          <div className={`track-body ${track.id === 'video' || track.id === 'waveform' ? 'locked' : ''}`} style={{ height: track.height }}>
+            {(track.id === 'video' || track.id === 'waveform') && <TimelineEvidence waveform={track.id === 'waveform' ? waveform : null} thumbnails={track.id === 'video' && showThumbnails ? thumbnails : null}
+              duration={duration} width={width} scrollLeft={scrollLeft} viewportWidth={fitWidth} height={track.height} kind={track.id} />}
             {track.blocks.map(({ entry: original, lane, left, width: blockWidth }) => {
               const entry = previewById.get(original.id) ?? original;
               const previewLeft = Math.min(entry.start_ms / duration * width, width - 4);
@@ -370,7 +455,7 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
               onPointerDown={event => beginEdit(event, entry)} onClick={event => onChoose(entry, event)}
               style={{ left: entry === original ? left : previewLeft,
                 width: displayWidth,
-                top: lane * 35 + 4, backgroundColor: colors.get(entry.speaker_id) }}>
+                top: lane * track.laneHeight + 4, height: track.laneHeight - 7, backgroundColor: colors.get(entry.speaker_id) }}>
                 <span>{entry.text}</span>
                 <span className="resize-handle start" data-edge="start" aria-label="开始边界" title="拖动开始边界" />
                 <span className="resize-handle end" data-edge="end" aria-label="结束边界" title="拖动结束边界" />
@@ -379,9 +464,19 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
             <div className="playhead" style={{ left: `${position / duration * 100}%` }} />
             {snapTime !== null && <div className="snap-guide" style={{ left: `${snapTime / duration * 100}%` }} />}
           </div>
+          <div className="track-height-handle" style={{ left: scrollLeft }} title="拖动调整此轨高度 · Esc 取消">
+            <WorkspaceSplitter label={`调整轨道高度 ${track.label}`} horizontal onBegin={() => {
+              const original = heights;
+              return { move: delta => { if (!busy && !edit.current && !box.current && !gesture.current) setHeights({ ...original, [track.id]: Math.max(track.minimum, Math.min(Math.max(320, track.minimum * 3), track.height + delta)) }); }, cancel: () => setHeights(original) };
+            }} />
+          </div>
         </div>)}
         {marquee && <div className="selection-marquee" aria-label="框选范围" style={marquee} />}
       </div>
     </div>
+    <ScrubPreview url={thumbnails} version={thumbnailVersion} position={position} anchor={scrubbing && showThumbnails && viewport.current && ruler.current ? {
+      x: viewport.current.getBoundingClientRect().left + labelWidth + position / duration * width - scrollLeft,
+      y: ruler.current.getBoundingClientRect().top,
+    } : null} />
   </>;
 }

@@ -7,6 +7,8 @@ async function openProject(page: Page, name: string) {
   await page.getByRole('button', { name: '文件', exact: true }).click();
   await page.getByRole('button', { name: '打开工程…' }).click();
   await page.getByRole('button', { name, exact: true }).click();
+  // These tests exercise explicit saved-order editing. Count-sorted defaults have separate coverage.
+  await page.getByRole('button', { name: '工程轨序', exact: true }).click();
 }
 
 async function fixture(page: Page) {
@@ -190,7 +192,7 @@ test('缩放和双向滚动后播放头仍按原片坐标更新实际帧，Esc �
   const firstFrame = await frame();
   const zoom = page.getByLabel('时间轴缩放', { exact: true });
   await zoom.focus();
-  await zoom.press('ArrowRight'); // 2x fit, kept separate from entry navigation.
+  await zoom.fill('1'); // 2x fit; the slider now also supports eighth-step increments.
   await expect(page.getByLabel('缩放倍率')).toHaveText('2×');
   const viewport = page.getByRole('region', { name: '时间轴轨道滚动区' });
   await viewport.hover();

@@ -55,7 +55,11 @@ class ProjectHTTPTests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.client.close()
-        cls.server.terminate()
+        if sys.platform == 'win32':
+            # An HTTP timeout can finish before its native picker child exits.
+            subprocess.run(['taskkill', '/PID', str(cls.server.pid), '/T', '/F'], capture_output=True, timeout=10)
+        else:
+            cls.server.terminate()
         cls.server.wait(timeout=10)
         cls.log.close()
         cls.temp.cleanup()
@@ -67,6 +71,88 @@ class ProjectHTTPTests(unittest.TestCase):
         })
         self.assertEqual(response.status_code, 201, response.text)
         return response.json()
+
+    @unittest.skipUnless(sys.platform == 'win32', 'Windows native file dialog')
+    def test_native_picker_select_cancel_and_server_remains_responsive(self):
+        from webui.tests.native_dialog import respond_to_dialog
+
+        subtitle = self.root / "选择 中文 ' 空格.srt"
+        subtitle.write_text(SRT, encoding='utf-8')
+        before = self.client.get('/api/projects').json()
+        def while_open():
+            self.assertEqual(self.client.get('/api/health').status_code, 200)
+            duplicate = self.client.post('/api/files/pick', json={'kind': 'subtitle'})
+            self.assertEqual(duplicate.status_code, 409, duplicate.text)
+            self.assertEqual(duplicate.json()['error']['code'], 'file_picker_busy')
+
+        with ThreadPoolExecutor() as pool:
+            for kind, selected in [('media', str(self.video)), ('subtitle', str(subtitle)), ('subtitle', None)]:
+                pending = pool.submit(self.client.post, '/api/files/pick', json={
+                    'kind': kind, 'current_path': str(subtitle), 'format': 'plain-srt',
+                }, headers={'Origin': str(self.client.base_url).rstrip('/')}, timeout=30)
+                try:
+                    respond_to_dialog(self.server.pid, '字幕校对 WebUI · ' + ('选择视频' if kind == 'media' else '选择字幕'), selected, on_open=while_open)
+                    response = pending.result(timeout=20)
+                    self.assertEqual(response.status_code, 200, response.text)
+                    self.assertEqual(response.json(), {'path': selected})
+                finally:
+                    respond_to_dialog(self.server.pid, '字幕校对 WebUI · ' + ('选择视频' if kind == 'media' else '选择字幕'), None, timeout=1, required=False)
+        self.assertEqual(self.client.get('/api/projects').json(), before)
+
+    def test_picker_rejects_invalid_kind_and_foreign_origin(self):
+        response = self.client.post('/api/files/pick', json={'kind': 'folder'})
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.json()['error']['field'], 'kind')
+        response = self.client.post('/api/files/pick', json={'kind': 'media'}, headers={'Origin': 'https://example.com'})
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json()['error']['code'], 'file_picker_origin')
+
+    @unittest.skipUnless(sys.platform == 'win32', 'Windows native file dialog')
+    def test_native_picker_through_real_vite_proxy(self):
+        from webui.tests.native_dialog import respond_to_dialog
+
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1', 0))
+            port = sock.getsockname()[1]
+        frontend = Path(__file__).resolve().parents[1] / 'frontend'
+        # Load the checked-in Vite config. Only retarget the test server/port;
+        # the production config's Host forwarding behavior must remain intact.
+        code = "const target = " + json.dumps(str(self.client.base_url)) + "; const port = " + str(port) + ";" + """
+            import {createServer, loadConfigFromFile} from 'vite';
+            const {config} = await loadConfigFromFile({command: 'serve', mode: 'development'});
+            const proxy = config.server.proxy['/api'];
+            config.server.proxy['/api'] = typeof proxy === 'string' ? target : {...proxy, target};
+            const server = await createServer({...config, configFile: false,
+                server: {...config.server, host: '127.0.0.1', port, strictPort: true}});
+            await server.listen();
+        """
+        with (self.root / 'vite.log').open('w', encoding='utf-8') as log:
+            vite = subprocess.Popen(['node', '--input-type=module', '-e', code], cwd=frontend, stdout=log, stderr=subprocess.STDOUT)
+            try:
+                origin = f'http://127.0.0.1:{port}'
+                with httpx.Client(base_url=origin, timeout=30) as client:
+                    for _ in range(100):
+                        try:
+                            if client.get('/api/health').is_success:
+                                break
+                        except httpx.TransportError:
+                            pass
+                        time.sleep(.1)
+                    else:
+                        self.fail('Vite did not start')
+                    with ThreadPoolExecutor() as pool:
+                        pending = pool.submit(client.post, '/api/files/pick', json={'kind': 'subtitle'},
+                                              headers={'Origin': origin, 'Sec-Fetch-Site': 'same-origin'})
+                        try:
+                            respond_to_dialog(self.server.pid, '字幕校对 WebUI · 选择字幕', None)
+                            response = pending.result(timeout=20)
+                            self.assertEqual(response.status_code, 200, response.text)
+                            self.assertEqual(response.json(), {'path': None})
+                        finally:
+                            respond_to_dialog(self.server.pid, '字幕校对 WebUI · 选择字幕', None, timeout=1, required=False)
+            finally:
+                vite.terminate()
+                vite.wait(timeout=10)
 
     def test_preview_create_and_reopen_preserve_plain_subtitles(self):
         preview = self.client.post("/api/imports/preview", json={
