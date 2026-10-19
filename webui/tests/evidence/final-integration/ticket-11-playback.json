@@ -1,0 +1,152 @@
+{
+  "browser": "155.0.4283.45",
+  "project": {
+    "format_version": 1,
+    "id": "b49281e4-93d4-45f3-9442-2472ce149b52",
+    "name": "兼容预览-1792129257639",
+    "revision": 1,
+    "media": {
+      "path": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\preview\\1792129257367\\markers-offset-5-silent-False.mkv",
+      "duration_ms": 9000,
+      "identity": "sha256:32d74dbfb66e722fa7a7135161ce9757e28ba8b833687b63c5496d923f64ede3",
+      "size_bytes": 946994
+    },
+    "subtitle_sources": [
+      {
+        "id": "2911966d-0a8b-4ffe-bea4-bee03f4d04b3",
+        "path": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\preview\\1792129257367\\markers.srt",
+        "format": "plain-srt"
+      }
+    ],
+    "entries": [
+      {
+        "id": "91898e21-e2fb-4f76-880e-a855daa8333e",
+        "start_ms": 200,
+        "end_ms": 1800,
+        "text": "红色 440Hz 开头",
+        "speaker_id": "b73e64bd-1790-43e8-88ea-43cee2263947",
+        "tags": [],
+        "sources": [
+          {
+            "subtitle_id": "2911966d-0a8b-4ffe-bea4-bee03f4d04b3",
+            "index": 1,
+            "source_entries": [],
+            "moss_id": null
+          }
+        ]
+      },
+      {
+        "id": "e49d2a8d-4c2a-4d0e-ab92-09de123dcf91",
+        "start_ms": 4200,
+        "end_ms": 5800,
+        "text": "绿色 880Hz 中部",
+        "speaker_id": "b73e64bd-1790-43e8-88ea-43cee2263947",
+        "tags": [],
+        "sources": [
+          {
+            "subtitle_id": "2911966d-0a8b-4ffe-bea4-bee03f4d04b3",
+            "index": 2,
+            "source_entries": [],
+            "moss_id": null
+          }
+        ]
+      },
+      {
+        "id": "53e93b54-641c-495c-82ae-c783c0518c3a",
+        "start_ms": 8100,
+        "end_ms": 8900,
+        "text": "蓝色 1320Hz 结尾",
+        "speaker_id": "b73e64bd-1790-43e8-88ea-43cee2263947",
+        "tags": [],
+        "sources": [
+          {
+            "subtitle_id": "2911966d-0a8b-4ffe-bea4-bee03f4d04b3",
+            "index": 3,
+            "source_entries": [],
+            "moss_id": null
+          }
+        ]
+      }
+    ],
+    "speakers": [
+      {
+        "id": "b73e64bd-1790-43e8-88ea-43cee2263947",
+        "label": "?",
+        "color": "#71a8cc",
+        "order": 0
+      },
+      {
+        "id": "c0ce344a-5501-4a08-89e2-db33c91c6bfa",
+        "label": "NONSPEECH",
+        "color": "#a695ce",
+        "order": 1
+      }
+    ],
+    "exports": [],
+    "media_artifacts": [
+      {
+        "id": "99237a35-f839-49c0-87d5-1553d2590618",
+        "kind": "preview",
+        "path": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\projects\\b49281e4-93d4-45f3-9442-2472ce149b52\\previews\\99237a35-f839-49c0-87d5-1553d2590618.mp4",
+        "media_identity": "sha256:32d74dbfb66e722fa7a7135161ce9757e28ba8b833687b63c5496d923f64ede3",
+        "parameters": {
+          "version": 1,
+          "quality": "standard",
+          "container": "mp4",
+          "video": "libx264",
+          "pixel_format": "yuv420p",
+          "audio": "aac",
+          "audio_bitrate": "160k",
+          "sample_rate": 48000,
+          "preset": "fast",
+          "crf": 23,
+          "max_width": 1920,
+          "timebase": "common-source-origin",
+          "gop": 50
+        },
+        "output_identity": "sha256:e28db040abf6636f90a5d19781358efea19932c9d07c9a9938c01dd3d8c68637"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "time": 1,
+      "pixel": [
+        254,
+        0,
+        0,
+        255
+      ],
+      "hz": 430,
+      "rms": 0.28279443342826854,
+      "duration": 9,
+      "url": "http://127.0.0.1:18761/api/projects/b49281e4-93d4-45f3-9442-2472ce149b52/previews/99237a35-f839-49c0-87d5-1553d2590618?identity=sha256:32d74dbfb66e722fa7a7135161ce9757e28ba8b833687b63c5496d923f64ede3&path=D%3A%5Cwhisper-diarization%5Cwebui%5Cfrontend%5C.test-workspace%5Cpreview%5C1792129257367%5Cmarkers-offset-5-silent-False.mkv"
+    },
+    {
+      "time": 5,
+      "pixel": [
+        0,
+        254,
+        0,
+        255
+      ],
+      "hz": 870,
+      "rms": 0.2827642215790115,
+      "duration": 9,
+      "url": "http://127.0.0.1:18761/api/projects/b49281e4-93d4-45f3-9442-2472ce149b52/previews/99237a35-f839-49c0-87d5-1553d2590618?identity=sha256:32d74dbfb66e722fa7a7135161ce9757e28ba8b833687b63c5496d923f64ede3&path=D%3A%5Cwhisper-diarization%5Cwebui%5Cfrontend%5C.test-workspace%5Cpreview%5C1792129257367%5Cmarkers-offset-5-silent-False.mkv"
+    },
+    {
+      "time": 8.5,
+      "pixel": [
+        0,
+        0,
+        255,
+        255
+      ],
+      "hz": 1320,
+      "rms": 0.2826902745270191,
+      "duration": 9,
+      "url": "http://127.0.0.1:18761/api/projects/b49281e4-93d4-45f3-9442-2472ce149b52/previews/99237a35-f839-49c0-87d5-1553d2590618?identity=sha256:32d74dbfb66e722fa7a7135161ce9757e28ba8b833687b63c5496d923f64ede3&path=D%3A%5Cwhisper-diarization%5Cwebui%5Cfrontend%5C.test-workspace%5Cpreview%5C1792129257367%5Cmarkers-offset-5-silent-False.mkv"
+    }
+  ]
+}

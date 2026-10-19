@@ -1,0 +1,62 @@
+{
+  "platform": "win32",
+  "verifiedAt": "2026-10-16T05:41:35.551Z",
+  "ignoredOSBoundaryRecords": [
+    "null",
+    "empty"
+  ],
+  "receipt": {
+    "project_id": "f2f99e47-9845-46ce-802e-f1b5ca1f7441",
+    "export_id": "92eac449-a6bb-47e9-a1d1-ad5d6eb84f9d",
+    "path": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\projects\\f2f99e47-9845-46ce-802e-f1b5ca1f7441\\exports",
+    "opened": true
+  },
+  "explorer": {
+    "path": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\projects\\f2f99e47-9845-46ce-802e-f1b5ca1f7441\\exports",
+    "hwnd": 399376
+  },
+  "exported": {
+    "id": "92eac449-a6bb-47e9-a1d1-ad5d6eb84f9d",
+    "filename": "字幕-speaker-srt-r1.srt",
+    "path": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\projects\\f2f99e47-9845-46ce-802e-f1b5ca1f7441\\exports\\92eac449-a6bb-47e9-a1d1-ad5d6eb84f9d.srt",
+    "format": "speaker-srt",
+    "keep_tags": false,
+    "revision": 1
+  },
+  "resources": {
+    "project_id": "f2f99e47-9845-46ce-802e-f1b5ca1f7441",
+    "revision": 2,
+    "media": {
+      "path": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\inputs\\资源原片-1792129292167.mp4",
+      "duration_ms": 8000,
+      "identity": "sha256:dd5ca2cb993d3cf6122a71dd1eee524634edad8ffa14472508ff85f780298025",
+      "size_bytes": 309077,
+      "status": "available"
+    },
+    "subtitle_sources": [
+      {
+        "id": "9b9e7fcf-1b14-473a-ad12-f5bb5e657290",
+        "path": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\inputs\\资源-1792129292166.jsonl",
+        "format": "normalized-jsonl",
+        "status": "available"
+      }
+    ],
+    "working_subtitles": {
+      "path": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\projects\\f2f99e47-9845-46ce-802e-f1b5ca1f7441\\project.json",
+      "count": 2,
+      "status": "available"
+    },
+    "media_artifacts": [],
+    "exports": [
+      {
+        "id": "92eac449-a6bb-47e9-a1d1-ad5d6eb84f9d",
+        "filename": "字幕-speaker-srt-r1.srt",
+        "path": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\projects\\f2f99e47-9845-46ce-802e-f1b5ca1f7441\\exports\\92eac449-a6bb-47e9-a1d1-ad5d6eb84f9d.srt",
+        "format": "speaker-srt",
+        "keep_tags": false,
+        "revision": 1,
+        "status": "available"
+      }
+    ]
+  }
+}

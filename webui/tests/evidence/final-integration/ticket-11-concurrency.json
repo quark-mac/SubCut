@@ -1,0 +1,57 @@
+{
+  "observed": [
+    {
+      "state": "running",
+      "progress": 0
+    },
+    {
+      "state": "running",
+      "progress": 0.07940740740740741
+    },
+    {
+      "state": "running",
+      "progress": 0.3579259259259259
+    },
+    {
+      "state": "running",
+      "progress": 0.5420247037037037
+    },
+    {
+      "state": "running",
+      "progress": 0.8233086481481482
+    },
+    {
+      "state": "succeeded",
+      "progress": 1
+    }
+  ],
+  "pendingProof": true,
+  "first": "57fc3051-d0e8-4130-acb2-1672bb6c38a5",
+  "second": "80d08545-e870-40f5-a2f8-7fbeb9af8f28",
+  "firstText": "任务完成时的新草稿",
+  "secondText": "另一工程独立草稿",
+  "artifacts": [
+    {
+      "id": "5795db43-7114-441a-8840-cf3c396198fd",
+      "kind": "preview",
+      "path": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\projects\\57fc3051-d0e8-4130-acb2-1672bb6c38a5\\previews\\5795db43-7114-441a-8840-cf3c396198fd.mp4",
+      "media_identity": "sha256:1ef65d8c41ef29d32591907afe7e6f5525fab87eadb35f4098146bd86b66ed09",
+      "parameters": {
+        "version": 1,
+        "quality": "standard",
+        "container": "mp4",
+        "video": "libx264",
+        "pixel_format": "yuv420p",
+        "audio": "aac",
+        "audio_bitrate": "160k",
+        "sample_rate": 48000,
+        "preset": "fast",
+        "crf": 23,
+        "max_width": 1920,
+        "timebase": "common-source-origin",
+        "gop": 50
+      },
+      "output_identity": "sha256:3f18d41a295d07b013ca86846e51b7b4cab44ba12b7557649fbf18253141551c"
+    }
+  ]
+}

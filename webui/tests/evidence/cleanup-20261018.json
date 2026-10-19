@@ -1,0 +1,1450 @@
+{
+  "date": "2026-10-18",
+  "state": "completed",
+  "baseline_commit": "d742d30c38de382e51996cb556f1a84efac6878e",
+  "retained_branch": "feat/webui",
+  "retired_worktrees": [
+    {
+      "branch": "feat/webui-01",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-01",
+      "head": "382c094e3ef9230b89bf76a65cf73f37e67c14a4",
+      "files": 1281,
+      "bytes": 71804098,
+      "unique_commits_vs_feat_webui": 0,
+      "tracked_changes": [],
+      "untracked": [
+        ".openchamber/screenshots/ticket-11-manual-preview-5s-2026-10-15T21-23-51-766.jpg"
+      ]
+    },
+    {
+      "branch": "feat/webui-02",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-02",
+      "head": "1f2d7eee1eef25a68362cf458b3f3e1eec81937b",
+      "files": 1306,
+      "bytes": 71889026,
+      "unique_commits_vs_feat_webui": 0,
+      "tracked_changes": [],
+      "untracked": []
+    },
+    {
+      "branch": "feat/webui-03",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-03",
+      "head": "7f48013b2226dce1c5c773bf1106d1db84f9ca48",
+      "files": 1338,
+      "bytes": 72249754,
+      "unique_commits_vs_feat_webui": 0,
+      "tracked_changes": [],
+      "untracked": []
+    },
+    {
+      "branch": "feat/webui-04",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-04",
+      "head": "58d8c36b8588c514361a62fdb9185a0804b296e9",
+      "files": 1368,
+      "bytes": 72743786,
+      "unique_commits_vs_feat_webui": 0,
+      "tracked_changes": [],
+      "untracked": []
+    },
+    {
+      "branch": "feat/webui-05",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-05",
+      "head": "c71b6bc857257077dcae223da7ddb55feb22ab36",
+      "files": 1373,
+      "bytes": 72970359,
+      "unique_commits_vs_feat_webui": 0,
+      "tracked_changes": [],
+      "untracked": []
+    },
+    {
+      "branch": "feat/webui-06",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-06",
+      "head": "a8aa2de747fd01d83bfe3828954395b72a584eca",
+      "files": 1395,
+      "bytes": 73222193,
+      "unique_commits_vs_feat_webui": 0,
+      "tracked_changes": [],
+      "untracked": []
+    },
+    {
+      "branch": "feat/webui-07",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-07",
+      "head": "fa02b8949d3867329acf231b6cc458b2c323d42c",
+      "files": 1425,
+      "bytes": 73505552,
+      "unique_commits_vs_feat_webui": 0,
+      "tracked_changes": [],
+      "untracked": []
+    },
+    {
+      "branch": "feat/webui-08",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-08",
+      "head": "91b73ce329687afd5766a8edc53ee8448a845294",
+      "files": 1409,
+      "bytes": 74085129,
+      "unique_commits_vs_feat_webui": 0,
+      "tracked_changes": [],
+      "untracked": []
+    },
+    {
+      "branch": "feat/webui-09",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-09",
+      "head": "b777a56f9328f10317ded0acc7813a93183d2eb1",
+      "files": 1466,
+      "bytes": 73985339,
+      "unique_commits_vs_feat_webui": 0,
+      "tracked_changes": [],
+      "untracked": []
+    },
+    {
+      "branch": "feat/webui-10",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-10",
+      "head": "6ba83ca670f315fe210f7a4fad36b0deb430df4e",
+      "files": 1596,
+      "bytes": 83968326,
+      "unique_commits_vs_feat_webui": 0,
+      "tracked_changes": [],
+      "untracked": []
+    },
+    {
+      "branch": "feat/webui-11",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-11",
+      "head": "4fdd4ae37c845a8acd400154eaaba195688316b4",
+      "files": 2038,
+      "bytes": 178928763,
+      "unique_commits_vs_feat_webui": 0,
+      "tracked_changes": [],
+      "untracked": []
+    },
+    {
+      "branch": "feat/webui-12",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-12",
+      "head": "ac96e1ea2503647352ffd25798dfd4172bec51c9",
+      "files": 2765,
+      "bytes": 719650905,
+      "unique_commits_vs_feat_webui": 0,
+      "tracked_changes": [],
+      "untracked": []
+    },
+    {
+      "branch": "feat/webui-13",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-13",
+      "head": "da6ad6704df23dc9110eb4b98c2023b15026b1a1",
+      "files": 4130,
+      "bytes": 686313509,
+      "unique_commits_vs_feat_webui": 0,
+      "tracked_changes": [],
+      "untracked": []
+    },
+    {
+      "branch": "feat/webui-review-fixes",
+      "path": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\review-fixes",
+      "head": "08a75301223c334bf49079b4493b482c3e343ccc",
+      "files": 2214,
+      "bytes": 456002180,
+      "unique_commits_vs_feat_webui": 0,
+      "tracked_changes": [],
+      "untracked": []
+    }
+  ],
+  "retained_existing_evidence": [
+    {
+      "path": "final-review/cleanup-environment.json",
+      "bytes": 838,
+      "sha256": "202aaea56ad5857db6a41e21183cda0d0b4e7972cc19daa66db273a59488184c"
+    },
+    {
+      "path": "final-review/cleanup-final.json",
+      "bytes": 421,
+      "sha256": "1162bff0cfd105bb2a9eb4663401ab8af62c303b41ea185079a35b42e4ef9e4f"
+    },
+    {
+      "path": "final-review/final-backend.log",
+      "bytes": 4679,
+      "sha256": "42c786a723ae9e2f01e5fc9607f64d75fff5687833379e1b3dd0296f8f944249"
+    },
+    {
+      "path": "final-review/final-browser-exit.json",
+      "bytes": 91,
+      "sha256": "f4f6e373c18425db6146ec4231c95f9fa371c13f9f4a3b1b008aee1640d87741"
+    },
+    {
+      "path": "final-review/final-browser-results/.last-run.json",
+      "bytes": 48,
+      "sha256": "d73c748bbd999a5ec3437ec97303e04ac1e89ce51cc1c336c1b9f179ffe82420"
+    },
+    {
+      "path": "final-review/final-browser.log",
+      "bytes": 15637,
+      "sha256": "a3e23c6ae8f1d80a43fccea0293b3d4dc26ebcba947ff3eacefe1620ae3ba872"
+    },
+    {
+      "path": "final-review/final-build.log",
+      "bytes": 618,
+      "sha256": "30ad524e535bad9e933d0cb179d043b561738fe153f8f1aa7044f6e45ef186b6"
+    },
+    {
+      "path": "final-review/final-commands.json",
+      "bytes": 2863,
+      "sha256": "908c69c4558df42e415fc721a2c554f443acbc3e5bf5e3c55f317fa45fcc5b7e"
+    },
+    {
+      "path": "final-review/final-compile.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-review/final-typecheck.log.zip",
+      "bytes": 196,
+      "sha256": "51761424bf58050133baf1cfcb247693cd5bd07d8f0dcbc87bfa03b8af758300"
+    },
+    {
+      "path": "final-review/new-scenarios-browser.json",
+      "bytes": 12397,
+      "sha256": "90d12f8b59c06b81103f3eb64af05086b6252ce5f6bf93d0c7db6bc74e42bf72"
+    },
+    {
+      "path": "final-review/preview-green.log",
+      "bytes": 1758,
+      "sha256": "62699712528b658c8fa719adfe25a52b74dc4cd9a2eabfa9dcb206d8d06b8fc3"
+    },
+    {
+      "path": "final-review/preview-red.log",
+      "bytes": 4090,
+      "sha256": "5a93e5523c85205ed6928173b4c04f13e7d953034cfa8af340546a0dc97b5eb1"
+    },
+    {
+      "path": "final-review/preview-refresh-save.json",
+      "bytes": 4388,
+      "sha256": "fe0e97d4ce338ba27bbd3c6fadf0d9c5f6690fd305581f4f88bcb563d39e5195"
+    },
+    {
+      "path": "final-review/relocated-source.json",
+      "bytes": 1122,
+      "sha256": "89e1e2f123c0fbb714fac941d8f31aeec2eb35478963d3878cc859f75338260b"
+    },
+    {
+      "path": "final-review/srt-green.log",
+      "bytes": 1638,
+      "sha256": "29c7cff5019f214ce2574eaada378ff84f14df05416f3402ee891f725c225b8b"
+    },
+    {
+      "path": "final-review/srt-red.log",
+      "bytes": 42584,
+      "sha256": "1b0c8a6680b64368457cabd1cea682e5bcc61d77d3bd6dd80b774d0a7394f70d"
+    },
+    {
+      "path": "final-review/targeted-browser.log",
+      "bytes": 10407,
+      "sha256": "f6048c38f0e2bfdb73cbfea15eca4fd9cf9c3432a63c8e16b23945c012799e18"
+    },
+    {
+      "path": "final-review/verification.json",
+      "bytes": 17819,
+      "sha256": "ca068dac2562d2ac6c0a5476a9e0feb6ad9c0e9feaf2487db02d668c30fe9f50"
+    },
+    {
+      "path": "ticket-11-quality-race-green.json",
+      "bytes": 8394,
+      "sha256": "66726a9840257c823eb71b4fe6890d1e1e2189b3ebd9fa3dba6f72c12b62b524"
+    },
+    {
+      "path": "ticket-11-quality-race-red.json",
+      "bytes": 7405,
+      "sha256": "fd2996274b14f4e13eb91f90cf9c248e1ae3b1ab263b2a29138dd010fbcc2b94"
+    },
+    {
+      "path": "ticket-12-progress-diagnosis.json",
+      "bytes": 11060,
+      "sha256": "12f3b985ec90231b1aabe4ea82bf33966ffe2479467366e538eb3eb4d4c41c49"
+    },
+    {
+      "path": "ticket-13-acceptance.md",
+      "bytes": 19729,
+      "sha256": "4736877e2390966b99cd64cc56011e42ceb888fd0ffc520448dd3a8f10dfa9ae"
+    },
+    {
+      "path": "ticket-13-integration-fix/acceptance.md",
+      "bytes": 10211,
+      "sha256": "dfb9a6244b87957f80dd9b38940d0eeffd6849501237513552c5523103e0a015"
+    },
+    {
+      "path": "ticket-13-integration-fix/browser-targeted-green.log",
+      "bytes": 1487,
+      "sha256": "46ca76fae8933509b9a419830c60d3fcbb3657aaea1441c1d4dca5361e9286fd"
+    },
+    {
+      "path": "ticket-13-integration-fix/explorer-launch-probe.json",
+      "bytes": 1334,
+      "sha256": "b0347bd0be98c56335323a2965e40102907c25de7fd62e479503e8581f0a6a0f"
+    },
+    {
+      "path": "ticket-13-integration-fix/original-integration-browser.log",
+      "bytes": 19241,
+      "sha256": "849b580f588d045424e8e779f86b16be658650f8d79f1cb691ce38ab9b01551e"
+    },
+    {
+      "path": "ticket-13-integration-fix/pointer-media-green.json",
+      "bytes": 639,
+      "sha256": "136c550a8a7bad9c61e3e8dca585e3f60ce95300f0e979abdf8871f1371da768"
+    },
+    {
+      "path": "ticket-13-integration-fix/pointer-media-red.json",
+      "bytes": 732,
+      "sha256": "a552d222b2fbd6f4a6bdf2b2d5ce16cc2163c9892d0b811b423ab9c6dcfa8a30"
+    },
+    {
+      "path": "ticket-13-integration-fix/python-cache-diagnostic.log",
+      "bytes": 3194,
+      "sha256": "ab827f306d40b36a5c5d39cce78b64261091f45325494c7ffccf7f7708857e36"
+    },
+    {
+      "path": "ticket-13-integration-fix/python-polling-red.log",
+      "bytes": 1929,
+      "sha256": "c1042508cef1092ad2b41ec5b27bfd8ee5798406453d0861656a81d2ea3d67d4"
+    },
+    {
+      "path": "ticket-13-integration-fix/python-targeted-green.log",
+      "bytes": 705,
+      "sha256": "b491c0e5b04c7163b7a8fd1378354a154210d5c34d79001984e85e774b1e0d97"
+    },
+    {
+      "path": "ticket-13-long-media.json",
+      "bytes": 3775,
+      "sha256": "82c64dbd39130820e34a78768fdf1bd54dc0fa981b4194743101a4024d58fa34"
+    },
+    {
+      "path": "ticket-13-verification.json",
+      "bytes": 16432,
+      "sha256": "a01003ee18bf57d81d044b741deca0a75ff3f57de63ca6fa7e656a6ee40289ea"
+    }
+  ],
+  "preserved_local_records": [
+    {
+      "source": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\final-review-integration-verified\\final-review-integration-backend.log",
+      "path": "final-integration/final-review-integration-backend.log",
+      "bytes": 4679,
+      "sha256": "88efc88ae292b0007494d8697be6c92a482e0d3df045ea002eb03b3c49c706d9"
+    },
+    {
+      "source": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\final-review-integration-verified\\final-review-integration-browser.log",
+      "path": "final-integration/final-review-integration-browser.log",
+      "bytes": 14705,
+      "sha256": "ae9c4207233f37aa718a19de74b9a469111928e7a3da4334f199aeb998bb291e"
+    },
+    {
+      "source": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\final-review-integration-verified\\ticket-11-quality-response-order.json",
+      "path": "final-integration/ticket-11-quality-response-order.json",
+      "bytes": 7719,
+      "sha256": "1a41769d443b32c5285b06a2e2b7986f8576ed7dee30121d37dd321d1876ef76"
+    },
+    {
+      "source": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\final-review-integration-verified\\test-results\\.last-run.json",
+      "path": "final-integration/browser-last-run.json",
+      "bytes": 45,
+      "sha256": "91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903"
+    },
+    {
+      "source": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\final-review-integration-verified\\evidence\\ticket-10-export-location.json",
+      "path": "final-integration/ticket-10-export-location.json",
+      "bytes": 2315,
+      "sha256": "c36d57f1b9617bbb6544998cdce9f2da98667e090383ac841934a4b884c21b75"
+    },
+    {
+      "source": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\final-review-integration-verified\\evidence\\ticket-11-concurrency.json",
+      "path": "final-integration/ticket-11-concurrency.json",
+      "bytes": 1544,
+      "sha256": "194b089e3bc7d0ebfe673ea2d964a9c9ccf773a229b87e7965d280a84bdec942"
+    },
+    {
+      "source": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\final-review-integration-verified\\evidence\\ticket-11-playback.json",
+      "path": "final-integration/ticket-11-playback.json",
+      "bytes": 4963,
+      "sha256": "c654c19ad09b39c41f7ef2ddca18518b42cfc9c8f2036e2cf56f3846df993808"
+    },
+    {
+      "source": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\final-review-integration-verified\\evidence\\ticket-12-alignment.json",
+      "path": "final-integration/ticket-12-alignment.json",
+      "bytes": 148715,
+      "sha256": "fb71ee6bc04398eefc0e0b3eff661f358a98b0f2e14fec043fb228af4d603bcf"
+    },
+    {
+      "source": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\final-review-integration-verified\\evidence\\ticket-12-fast-progress.json",
+      "path": "final-integration/ticket-12-fast-progress.json",
+      "bytes": 164,
+      "sha256": "09afbcfec2e4f50ad26dd75c05c18987e64c52aceb6f773dc6bcbd026d9a98ce"
+    },
+    {
+      "source": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\final-review-integration-verified\\evidence\\ticket-12-progress.json",
+      "path": "final-integration/ticket-12-progress.json",
+      "bytes": 2878,
+      "sha256": "fd3ae3e61daaca64a40ef858543d12b2d7f687bbf1b0ddac9a1a1b000e4c33a7"
+    },
+    {
+      "source": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\final-review-integration-verified\\evidence\\ticket-13-combination.json",
+      "path": "final-integration/ticket-13-combination.json",
+      "bytes": 9727,
+      "sha256": "b3217693e47ff8763607c16c9544796bc4baaf9ffca9aa9c66baef32b00590d0"
+    },
+    {
+      "source": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\final-review-integration-verified\\evidence\\ticket-13-integration-fix\\pointer-media-green.json",
+      "path": "final-integration/ticket-13-integration-fix/pointer-media-green.json",
+      "bytes": 608,
+      "sha256": "500ea4af666ec567137c04ca3898c0387da541e3b6de7ac2f39f42f7f9726e43"
+    },
+    {
+      "source": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\final-review-integration-verified\\evidence\\ticket-13-launcher.json",
+      "path": "final-integration/ticket-13-launcher.json",
+      "bytes": 2042,
+      "sha256": "548f2240dfd411ce651c6ed3d8383f713cf96c8bd8aeff9709253a3d3f2e2cbc"
+    },
+    {
+      "source": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\final-review-integration-verified\\evidence\\ticket-13-scale.json",
+      "path": "final-integration/ticket-13-scale.json",
+      "bytes": 18283,
+      "sha256": "b37be3785e052a2e79f6bd28a19f68296223a8eabd9d2d49ee465faab88a6ccb"
+    },
+    {
+      "source": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\final-review-integration-verified\\evidence\\ticket-13-virtual-selection.json",
+      "path": "final-integration/ticket-13-virtual-selection.json",
+      "bytes": 683,
+      "sha256": "72fca81a27cafd90db84a1c30064abd29f82c626b40e4b603c97602ce2b8e783"
+    },
+    {
+      "source": "D:\\whisper-diarization\\webui\\frontend\\.test-workspace\\final-review-integration-verified\\evidence\\ticket-13-long-film.jpg",
+      "path": "final-integration/ticket-13-long-film.jpg",
+      "bytes": 163568,
+      "sha256": "4eb361b0f1969c2b76907a0debb9dd4ecdf9d7b1207cf251d699c7e1a4b0ab4d"
+    },
+    {
+      "source": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-11\\webui\\frontend\\.test-workspace\\ticket-11-final-fixed-browser.log",
+      "path": "worktree-records/ticket-11-final-fixed-browser.log",
+      "bytes": 14944,
+      "sha256": "9d293f0dd27ffdf201ff388ca5f4c7a4599ebc584e7e1eb29f46d3d2d6095ea2"
+    },
+    {
+      "source": "C:\\Users\\machi\\AppData\\Local\\Temp\\opencode\\webui-worktrees\\ticket-12\\webui\\frontend\\.test-workspace\\ticket-12-progress-fix-browser.log",
+      "path": "worktree-records/ticket-12-progress-fix-browser.log",
+      "bytes": 22072,
+      "sha256": "179d8dcf2d568568b37ccdf0989a6ff509f72c0b9827a2be9e9f909672976f45"
+    }
+  ],
+  "removed_tracked_evidence": [
+    {
+      "path": "final-review/new-scenarios-command-encoding-error.json",
+      "bytes": 2191,
+      "sha256": "f53738e5642e26d22a336a5dc9c29a90b812f68809c23e63f9fb54a23d107f82",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/new-scenarios-command-encoding-error.json"
+    },
+    {
+      "path": "final-review/new-scenarios-command-encoding-error.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/new-scenarios-command-encoding-error.log"
+    },
+    {
+      "path": "final-review/new-scenarios-server.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/new-scenarios-server.log"
+    },
+    {
+      "path": "final-review/preview-red-results/.last-run.json",
+      "bytes": 101,
+      "sha256": "38ce7cc830eba2dcca5991be82835c380a69a518441e4cf563a23f6515ea1e0b",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/preview-red-results/.last-run.json"
+    },
+    {
+      "path": "final-review/preview-red-results/preview-等待保存时同上下文刷新预览仍提交已点击的生成并播放真实副本/error-context.md",
+      "bytes": 12359,
+      "sha256": "c03e23c359662ded743fc56d3220c1c86d42a75c489c5085d14826b5e010e514",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/preview-red-results/preview-等待保存时同上下文刷新预览仍提交已点击的生成并播放真实副本/error-context.md"
+    },
+    {
+      "path": "final-review/preview-red-results/preview-等待保存时同上下文刷新预览仍提交已点击的生成并播放真实副本/trace.zip",
+      "bytes": 32737,
+      "sha256": "02ae99ea38aada9d45eed6b7b678c888eb8af3fe21a79a2b5b29a6935a659147",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/preview-red-results/preview-等待保存时同上下文刷新预览仍提交已点击的生成并播放真实副本/trace.zip"
+    },
+    {
+      "path": "final-review/regression-manifest.json",
+      "bytes": 5937,
+      "sha256": "0de4f3b547ca0fe9f98ff439a29c9da1e360209a8a2b61f8eb06a87e12d05f88",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regression-manifest.json"
+    },
+    {
+      "path": "final-review/regressions/ticket-05-speaker-management.jpg",
+      "bytes": 154585,
+      "sha256": "e68f824e1a4097ffd826ebe5613c380f4f25013816009dd86f9c3ee25c877ebb",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-05-speaker-management.jpg"
+    },
+    {
+      "path": "final-review/regressions/ticket-06-drag-timing.jpg",
+      "bytes": 148034,
+      "sha256": "cae60b4c99f24343515c6336764a4f5cd77c5a9aa2844be1a11081b18655c644",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-06-drag-timing.jpg"
+    },
+    {
+      "path": "final-review/regressions/ticket-07-batch-editing.jpg",
+      "bytes": 147020,
+      "sha256": "e3ff85d49f29bca6ba6d2b87fba8721888c41efd55d14a232f1350b5bc6cb9bb",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-07-batch-editing.jpg"
+    },
+    {
+      "path": "final-review/regressions/ticket-08-structure-editing.jpg",
+      "bytes": 153497,
+      "sha256": "1d768a231f8218e4595717ced614e27ca53f045c7e11d7f83630ec2667e8c20a",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-08-structure-editing.jpg"
+    },
+    {
+      "path": "final-review/regressions/ticket-10-export-location.jpg",
+      "bytes": 138106,
+      "sha256": "d829120634f65b335b6784752ade010c4ea250cb7d9d4bfbf23ccb7ef72a1e3d",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-10-export-location.jpg"
+    },
+    {
+      "path": "final-review/regressions/ticket-10-export-location.json",
+      "bytes": 2768,
+      "sha256": "a9e7cc6ba91b6677d8e863185273a17682c81e115729d5e73f282892f6b7a272",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-10-export-location.json"
+    },
+    {
+      "path": "final-review/regressions/ticket-10-relocated-resources.jpg",
+      "bytes": 137732,
+      "sha256": "277e41ab7c40fc5c9e06a78e474d21e4bf82e335ab271da8fa6cc6634149f174",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-10-relocated-resources.jpg"
+    },
+    {
+      "path": "final-review/regressions/ticket-11-1s.jpg",
+      "bytes": 125788,
+      "sha256": "c4c636c270ebd68827a1711d17d04e49e624e91407bd482f99b04ecf8de6eff8",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-11-1s.jpg"
+    },
+    {
+      "path": "final-review/regressions/ticket-11-5s.jpg",
+      "bytes": 126636,
+      "sha256": "826639a7228f5c7ff1d1f52a64a1f21e4d527d506f569df089d489b60e6d650e",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-11-5s.jpg"
+    },
+    {
+      "path": "final-review/regressions/ticket-11-8.5s.jpg",
+      "bytes": 124797,
+      "sha256": "0a0c9f18e7bd7bddabf5b59e6a1ba4b61032f3e5d2da0581e4ac2ef34535f2c9",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-11-8.5s.jpg"
+    },
+    {
+      "path": "final-review/regressions/ticket-11-concurrency.json",
+      "bytes": 1656,
+      "sha256": "38be19778e46cde13c5792612a2bf76f8829bfb03ed9b76a34133ff6b081c15f",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-11-concurrency.json"
+    },
+    {
+      "path": "final-review/regressions/ticket-11-playback.json",
+      "bytes": 5471,
+      "sha256": "c36f55f6878f16a7cc5e4d77d9cb5afba7eb804eeb5a6642f90387f4887f93f2",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-11-playback.json"
+    },
+    {
+      "path": "final-review/regressions/ticket-11-retry.jpg",
+      "bytes": 132213,
+      "sha256": "ae66aaaf1aad39db6d8961095bd46277aea2dfaee13e64292ae57eee0264902b",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-11-retry.jpg"
+    },
+    {
+      "path": "final-review/regressions/ticket-12-alignment.json",
+      "bytes": 156166,
+      "sha256": "6b9febaab39442df980a9557c62fbeae2fdb88025251ed1663bd98044d6fbc96",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-12-alignment.json"
+    },
+    {
+      "path": "final-review/regressions/ticket-12-delayed-preview.jpg",
+      "bytes": 133575,
+      "sha256": "28a1ddc2de80d034ed2868df6e44a349fd8041bc43eb976c2778098526bce479",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-12-delayed-preview.jpg"
+    },
+    {
+      "path": "final-review/regressions/ticket-12-fast-progress.json",
+      "bytes": 173,
+      "sha256": "eee354115cb217c2c903ff507f2ab473d7570b8ba242242a909b2c53169b9841",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-12-fast-progress.json"
+    },
+    {
+      "path": "final-review/regressions/ticket-12-progress.json",
+      "bytes": 3476,
+      "sha256": "65adba0414d4ebfe00d4dc0fabe46fb410752a3fd3da7f062fba3d7719e18de5",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-12-progress.json"
+    },
+    {
+      "path": "final-review/regressions/ticket-12-retry.jpg",
+      "bytes": 130426,
+      "sha256": "8781d5e896325d29d8391a15dfbac557c4fb6d8285fb30779e6bf87c4019ae8d",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-12-retry.jpg"
+    },
+    {
+      "path": "final-review/regressions/ticket-12-running-progress.jpg",
+      "bytes": 128874,
+      "sha256": "b445c2d79f42fbff337f5da5e09ab4f9ff2800ec9f09bfa6eda771306a4a151e",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-12-running-progress.jpg"
+    },
+    {
+      "path": "final-review/regressions/ticket-12-timeline.jpg",
+      "bytes": 133752,
+      "sha256": "1d841466e4aa94bcf136028120c64f77214491577a5777f37adc03c41c872875",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-12-timeline.jpg"
+    },
+    {
+      "path": "final-review/regressions/ticket-13-combination.jpg",
+      "bytes": 139793,
+      "sha256": "205caa5b1e01bd69bbff57c3d50c3a2f9d289f7f4e2fcdbe2ffb4abd8b0d9e31",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-13-combination.jpg"
+    },
+    {
+      "path": "final-review/regressions/ticket-13-combination.json",
+      "bytes": 10254,
+      "sha256": "ab7798eae6883a006260ecb8a01639c41faccb79a7cb3bc84db77447a489d3ff",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-13-combination.json"
+    },
+    {
+      "path": "final-review/regressions/ticket-13-integration-fix/pointer-media-green.json",
+      "bytes": 639,
+      "sha256": "0bc039ff24a8146568ac4dd3c7374ab2b904383523003d946bf9398c448b0a20",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-13-integration-fix/pointer-media-green.json"
+    },
+    {
+      "path": "final-review/regressions/ticket-13-launcher.json",
+      "bytes": 2629,
+      "sha256": "5c7f86819490f9d74f0de0518da8c3fe08c53512d0f7f62b5aed5c669f2332a2",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-13-launcher.json"
+    },
+    {
+      "path": "final-review/regressions/ticket-13-long-film.jpg",
+      "bytes": 161489,
+      "sha256": "c18768ea8df52bfdf509502ebf11f68de38b90b0834e3b3913c978b579a2b7f8",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-13-long-film.jpg"
+    },
+    {
+      "path": "final-review/regressions/ticket-13-scale.json",
+      "bytes": 19812,
+      "sha256": "99a19744c66d3288ca0ddbc08afc9c844ab203ef348bb5d2557adb85ca687ea9",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-13-scale.json"
+    },
+    {
+      "path": "final-review/regressions/ticket-13-virtual-selection.json",
+      "bytes": 703,
+      "sha256": "8ddb858301cadfad778f4a1f7c657dd7386d44ace354aadd31d3592b2bb50295",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/regressions/ticket-13-virtual-selection.json"
+    },
+    {
+      "path": "final-review/targeted-first/test-results/.last-run.json",
+      "bytes": 151,
+      "sha256": "c2e296a0424811ba1972f325ceab4161ba2294836bc35b3bb8bf125febe1e373",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/test-results/.last-run.json"
+    },
+    {
+      "path": "final-review/targeted-first/test-results/preview-等待保存时质量上下文切换取消旧生成意图/error-context.md",
+      "bytes": 12349,
+      "sha256": "a0087600ca4b421de75defe93fa38008578f77bb9fb51511ee65eaffb114a7ba",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/test-results/preview-等待保存时质量上下文切换取消旧生成意图/error-context.md"
+    },
+    {
+      "path": "final-review/targeted-first/test-results/preview-等待保存时质量上下文切换取消旧生成意图/trace.zip",
+      "bytes": 13254,
+      "sha256": "7d696153cc09d2d4c308298e6640bb2903134d9cd2ccfe46a87c321906d417ab",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/test-results/preview-等待保存时质量上下文切换取消旧生成意图/trace.zip"
+    },
+    {
+      "path": "final-review/targeted-first/test-results/preview-等待保存时质量上下文切走再切回取消旧生成意图/error-context.md",
+      "bytes": 12349,
+      "sha256": "e7d2c4fe8ac7acf7d2d747ba445af62953fd7625b87b0ff9a3e07ecfd8d337aa",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/test-results/preview-等待保存时质量上下文切走再切回取消旧生成意图/error-context.md"
+    },
+    {
+      "path": "final-review/targeted-first/test-results/preview-等待保存时质量上下文切走再切回取消旧生成意图/trace.zip",
+      "bytes": 13439,
+      "sha256": "408b2c31623bdc4445470f2309525204acd35e5e066b9226d2872bf3692afaed",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/test-results/preview-等待保存时质量上下文切走再切回取消旧生成意图/trace.zip"
+    },
+    {
+      "path": "final-review/targeted-first/webui/tests/evidence/ticket-05-speaker-management.jpg",
+      "bytes": 154661,
+      "sha256": "935dbb45d2396c14b13ccdd60adbbb80912fc7ee1330e9441cc717703eda2a0f",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/webui/tests/evidence/ticket-05-speaker-management.jpg"
+    },
+    {
+      "path": "final-review/targeted-first/webui/tests/evidence/ticket-08-structure-editing.jpg",
+      "bytes": 153571,
+      "sha256": "b8890214f4f302c57fc1ab598d412037ab89f006fc32350853e01d58f9f9be41",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/webui/tests/evidence/ticket-08-structure-editing.jpg"
+    },
+    {
+      "path": "final-review/targeted-first/webui/tests/evidence/ticket-11-1s.jpg",
+      "bytes": 125794,
+      "sha256": "39a3b876e5c8cb5c440aff85e1656652436fdbcda95c5a8c2f63a7ce81f0c356",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/webui/tests/evidence/ticket-11-1s.jpg"
+    },
+    {
+      "path": "final-review/targeted-first/webui/tests/evidence/ticket-11-5s.jpg",
+      "bytes": 126611,
+      "sha256": "548d3f18c426517a31c9d7521d810036f701de6dbb36042e8a7991242f5331ce",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/webui/tests/evidence/ticket-11-5s.jpg"
+    },
+    {
+      "path": "final-review/targeted-first/webui/tests/evidence/ticket-11-8.5s.jpg",
+      "bytes": 124754,
+      "sha256": "48aa4223e51fa09c1e67f4006b8f39dd81e85830ec35dc6951171c61dde4eb9c",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/webui/tests/evidence/ticket-11-8.5s.jpg"
+    },
+    {
+      "path": "final-review/targeted-first/webui/tests/evidence/ticket-11-concurrency.json",
+      "bytes": 1657,
+      "sha256": "5a077df25452515a3879f16107228508ea8cdb233f0bd77ea0865435c2cea867",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/webui/tests/evidence/ticket-11-concurrency.json"
+    },
+    {
+      "path": "final-review/targeted-first/webui/tests/evidence/ticket-11-playback.json",
+      "bytes": 5471,
+      "sha256": "c5a101e25f70409cccdd6a9f96a1ff94693df8f089b763dcba57063ac33951f8",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/webui/tests/evidence/ticket-11-playback.json"
+    },
+    {
+      "path": "final-review/targeted-first/webui/tests/evidence/ticket-11-retry.jpg",
+      "bytes": 132139,
+      "sha256": "f2fff13da9a47c7163f92c6f2ef96a58cc17d202a2cb24041ae9ba02a0729e6a",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/webui/tests/evidence/ticket-11-retry.jpg"
+    },
+    {
+      "path": "final-review/targeted-first/webui/tests/evidence/ticket-12-alignment.json",
+      "bytes": 156166,
+      "sha256": "78ad514a2f75ea536be7c64f6b44d9de6b7fe2a477ce999a29274982e8bd1e68",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/webui/tests/evidence/ticket-12-alignment.json"
+    },
+    {
+      "path": "final-review/targeted-first/webui/tests/evidence/ticket-12-delayed-preview.jpg",
+      "bytes": 133515,
+      "sha256": "a621e7fb6d1ce43d8eb44c3799a2ce04ad7c89ae23ef77f87c550cfd2e72ce84",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/webui/tests/evidence/ticket-12-delayed-preview.jpg"
+    },
+    {
+      "path": "final-review/targeted-first/webui/tests/evidence/ticket-12-fast-progress.json",
+      "bytes": 173,
+      "sha256": "e3e5d22c6f5ca369ffe6089df36fa46ab6517b283488211e70a35b1151d9a0c5",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/webui/tests/evidence/ticket-12-fast-progress.json"
+    },
+    {
+      "path": "final-review/targeted-first/webui/tests/evidence/ticket-12-progress.json",
+      "bytes": 3253,
+      "sha256": "2e2685aee450b41b2eb42085f2f989ac4ee497e3c42bf2492a8d998607c56b21",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/webui/tests/evidence/ticket-12-progress.json"
+    },
+    {
+      "path": "final-review/targeted-first/webui/tests/evidence/ticket-12-retry.jpg",
+      "bytes": 130415,
+      "sha256": "bf8c72ac3f3d10cbfcb9335987691082a35a817e159e8a00ba56dcaa5e020ccd",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/webui/tests/evidence/ticket-12-retry.jpg"
+    },
+    {
+      "path": "final-review/targeted-first/webui/tests/evidence/ticket-12-running-progress.jpg",
+      "bytes": 128522,
+      "sha256": "85ce072eb488ab5de4c92f7f4264fc85f5f040d1ec053eae235410b1d8e98774",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/webui/tests/evidence/ticket-12-running-progress.jpg"
+    },
+    {
+      "path": "final-review/targeted-first/webui/tests/evidence/ticket-12-timeline.jpg",
+      "bytes": 133706,
+      "sha256": "f103c63c28ae8a53598fd53a7ae9f2abc9b0f5cdcdaefe406e32c292c17a33cb",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/webui/tests/evidence/ticket-12-timeline.jpg"
+    },
+    {
+      "path": "final-review/targeted-first/webui/tests/evidence/ticket-13-integration-fix/pointer-media-green.json",
+      "bytes": 639,
+      "sha256": "a37e45861b2fd2f6f31e2ca29d8949ffb223ea31f5b9ba94fd7ec1b6814a06be",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/final-review/targeted-first/webui/tests/evidence/ticket-13-integration-fix/pointer-media-green.json"
+    },
+    {
+      "path": "ticket-01-workspace.jpg",
+      "bytes": 186141,
+      "sha256": "872f9fb97ea7d4eb9c02a776f75b6d815b4ad50e9b8b0898b69c99dc1deea190",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-01-workspace.jpg"
+    },
+    {
+      "path": "ticket-02-history-autosave.jpg",
+      "bytes": 145721,
+      "sha256": "2c35a1230469b0a5132eb8a7d3069728ea4dd3253eab375e548d1e19deda88d1",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-02-history-autosave.jpg"
+    },
+    {
+      "path": "ticket-03-exports.jpg",
+      "bytes": 136445,
+      "sha256": "10c3224c38beff4084e67bd64e1cefc38f9fa0acd149d66ab341b42b7b1fde4f",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-03-exports.jpg"
+    },
+    {
+      "path": "ticket-03-import-preview.jpg",
+      "bytes": 105876,
+      "sha256": "f60186c75cbee20699df99a6fb289c0d8d508336b43594acfa49a943f809b5a7",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-03-import-preview.jpg"
+    },
+    {
+      "path": "ticket-04-shared-timeline.jpg",
+      "bytes": 171437,
+      "sha256": "1c614b399f7de730f778980fb709e48f491094ab1c985b4127e70fd4d0990146",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-04-shared-timeline.jpg"
+    },
+    {
+      "path": "ticket-04-speaker-track-saved.jpg",
+      "bytes": 180202,
+      "sha256": "a38c2d00741bf5813262b545aa104f4f7efd012a30a84de30d7d925857b39137",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-04-speaker-track-saved.jpg"
+    },
+    {
+      "path": "ticket-05-speaker-management.jpg",
+      "bytes": 155363,
+      "sha256": "0b418b15b1c7b0b4f5be066aa981388393f60f2bc63f5b035eebfd5ffa2ccd77",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-05-speaker-management.jpg"
+    },
+    {
+      "path": "ticket-06-drag-timing.jpg",
+      "bytes": 148647,
+      "sha256": "61ef8d8c568dc8bea6b963e63a2bdc3c5574a34d3515e295d0203096f40593aa",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-06-drag-timing.jpg"
+    },
+    {
+      "path": "ticket-07-batch-editing.jpg",
+      "bytes": 149271,
+      "sha256": "ff205b38e21bb9f206e9fb7d36d496a55cb04384da22ef9cb5ea95eaffc4e8d5",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-07-batch-editing.jpg"
+    },
+    {
+      "path": "ticket-08-structure-editing.jpg",
+      "bytes": 153964,
+      "sha256": "a85811580cff4a84bacb31c1b334cface3b9a7165bf857ba0357ff5f8907e1c1",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-08-structure-editing.jpg"
+    },
+    {
+      "path": "ticket-09-review-workspace.jpg",
+      "bytes": 175585,
+      "sha256": "9238df65dcb11fc0df7d227665feefe7771d2bd54b450fe81a0b8c4841e50025",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-09-review-workspace.jpg"
+    },
+    {
+      "path": "ticket-10-export-location.jpg",
+      "bytes": 139618,
+      "sha256": "9097fc2180dca5cc8e9b46809307f08ba3b13cc801dcc5ecd435ba14f0b854c7",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-10-export-location.jpg"
+    },
+    {
+      "path": "ticket-10-export-location.json",
+      "bytes": 2683,
+      "sha256": "bd4b9c520cd7c4b48973e7a4998667ae4e2e4261396d564184b8110e0ded2758",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-10-export-location.json"
+    },
+    {
+      "path": "ticket-10-manual-save-as-export.jpg",
+      "bytes": 175434,
+      "sha256": "5f7a1fb8083ac3c6b6349d752d9cb4e55c133c1798afd31e44dda9f32c020977",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-10-manual-save-as-export.jpg"
+    },
+    {
+      "path": "ticket-10-relocated-resources.jpg",
+      "bytes": 138864,
+      "sha256": "4ad423c0e463375c75f6f40d79514665de791f59efaef3c1eaf43d913f8e1c0e",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-10-relocated-resources.jpg"
+    },
+    {
+      "path": "ticket-11-1s.jpg",
+      "bytes": 134891,
+      "sha256": "ffbbd95233546562164b842ab53b899fb218eed71de2b0b460fca3060e2720a3",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-11-1s.jpg"
+    },
+    {
+      "path": "ticket-11-5s.jpg",
+      "bytes": 135673,
+      "sha256": "ce702e605d3f2654c7b65dff97685ed06f3060db6b7d80ca9b26dccd4451ed1f",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-11-5s.jpg"
+    },
+    {
+      "path": "ticket-11-8.5s.jpg",
+      "bytes": 133962,
+      "sha256": "f504406d67e0957bd0020e4ad2fab79ee8f67ec29244802087f7189b8b345d1d",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-11-8.5s.jpg"
+    },
+    {
+      "path": "ticket-11-concurrency.json",
+      "bytes": 1653,
+      "sha256": "c8adbd9ee0d32d4ff21204d688a112df0fc4d234a6b8310ae0152591777c2afe",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-11-concurrency.json"
+    },
+    {
+      "path": "ticket-11-integration-artifacts.json",
+      "bytes": 1075,
+      "sha256": "415c8ee616b8882fab9b26bd51042540a309346c4274c5a76d96b021f75b274a",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-11-integration-artifacts.json"
+    },
+    {
+      "path": "ticket-11-manual-preview-5s.jpg",
+      "bytes": 162583,
+      "sha256": "4e316148dd2db5d32e6a126002ae1112adc2103e2466794b5bed72b3434f2135",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-11-manual-preview-5s.jpg"
+    },
+    {
+      "path": "ticket-11-playback.json",
+      "bytes": 5453,
+      "sha256": "5478c967dc3d914685f616352f5fea5c5477bd14a07188461a24f1d4c50b893f",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-11-playback.json"
+    },
+    {
+      "path": "ticket-11-retry.jpg",
+      "bytes": 141273,
+      "sha256": "e6fe8c50f3b07bdc0aa3e1c34661f07729a367e5934e7f2e61271d977e9a68ae",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-11-retry.jpg"
+    },
+    {
+      "path": "ticket-12-alignment.json",
+      "bytes": 156166,
+      "sha256": "438d12c53245f68a1ce3762edd0fa2a34d0381ded8c6bdb9d95d2dcccbaa9318",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-12-alignment.json"
+    },
+    {
+      "path": "ticket-12-delayed-preview.jpg",
+      "bytes": 135968,
+      "sha256": "60099f141e0f6d638c4f3c9a200d060770f5f0416c02e91e6ec9b4101b1fa450",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-12-delayed-preview.jpg"
+    },
+    {
+      "path": "ticket-12-fast-progress.json",
+      "bytes": 173,
+      "sha256": "be75815edc6f871052bfd3147852f10c878c62178b5dd00c305d0324d66d26f9",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-12-fast-progress.json"
+    },
+    {
+      "path": "ticket-12-manual-reopened.jpg",
+      "bytes": 200076,
+      "sha256": "e6edb1d832adc6ab7da422ad67dfac9279d51486ccd4440dc3e356829d8f6c09",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-12-manual-reopened.jpg"
+    },
+    {
+      "path": "ticket-12-progress.json",
+      "bytes": 3035,
+      "sha256": "fdcca3c6ce7bf163f0837c6dd4bc37e879cc8f1f0fb35262b49101439f1f1cb2",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-12-progress.json"
+    },
+    {
+      "path": "ticket-12-retry.jpg",
+      "bytes": 135759,
+      "sha256": "91144bff1f1d9fcbad5959345e9ccce3954aeea435ff57933c6c88531ff17a27",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-12-retry.jpg"
+    },
+    {
+      "path": "ticket-12-running-progress.jpg",
+      "bytes": 129590,
+      "sha256": "c803f3087c89934f05234686f8815a95fa407dcc9f720ff8d662db9813cf84dd",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-12-running-progress.jpg"
+    },
+    {
+      "path": "ticket-12-timeline.jpg",
+      "bytes": 135133,
+      "sha256": "28e7a6513cd85689ce5763140f3e0e58323a50c214953ca8cd415e6186bb1ac9",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-12-timeline.jpg"
+    },
+    {
+      "path": "ticket-13-browser-80-pass.log",
+      "bytes": 16405,
+      "sha256": "977a8e155f022585edaf2c004e71a360dd2ceee84f478ccd7c798ccb491f1d66",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-browser-80-pass.log"
+    },
+    {
+      "path": "ticket-13-browser-cleanup-failure.log",
+      "bytes": 18420,
+      "sha256": "a2aa3781affd194b30c08c24f8826dfab8a23e03f68578021af0acc2b6f15c44",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-browser-cleanup-failure.log"
+    },
+    {
+      "path": "ticket-13-browser-final.log",
+      "bytes": 16547,
+      "sha256": "bd6d303718229636c879114329cf708ebf9fd4d708ac1b49bbb96184d0db059f",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-browser-final.log"
+    },
+    {
+      "path": "ticket-13-browser-first.log",
+      "bytes": 16330,
+      "sha256": "1a56c746066fb6fcc004e9ed96f58e27af30f95646e0287a039b9d0981ed06de",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-browser-first.log"
+    },
+    {
+      "path": "ticket-13-build.log",
+      "bytes": 896,
+      "sha256": "367da2cc816e390242742dc66b16a2860648ccefe0546df706482232bad6bdf0",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-build.log"
+    },
+    {
+      "path": "ticket-13-combination.jpg",
+      "bytes": 146112,
+      "sha256": "ce79dbd582767cffed58323718b3f44075cb516cc175fdf10f888e02a4c9d011",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-combination.jpg"
+    },
+    {
+      "path": "ticket-13-combination.json",
+      "bytes": 10242,
+      "sha256": "4a43ce4430e52727859438f0b7462897b165507d9767fb4d73af0131aa832038",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-combination.json"
+    },
+    {
+      "path": "ticket-13-environment.json",
+      "bytes": 1119,
+      "sha256": "b721f21d4c71a7ac1bdb2e0a883a22f6ce1f94644511708c0eaaa10187e14dd2",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-environment.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/browser-full.log",
+      "bytes": 15258,
+      "sha256": "0067a5e197c8e69c2992567e93801af8c2c4fdd8834f8ef20e38f6fc8c5d9ec7",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/browser-full.log"
+    },
+    {
+      "path": "ticket-13-integration-fix/build-checks.json",
+      "bytes": 358,
+      "sha256": "ff31a044fe83abb1fdeda1e857dd7ef171978b72cd7229ed8ac1184db62564e8",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/build-checks.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/build-final.log",
+      "bytes": 827,
+      "sha256": "10457e596698c07081b4a96e7ad5691d92782b41a883833c0784f884ae7cbabd",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/build-final.log"
+    },
+    {
+      "path": "ticket-13-integration-fix/build.log",
+      "bytes": 827,
+      "sha256": "a1dbc520eac1790a5a335d2c803e14267c9dc674cdb8e3b71a3da1e16c82c4f1",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/build.log"
+    },
+    {
+      "path": "ticket-13-integration-fix/cleanup.json",
+      "bytes": 665,
+      "sha256": "776b1a32d0106af095e045e3afc7b57f9928c87dc0eba813cf1922b6bc4ebb3e",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/cleanup.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/compile.json",
+      "bytes": 633,
+      "sha256": "b0c881bca228fa258904a099244d0020943a3229958209186cc0af30afbf51da",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/compile.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/manual-media-controls.jpg",
+      "bytes": 173145,
+      "sha256": "f322aaa208dd2fc6da625e18c46a2b2576dba6eda7016ec6b8c23aad67bae1c4",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/manual-media-controls.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/original-media-error-context.md",
+      "bytes": 10401,
+      "sha256": "37f5a0fe3626060e1174622eae0bfb424c463bbe3b8ef0bd7868da091fa2bdf4",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/original-media-error-context.md"
+    },
+    {
+      "path": "ticket-13-integration-fix/pointer-media-red-context.md",
+      "bytes": 10539,
+      "sha256": "25bdf18f1a9cfc7796586d0ad3b5480aee7d8c237149aa12ace63da3c0f0c7a1",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/pointer-media-red-context.md"
+    },
+    {
+      "path": "ticket-13-integration-fix/python-full.log",
+      "bytes": 4549,
+      "sha256": "ec2a6f6e1fc23c1238d23b840928e02c52fd39f5e17c4cba8aba464682383efc",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/python-full.log"
+    },
+    {
+      "path": "ticket-13-integration-fix/python-initial-failure.log",
+      "bytes": 5562,
+      "sha256": "ddd50cb42521c5cf9664213d6b5567581434ff1255b9dd592362596b0d541a49",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/python-initial-failure.log"
+    },
+    {
+      "path": "ticket-13-integration-fix/python.log",
+      "bytes": 5562,
+      "sha256": "ddd50cb42521c5cf9664213d6b5567581434ff1255b9dd592362596b0d541a49",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/python.log"
+    },
+    {
+      "path": "ticket-13-integration-fix/regression-manifest.json",
+      "bytes": 5458,
+      "sha256": "6a29412d664d4028ca8bc09a72af5c94ce9da9de5ef8803729f5487069bce00c",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regression-manifest.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-05-speaker-management.jpg",
+      "bytes": 154691,
+      "sha256": "6ac5be09b532c2c465778377f98ba7fb974b43fcb87915c02260a41c1097094b",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-05-speaker-management.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-06-drag-timing.jpg",
+      "bytes": 147913,
+      "sha256": "e727470b0d1d890f9026e54b18aabdd4149e37117e5c66b7f85ea6ddd7e65b8a",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-06-drag-timing.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-07-batch-editing.jpg",
+      "bytes": 147079,
+      "sha256": "989abfd0ac34f5d586ce9e2270bf63e8ea500b6aa51297c019f3f282cb964777",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-07-batch-editing.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-08-structure-editing.jpg",
+      "bytes": 153465,
+      "sha256": "18830fec095742ae2e70982abe7002de3d0ec520318b7713eb82603427ddf384",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-08-structure-editing.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-10-export-location.jpg",
+      "bytes": 138282,
+      "sha256": "a21e2981d65a552693a1c1ae4f7f890bcaf88add1048df26e8eb15bbf04efc07",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-10-export-location.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-10-export-location.json",
+      "bytes": 2747,
+      "sha256": "3e6086cc2b682ffe28e225cba148cc21be8a05388d97eeb8e61e82a7efc0ef63",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-10-export-location.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-10-relocated-resources.jpg",
+      "bytes": 137570,
+      "sha256": "8b24c4e50c535d240a0163c7a548a0da925b2cd4e0c770e139f17c74e47b910c",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-10-relocated-resources.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-11-1s.jpg",
+      "bytes": 125679,
+      "sha256": "75b8b70aee59239a52f2505459a06d1e48759686009c5ceb3a198420de0d4445",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-11-1s.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-11-5s.jpg",
+      "bytes": 126488,
+      "sha256": "3dffeaa1a3903c6d727e84c729b94213880274b464943dec0251bd124b4a2207",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-11-5s.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-11-8.5s.jpg",
+      "bytes": 124615,
+      "sha256": "be5fd9e825308092c4699a5b9ae229b4623835af96d4a260ce5820046efb819e",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-11-8.5s.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-11-concurrency.json",
+      "bytes": 1653,
+      "sha256": "43c2d21f417f045f60a05895cfcd0ffe41bf2f6bd76d7286ed68e08f15f70ad5",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-11-concurrency.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-11-playback.json",
+      "bytes": 5453,
+      "sha256": "7b0fabf2b9cc3b504d15bb09bd907aeca7eca3ebd5e7255d33ac48d33a950fff",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-11-playback.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-11-quality-response-order.json",
+      "bytes": 8468,
+      "sha256": "4bde8b137b72437d372d621ea6d2406594ec3794e68f5de2545420734d9ab60e",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-11-quality-response-order.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-11-retry.jpg",
+      "bytes": 132193,
+      "sha256": "654a3ec78f6eb1e17e48b62e85110fd9ed185f62535498645d1d5d856d64e037",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-11-retry.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-12-alignment.json",
+      "bytes": 156166,
+      "sha256": "5ab61b64d57410e4b4351e844ed1e8cd7269e6962a31e3b2d0ac872269c914b7",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-12-alignment.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-12-delayed-preview.jpg",
+      "bytes": 133573,
+      "sha256": "e24fa1d19535bc5ff47f3162d386c7ba4d27c9659c8432e171d7038e6f2d1fd5",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-12-delayed-preview.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-12-fast-progress.json",
+      "bytes": 173,
+      "sha256": "e28e7a20bfe922fb40a316a4ba9096164c2a5eb82b2fba08687a96495196ad7d",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-12-fast-progress.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-12-progress.json",
+      "bytes": 3249,
+      "sha256": "e81556f7f8a8a9c16707bced6db690f4e6ee68d7463e447c7d8c9438c3522c9b",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-12-progress.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-12-retry.jpg",
+      "bytes": 130391,
+      "sha256": "9a076dbeb054ff943688eeb5bc8d41bfb7ff793bc9fc310c3c9b7028e65e0b4a",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-12-retry.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-12-running-progress.jpg",
+      "bytes": 128576,
+      "sha256": "c8e87e34f490e3c616b1a3d72fe4815cb6e086ba843ecfb497fc6ce8062e3a7d",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-12-running-progress.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-12-timeline.jpg",
+      "bytes": 133616,
+      "sha256": "1ea2044cc9ce0da1d370b6b7bbfba5c0e9505bc46fd5cb6c3006c4c05d94cfb6",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-12-timeline.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-13-combination.jpg",
+      "bytes": 139680,
+      "sha256": "ff6f79c5d67d12fb1105a80ca1d752248766dac073029fd0de8dcddb98d6fe4f",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-13-combination.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-13-combination.json",
+      "bytes": 10242,
+      "sha256": "870659de279d6da32bcac47fd49158e099e093f944b75aaea60ac243ad89e90e",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-13-combination.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-13-launcher.json",
+      "bytes": 2271,
+      "sha256": "cb66ae9f54033b7fb98fd38d3ff5a7bbdc7ae4c4940e2d105c893d5c8156d833",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-13-launcher.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-13-long-film.jpg",
+      "bytes": 163678,
+      "sha256": "bc2ebaa74db78e415d3c65906a541019d149465c2dc79c65ea59da0ccb6888a5",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-13-long-film.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-13-scale.json",
+      "bytes": 19440,
+      "sha256": "666f30a7af582a9021df65079f6ee11e242a1497ae2fa153122f1a9515cec3e5",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-13-scale.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-13-virtual-selection.json",
+      "bytes": 703,
+      "sha256": "9a79825a1ca6e328869138507f94032ec6c2ab9aeb48a1974624eb7e9c55357a",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-13-virtual-selection.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/regressions/ticket-13-windows-launch.jpg",
+      "bytes": 132388,
+      "sha256": "7e6f094d8f9b8d70da88947987cab39cb4ac7d31d792961ffb2db79d4945d70f",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/regressions/ticket-13-windows-launch.jpg"
+    },
+    {
+      "path": "ticket-13-integration-fix/scale-summary.json",
+      "bytes": 796,
+      "sha256": "2211c57f62a85037f3e5972977bffbad7885f86d35487aa9317bbd5cc3bf870c",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/scale-summary.json"
+    },
+    {
+      "path": "ticket-13-integration-fix/verification-before-recovery.json",
+      "bytes": 3360,
+      "sha256": "22c3d474acf8c81d1a1fdc0e3482fcdbeeaef5bed458090059274a81a16ad716",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-integration-fix/verification-before-recovery.json"
+    },
+    {
+      "path": "ticket-13-launcher.json",
+      "bytes": 2343,
+      "sha256": "99a624bb6171e2685489d74a8e7f8f967594e23bad3a806d8f02bf36c0be2987",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-launcher.json"
+    },
+    {
+      "path": "ticket-13-long-film.jpg",
+      "bytes": 169800,
+      "sha256": "737c29488eac0fa162936a6590e494482a6c049b0d7200f34661a3acd76acac8",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-long-film.jpg"
+    },
+    {
+      "path": "ticket-13-long-label-red.md",
+      "bytes": 16859,
+      "sha256": "1a144186571f5bd1c413096432c22f46298dcc1d3ba28f718e381d85d038fa39",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-long-label-red.md"
+    },
+    {
+      "path": "ticket-13-manual-long-film.jpg",
+      "bytes": 257825,
+      "sha256": "8145e7bb20ded5c1acf3605f149155a36e06e1de9779c21b4e80d6d03899abf7",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-manual-long-film.jpg"
+    },
+    {
+      "path": "ticket-13-manual.json",
+      "bytes": 1293,
+      "sha256": "ef9a0aebdbb6b0bfa2f62b9edc8bf4765a5a1d6f814a9a29745a92b9b7dece66",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-manual.json"
+    },
+    {
+      "path": "ticket-13-python-final.log",
+      "bytes": 4491,
+      "sha256": "298da77b2c9de8678b9fc9db570554da044de402e5afe37a86ce462e210044ba",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-python-final.log"
+    },
+    {
+      "path": "ticket-13-python-first.log",
+      "bytes": 4618,
+      "sha256": "9744aa9608f3d49afd1c90961d89754ba23029f5aed3c10078b8b3e1fe16b997",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-python-first.log"
+    },
+    {
+      "path": "ticket-13-regression-manifest.json",
+      "bytes": 3563,
+      "sha256": "08b85f0f5e44657bb58477d5a6db8f0ce2190f6cd3c2b07846894ad3d4c7dcac",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regression-manifest.json"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-05-speaker-management.jpg",
+      "bytes": 161782,
+      "sha256": "321a2987d22c93a15f2e010dc4bad1b9c377f20d0fd06ea75706a4e5eaf6c02e",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-05-speaker-management.jpg"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-06-drag-timing.jpg",
+      "bytes": 155125,
+      "sha256": "c85f9a620dbb8fea90736de2fd3f697b72e31736debab599d14ef6d669b850ff",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-06-drag-timing.jpg"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-07-batch-editing.jpg",
+      "bytes": 154352,
+      "sha256": "4fd0a4cc87cf28b972d482b579861245d105b2d900e74b1f142432ee0e084d5b",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-07-batch-editing.jpg"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-08-structure-editing.jpg",
+      "bytes": 160634,
+      "sha256": "7f753540e22c322a51daa96c86da5cf774c56568a2f2432188c356cc1cc456f8",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-08-structure-editing.jpg"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-10-export-location.jpg",
+      "bytes": 137875,
+      "sha256": "1537ea5aff541801672b7ed0aee39974219ce598da0bb4fc551e9739f6ccec40",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-10-export-location.jpg"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-10-export-location.json",
+      "bytes": 2682,
+      "sha256": "fa597c83b883809c2f56a1024ec0157bcbfa76cc2964bd43dc78770abd4da97e",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-10-export-location.json"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-10-relocated-resources.jpg",
+      "bytes": 141601,
+      "sha256": "572440f9b0db5e17e1efebcf7b6e6cff6ab7440852e5ff939e96d6281faa866b",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-10-relocated-resources.jpg"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-11-1s.jpg",
+      "bytes": 130319,
+      "sha256": "a08dadd1bf145dfef2ed035434f79f5e6c484283c7cf15c54cc4da641e6e2d56",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-11-1s.jpg"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-11-5s.jpg",
+      "bytes": 131098,
+      "sha256": "cb71d7ebc1002411fd551b2452da7e80ceb8af041bb083c0263f813520f39ff3",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-11-5s.jpg"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-11-8.5s.jpg",
+      "bytes": 129405,
+      "sha256": "5509aaa4b1fbde4b1bd63368ce6b381f6e41ed7561531178a6249de50bf50655",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-11-8.5s.jpg"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-11-concurrency.json",
+      "bytes": 1654,
+      "sha256": "cbf4c30f2813e2da13fa11f9d25f621347234300b90e2189bd1ad1c600b52df9",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-11-concurrency.json"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-11-playback.json",
+      "bytes": 5453,
+      "sha256": "5575938493125ac83357c8f3a2297917147c9e68088706d5c731e700bd2782e5",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-11-playback.json"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-11-retry.jpg",
+      "bytes": 136579,
+      "sha256": "e0cee8266f35712c7c388c633024a9267bf52f2e733d120b99ba2043d438e1e1",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-11-retry.jpg"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-12-alignment.json",
+      "bytes": 156166,
+      "sha256": "37011de2b6ba2f1baa465b6bb01c43f76138e4dc2d9d43647ad7831040b048a9",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-12-alignment.json"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-12-delayed-preview.jpg",
+      "bytes": 135808,
+      "sha256": "7d30620376679276dddb64dd218a95177016a1df274c34070b205a9507750394",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-12-delayed-preview.jpg"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-12-fast-progress.json",
+      "bytes": 173,
+      "sha256": "87d8e8f019a4ac51262ffc109140bebbb9fdb46f1a6e97ec60f3652626e2cf0e",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-12-fast-progress.json"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-12-progress.json",
+      "bytes": 3476,
+      "sha256": "af4c63f744fb17c9d82adc6817292ce105ff7e168d8ec8cbb55576d83b768e66",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-12-progress.json"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-12-retry.jpg",
+      "bytes": 135840,
+      "sha256": "eeb651f46a87a319e199c059196786f877538d7523b0ad030e58ecbe3ee717f8",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-12-retry.jpg"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-12-running-progress.jpg",
+      "bytes": 129933,
+      "sha256": "742900e01fd3ed0a287fd88cd9bbe0b821e0d45c5de77ab6b2a9c11e477574ac",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-12-running-progress.jpg"
+    },
+    {
+      "path": "ticket-13-regressions/ticket-12-timeline.jpg",
+      "bytes": 135241,
+      "sha256": "ed3aa264d9d823d110a6fa8ae159bdb9db98d6ff98cede713393b24e63b0d627",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-regressions/ticket-12-timeline.jpg"
+    },
+    {
+      "path": "ticket-13-scale-summary.json",
+      "bytes": 792,
+      "sha256": "a6bb9a60ecd812b135a6471b51645c7e2c60838c69c7efc3761ab7eb6c533ccd",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-scale-summary.json"
+    },
+    {
+      "path": "ticket-13-scale.json",
+      "bytes": 19177,
+      "sha256": "5ae87af081a403670d197937d1163f1b1132459f663c2dc1fc2a64de0a36dc0a",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-scale.json"
+    },
+    {
+      "path": "ticket-13-virtual-selection.json",
+      "bytes": 703,
+      "sha256": "bf32d7db78d0d3cd0acfa469efed1f480ac01e19cdd1449ba46a01c5105d45c7",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-virtual-selection.json"
+    },
+    {
+      "path": "ticket-13-windows-launch.jpg",
+      "bytes": 132388,
+      "sha256": "7e6f094d8f9b8d70da88947987cab39cb4ac7d31d792961ffb2db79d4945d70f",
+      "git_source": "d742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-13-windows-launch.jpg"
+    }
+  ],
+  "scope": "Remove the 14 listed merged worktrees and local branches; curate webui/tests/evidence. Main frontend/.test-workspace and external demo/acceptance directories are retained.",
+  "historical_paths": "Recorded absolute paths are historical. Deleted worktree media/projects are not archived. Tracked evidence remains recoverable at baseline_commit."
+}

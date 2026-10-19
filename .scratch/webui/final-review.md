@@ -4,6 +4,8 @@ Status: done
 
 最终结论：全部任务已集成，最终全套验收通过，Standards / Spec 独立复审均已关闭原发现。下文按执行顺序保留历史记录；最终闭环见文末。
 
+2026-10-18 清理说明：用户随后批准删除已合并工作树并精简测试记录。本文旧路径和附件链接按当时现场保留；当前精选记录与历史附件恢复入口见 [证据索引](../../webui/tests/evidence/README.md)。主目录最终集成的原始日志已提取至 `webui/tests/evidence/final-integration/`。
+
 ## 范围与基线
 
 - 初始审查 HEAD / 本修复干净起点：`5586f22`（`feat/webui`）。规划基线：`17b1aa8`。
@@ -155,3 +157,10 @@ npm --prefix webui/frontend run test:browser
 - 最终集成实际验收沿用上节：后端 HTTP / 真实媒体 / 启动 **42/42**、真实 Edge **84/84**、typecheck/build、17 个 Python 文件编译均通过。独立复审后仅更新 tracker 文档，未改受测代码，未无理由重复全套测试。
 - 主代理确认 `.scratch/webui/issues/` 的 13 票全部 `done`，全部任务和修复分支均已纳入 `feat/webui`；将 `.scratch/webui/spec.md` 标为 `done`。源码变化局限 WebUI，生产流程与保护素材未改动。
 - 所有任务及修复 worktree 保留供检查；未推送远程。安装和启动见 `webui/README.md`，默认入口 `webui/start.cmd`。
+
+## 2026-10-18 用户批准的收尾清理
+
+- 重新只读核对全部 14 个目标分支均为 `feat/webui` 的祖先，独有提交为 0，无已跟踪文件未提交修改。票 01 唯一未跟踪截图与已提交历史附件 SHA-256 相同。
+- 删除 `feat/webui-01` 至 `feat/webui-13`、`feat/webui-review-fixes` 及对应工作树；主目录保留 `feat/webui`，HEAD 仍为 `d742d30`。
+- 原有 203 份验收记录保留 34 份，移除 169 份重复或低价值附件；从主目录最终集成归档和票 11/12 工作树提取 18 份重要原始记录并校验 SHA-256。最终结论、完整验收日志、关键红绿诊断及一张长片截图保留。
+- 清理没有重新执行产品测试。原有测试统计仍对应历史受测提交；删除清单、分支 HEAD 和文件来源见 [cleanup-20261018.json](../../webui/tests/evidence/cleanup-20261018.json)，历史附件恢复见 [证据索引](../../webui/tests/evidence/README.md#historical-artifacts)。
