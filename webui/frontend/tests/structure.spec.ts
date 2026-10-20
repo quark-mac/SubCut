@@ -45,7 +45,7 @@ async function seek(page: Page, ms: number) {
 test('新增片头默认两秒和未知归属，空白及取消不落盘，提交一步历史且无虚构来源', async ({ page }) => {
   const original = await fixture(page);
   await button(page, '新增字幕').click();
-  await expect(page.getByRole('dialog')).toContainText('00:00:00.000 → 00:00:02.000');
+  await expect(page.getByRole('dialog')).toContainText('00:00:00,000 → 00:00:02,000');
   await expect(page.getByLabel('新增说话人归属')).toHaveValue(original.speakers.find(s => s.label === '?')!.id);
   await expect(button(page, '确认新增')).toBeDisabled();
   await page.getByLabel('新增字幕正文').fill('   ');

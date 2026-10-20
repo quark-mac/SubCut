@@ -1,4 +1,5 @@
 import type { TimelineMedia } from './useTimelineMedia';
+import { IconButton } from './IconButton';
 
 const states = { queued: '等待', running: '运行中', succeeded: '成功', failed: '失败' };
 export function TimelineMediaControls({ media, kind, busy, onGenerate }: {
@@ -12,8 +13,8 @@ export function TimelineMediaControls({ media, kind, busy, onGenerate }: {
       <option value="standard">标准（{kind === '波形' ? '10 ms' : '1 秒'}）</option>
       <option value="detailed">精细（{kind === '波形' ? '5 ms' : '0.5 秒'}）</option>
     </select></label>
-    <button disabled={busy || media.busy} onClick={onGenerate}>{media.task?.state === 'failed' ? `重试${action}` : action}</button>
-    <button onClick={media.refresh}>刷新{kind}状态</button>
+    <div className="button-row"><IconButton icon="WandSparkles" label={media.task?.state === 'failed' ? `重试${action}` : action} disabled={busy || media.busy} onClick={onGenerate} />
+    <IconButton icon="RefreshCw" label={`刷新${kind}状态`} onClick={media.refresh} /></div>
     <div className="media-status" tabIndex={0} role="region" aria-label={`${kind}任务详情`}>
       {media.task && <><p role="status" aria-label={`${kind}任务状态`}>{states[media.task.state]} · {Math.round(media.task.progress * 100)}%{media.task.cached ? ' · 复用缓存' : ''}</p>
         <progress aria-label={`${kind}生成进度`} max={1} value={media.task.progress} />

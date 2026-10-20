@@ -32,7 +32,7 @@ async function fixture(page: Page) {
 test('另存为提交有效人物与结构编辑，复制完整来源配置并独立切换重开', async ({ page }) => {
   const original = await fixture(page);
   await button(page, '列表字幕 1').click();
-  await page.getByLabel('跳转时间', { exact: true }).fill('2'); await button(page, '跳转').click();
+  await page.getByLabel('跳转时间', { exact: true }).fill('00:00:02,000'); await button(page, '跳转').click();
   await button(page, '拆分字幕').click();
   await page.getByRole('tab', { name: '说话人', exact: true }).click();
   await page.getByRole('group', { name: '说话人 甲&乙', exact: true }).getByRole('button', { name: '编辑人物' }).click();
@@ -111,6 +111,7 @@ test('媒体移动仍可重开编辑，重定位验证身份且恢复实际播�
   await button(page, '保存工程').click(); await saved(page);
   const offline = await disk(page, original.id);
   expect(offline.entries[1].text).toBe('失联时修改');
+  await button(page, '工程资源菜单').click();
   await button(page, '重新定位原片').click();
   const other = path.join(inputs, `短片替换-${Date.now()}.mp4`);
   execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', moved, '-t', '2', '-c', 'copy', other]);

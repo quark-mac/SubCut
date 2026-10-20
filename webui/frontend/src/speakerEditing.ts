@@ -14,7 +14,7 @@ export function speakerDraftError(project: Project, draft: SpeakerDraft): string
 export function saveSpeaker(project: Project, speaker: Pick<Speaker, 'id' | 'label' | 'color'>): Project {
   const existing = project.speakers.some(s => s.id === speaker.id);
   const speakers = existing ? project.speakers.map(s => s.id === speaker.id ? { ...s, ...speaker } : s)
-    : [...project.speakers.slice(0, -2), { ...speaker, order: 0 }, ...project.speakers.slice(-2)];
+    : [...project.speakers.slice(0, -2), { ...speaker, order: 0, visible: true }, ...project.speakers.slice(-2)];
   return { ...project, speakers: orderedSpeakers(speakers) };
 }
 
@@ -36,14 +36,15 @@ export function reorderSpeaker(project: Project, source: string, target: string)
 
 export function mergeSpeaker(project: Project, source: string, target: string): Project | null {
   const from = project.speakers.find(s => s.id === source), to = project.speakers.find(s => s.id === target);
-  if (source === target || !from || !to || specialSpeaker(from.label) || specialSpeaker(to.label)) return null;
+  if (source === target || !from || !to || from.visible === false || to.visible === false || specialSpeaker(from.label) || specialSpeaker(to.label)) return null;
   return transferSpeaker(project, source, target);
 }
 
 export function removeSpeaker(project: Project, source: string): Project | null {
   const speaker = project.speakers.find(s => s.id === source);
-  if (!speaker || specialSpeaker(speaker.label)) return null;
-  return transferSpeaker(project, source, project.speakers.find(s => s.label === '?')!.id);
+  const unknown = project.speakers.find(s => s.label === '?');
+  if (!speaker || speaker.visible === false || specialSpeaker(speaker.label) || !unknown || unknown.visible === false) return null;
+  return transferSpeaker(project, source, unknown.id);
 }
 
 function transferSpeaker(project: Project, source: string, target: string): Project {
@@ -53,7 +54,7 @@ function transferSpeaker(project: Project, source: string, target: string): Proj
 
 export function replaceSubtitles(project: Project, preview: ImportPreview): Project {
   const remap = new Map(preview.speakers.map(s => [s.id, project.speakers.find(old => old.label === s.label)]));
-  const speakers = preview.speakers.map(s => ({ ...s, id: remap.get(s.id)?.id ?? s.id, color: remap.get(s.id)?.color ?? s.color }));
+  const speakers = preview.speakers.map(s => ({ ...s, id: remap.get(s.id)?.id ?? s.id, color: remap.get(s.id)?.color ?? s.color, visible: remap.get(s.id)?.visible ?? true }));
   const entries = preview.entries.map(e => ({ ...e, speaker_id: remap.get(e.speaker_id)?.id ?? e.speaker_id }));
   return { ...project, entries, speakers, subtitle_sources: preview.subtitle_sources };
 }

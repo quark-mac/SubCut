@@ -28,7 +28,7 @@ test('连续正文、时间及开放人物归属逐步撤销重做，保存保�
   await editor.fill('');
   await editor.pressSequentially('连续输入的一整句');
   await page.getByRole('button', { name: '应用修改', exact: true }).click();
-  await page.getByLabel('开始时间（毫秒）').fill('1200');
+  await page.getByLabel('开始时间', { exact: true }).fill('00:00:01,200');
   await page.getByRole('button', { name: '应用修改', exact: true }).click();
   await page.getByLabel('说话人名称').fill('Iroha&Kaguya');
   await page.getByRole('button', { name: '应用修改', exact: true }).click();
@@ -44,7 +44,7 @@ test('连续正文、时间及开放人物归属逐步撤销重做，保存保�
   await undo.click();
   await expect(page.getByLabel('说话人名称')).toHaveValue('?');
   await page.keyboard.press('Control+z');
-  await expect(page.getByLabel('开始时间（毫秒）')).toHaveValue('1000');
+  await expect(page.getByLabel('开始时间', { exact: true })).toHaveValue('00:00:01,000');
   await page.keyboard.press('Control+z');
   await expect(editor).toHaveValue(original);
   await expect(undo).toBeDisabled();
@@ -136,7 +136,7 @@ test('文字快捷键保留焦点语义，非法和取消输入不进入历史�
   await editor.press('Control+s');
   await expect(editor).toHaveAttribute('aria-invalid', 'false');
   await expect(redo).toBeEnabled(); // Returning to the same value is not an edit.
-  await page.getByLabel('结束时间（毫秒）').fill('1000');
+  await page.getByLabel('结束时间', { exact: true }).fill('00:00:01,000');
   await page.getByRole('button', { name: '导出普通 SRT', exact: true }).click();
   await expect(page.locator('[aria-invalid="true"]')).toBeFocused();
   expect((await (await page.request.get(`/api/projects/${project.id}`)).json()).exports).toEqual([]);
@@ -333,7 +333,7 @@ test('普通 SRT 从预览、原片播放、正文校对到保存重开和真实
   await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(1.2);
   await page.getByRole('button', { name: '暂停', exact: true }).click();
   await page.getByLabel('字幕正文').fill('浏览器修改\n第二行保留');
-  await page.getByLabel('开始时间（毫秒）').fill('1200');
+  await page.getByLabel('开始时间', { exact: true }).fill('00:00:01,200');
   await page.getByRole('button', { name: '保存工程', exact: true }).click();
   await expect(page.getByRole('status', { name: '保存状态' })).toHaveText('已保存');
   await page.reload();
@@ -343,7 +343,7 @@ test('普通 SRT 从预览、原片播放、正文校对到保存重开和真实
   // The edited item now sorts after the unchanged overlapping entry.
   await page.getByRole('button', { name: '列表字幕 2', exact: true }).click();
   await expect(page.getByLabel('字幕正文')).toHaveValue('浏览器修改\n第二行保留');
-  await expect(page.getByLabel('开始时间（毫秒）')).toHaveValue('1200');
+  await expect(page.getByLabel('开始时间', { exact: true })).toHaveValue('00:00:01,200');
   // Export must commit a focused editor, not silently use the last saved text.
   await page.getByLabel('字幕正文').fill('导出时提交\n第二行保留');
   await page.getByLabel('导出格式').selectOption('plain-srt');
@@ -376,12 +376,12 @@ test('非法输入阻止保存和导出，保存失败保留输入并可重试',
   await expect(page.getByRole('alert')).toContainText('字幕正文不能为空');
   await expect(editor).toBeFocused();
   await editor.fill('修正后正文');
-  await page.getByLabel('结束时间（毫秒）').fill('9000');
+  await page.getByLabel('结束时间', { exact: true }).fill('00:00:09,000');
   await page.getByRole('button', { name: '导出普通 SRT', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('不超过原片时长');
-  await expect(page.getByLabel('结束时间（毫秒）')).toBeFocused();
+  await expect(page.getByLabel('结束时间', { exact: true })).toBeFocused();
   expect((await (await page.request.get(`/api/projects/${project.id}`)).json()).exports).toEqual([]);
-  await page.getByLabel('结束时间（毫秒）').fill('4000');
+  await page.getByLabel('结束时间', { exact: true }).fill('00:00:04,000');
   // Simulate a network/storage failure at the public HTTP boundary, once.
   await page.route(`**/api/projects/${project.id}`, async route => {
     if (route.request().method() === 'PUT') {

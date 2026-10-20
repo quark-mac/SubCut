@@ -26,7 +26,7 @@ test('长片30秒视窗居中播放头，手动滚走后重复点击仍可找回
   const response = await page.request.post('/api/projects', {data:{name:`30秒-${Date.now()}`,media_path:media,subtitle_path:path.resolve('.test-workspace/inputs/来源.srt')}});
   const project = await response.json();
   await page.goto('/'); await open(page, project.name);
-  await page.getByLabel('跳转时间', {exact:true}).fill('01:00:00'); await button(page,'跳转').click();
+  await page.getByLabel('跳转时间', {exact:true}).fill('01:00:00,000'); await button(page,'跳转').click();
   const viewport = page.getByRole('region',{name:'时间轴轨道滚动区'});
   const centered = async () => {
     const box = (await viewport.boundingBox())!;
@@ -130,7 +130,7 @@ test('两小时4000条26人物可见范围、滚动缩放及完整编辑保存�
   await expect(page.getByLabel('字幕正文')).toHaveValue(target.text);
   await button(page, '重做').click();
   await expect(page.getByLabel('字幕正文')).toHaveValue('播放中长片修改\n来源保持');
-  await page.getByLabel('跳转时间', { exact: true }).fill('01:09:59.000'); await button(page, '跳转').click();
+  await page.getByLabel('跳转时间', { exact: true }).fill('01:09:59,000'); await button(page, '跳转').click();
   await button(page, '拆分字幕').click();
   await expect(page.getByLabel('选择数量', { exact: true })).toHaveText('已选 2 条');
   await button(page, '撤销').click();

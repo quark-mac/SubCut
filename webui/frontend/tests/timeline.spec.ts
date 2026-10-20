@@ -58,8 +58,8 @@ test('单条按轨道顺序换轨、边界不循环，一步历史与保存重�
   for (const label of ['甲', '乙', '?', 'NONSPEECH']) {
     await page.keyboard.press('ArrowDown');
     await expect(page.getByLabel('说话人名称')).toHaveValue(label);
-    await expect(page.getByLabel('开始时间（毫秒）')).toHaveValue('1000');
-    await expect(page.getByLabel('结束时间（毫秒）')).toHaveValue('4000');
+    await expect(page.getByLabel('开始时间', { exact: true })).toHaveValue('00:00:01,000');
+    await expect(page.getByLabel('结束时间', { exact: true })).toHaveValue('00:00:04,000');
   }
   await page.keyboard.press('ArrowDown');
   await expect(page.getByLabel('说话人名称')).toHaveValue('NONSPEECH');
@@ -100,7 +100,7 @@ test('轨序配色一致，同轨同时间错层可点击，跨视图正文时�
   await expect.poll(() => page.locator('video').evaluate((v: HTMLVideoElement) => v.currentTime)).toBeCloseTo(2, 2);
   await page.getByRole('button', { name: '字幕总览：甲的第一句', exact: true }).click();
   await page.getByLabel('字幕正文').fill('共享修改\n保留换行');
-  await page.getByLabel('开始时间（毫秒）').fill('1250');
+  await page.getByLabel('开始时间', { exact: true }).fill('00:00:01,250');
   await page.getByLabel('说话人归属').selectOption('乙');
   await page.getByRole('button', { name: '应用修改', exact: true }).click();
   const overview = page.getByRole('button', { name: '字幕总览：共享修改 保留换行', exact: true });
@@ -108,7 +108,7 @@ test('轨序配色一致，同轨同时间错层可点击，跨视图正文时�
   await expect(overview).toHaveClass(/selected/);
   await expect(person).toHaveClass(/selected/);
   await person.click();
-  await expect(page.getByLabel('开始时间（毫秒）')).toHaveValue('1250');
+  await expect(page.getByLabel('开始时间', { exact: true })).toHaveValue('00:00:01,250');
   await expect(page.getByLabel('播放字幕')).toContainText('共享修改');
   await expect(page.getByLabel('字幕列表')).toContainText('共享修改');
   await save(page);
@@ -210,7 +210,7 @@ test('缩放和双向滚动后播放头仍按原片坐标更新实际帧，Esc �
   expect(sixthFrame).not.toBe(firstFrame);
   await expect(page.getByLabel('字幕正文')).toHaveValue('甲的第一句');
   await page.mouse.up();
-  await expect(page.getByLabel('播放位置')).toContainText('00:00:06.');
+  await expect(page.getByLabel('播放位置')).toContainText('00:00:06,');
   await page.getByRole('button', { name: '拖动播放头' }).hover();
   await page.mouse.down();
   await page.mouse.move(x + 120, rect.y + 12, { steps: 5 });
@@ -224,7 +224,7 @@ test('缩放和双向滚动后播放头仍按原片坐标更新实际帧，Esc �
   await page.mouse.wheel(0, 2000);
   await expect.poll(() => viewport.evaluate(el => el.scrollTop)).toBeGreaterThan(0);
   await page.getByRole('button', { name: '非对白 NONSPEECH：风声', exact: true }).click();
-  await expect(page.getByLabel('开始时间（毫秒）')).toHaveValue('6000');
+  await expect(page.getByLabel('开始时间', { exact: true })).toHaveValue('00:00:06,000');
   await expect(video).toHaveJSProperty('seeking', false);
   expect(await frame()).toBe(sixthFrame);
   await page.getByRole('button', { name: '适合全片', exact: true }).click();
@@ -246,7 +246,7 @@ test('全片缩放下片尾一毫秒同轨条目仍可分别点击，拖动超�
   for (const text of ['甲的第一句', '甲的同时间句']) {
     await page.getByRole('button', { name: `甲：${text}`, exact: true }).click({ timeout: 3000 });
     await expect(page.getByLabel('字幕正文')).toHaveValue(text);
-    await expect(page.getByLabel('开始时间（毫秒）')).toHaveValue('7999');
+    await expect(page.getByLabel('开始时间', { exact: true })).toHaveValue('00:00:07,999');
   }
   const ruler = page.getByLabel('原片时间刻度', { exact: true });
   const rect = (await ruler.boundingBox())!;
@@ -257,7 +257,7 @@ test('全片缩放下片尾一毫秒同轨条目仍可分别点击，拖动超�
   await page.mouse.move(rect.x + rect.width + 10, rect.y + 10);
   await page.mouse.up();
   await expect.poll(() => page.locator('video').evaluate((v: HTMLVideoElement) => v.currentTime)).toBe(8);
-  await expect(page.getByLabel('播放位置')).toHaveText('00:00:08.000 / 00:00:08.000');
+  await expect(page.getByLabel('播放位置')).toHaveText('00:00:08,000 / 00:00:08,000');
   await expect(page.getByRole('button', { name: '撤销', exact: true })).toBeDisabled();
   expect((await (await page.request.get(`/api/projects/${project.id}`)).json()).entries).toEqual(entries);
 });

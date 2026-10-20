@@ -199,7 +199,8 @@ EXPORT_TYPES = {
 
 
 def write_subtitles(project, format, keep_tags=False) -> str:
-    ordered = sorted(project.entries, key=lambda entry: (entry.start_ms, entry.end_ms))
+    visible = {s.id for s in project.speakers if s.visible}
+    ordered = sorted((entry for entry in project.entries if entry.speaker_id in visible), key=lambda entry: (entry.start_ms, entry.end_ms))
     labels = {s.id: s.label for s in project.speakers}
     rows = []
     for index, entry in enumerate(ordered, 1):

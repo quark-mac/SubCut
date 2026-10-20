@@ -68,7 +68,7 @@ test('跨票组合：来源标签→重排双视图批量→筛选结构→故�
   expect(merged.entries).toHaveLength(4);
   expect(merged.entries[0]).toEqual({ ...project.entries[0], id: expect.any(String), end_ms: 3000, text: '目标一\n第二行\n隐藏的中间条\n目标三',
     speaker_id: project.speakers.find(s => s.label === '甲&乙')!.id, tags: ['MULTI', 'MERGED', 'CUSTOM'], sources: project.entries.slice(0, 3).flatMap(e => e.sources) });
-  await page.getByLabel('跳转时间').fill('1'); await button(page, '跳转').click();
+  await page.getByLabel('跳转时间').fill('00:00:01,000'); await button(page, '跳转').click();
   await button(page, '拆分字幕').click(); await expect(status(page)).toHaveText('已保存');
   const split = await disk();
   expect(split.entries.slice(0, 2).map(e => [e.start_ms, e.end_ms, e.text, e.sources, e.tags])).toEqual([
@@ -78,9 +78,9 @@ test('跨票组合：来源标签→重排双视图批量→筛选结构→故�
   await button(page, '撤销').click(); await expect(status(page)).toHaveText('已保存');
   expect((await disk()).entries).toEqual(merged.entries);
   await button(page, '清除筛选').click(); await row(page, 1).click();
-  await page.getByLabel('开始时间（毫秒）', { exact: true }).fill('4000');
+  await page.getByLabel('开始时间', { exact: true }).fill('00:00:04,000');
   await button(page, '导出说话人 SRT').click();
-  await expect(page.getByLabel('开始时间（毫秒）', { exact: true })).toBeFocused();
+  await expect(page.getByLabel('开始时间', { exact: true })).toBeFocused();
   expect((await disk()).entries).toEqual(merged.entries);
   await page.keyboard.press('Escape');
   const endpoint = `**/api/projects/${project.id}`;

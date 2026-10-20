@@ -1,5 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
-import { ordered, timeLabel, type Entry, type Project } from './api';
+import { ordered, timeLabel, visibleEntries, type Entry, type Project } from './api';
+import { IconButton, IconToggle } from './IconButton';
+import { TrackHeader } from './TrackHeader';
+import { specialSpeaker } from './speakerEditing';
 import { offsetSpeakers } from './selectionEditing';
 import { TimelineEvidence } from './TimelineEvidence';
 import { WorkspaceSplitter } from './WorkspaceSplitter';
@@ -15,6 +18,10 @@ interface Props {
   thumbnails: string | null;
   thumbnailVersion: string;
   speakers: Project['speakers'];
+  onReorder: (source: string, target: string) => void;
+  onToggleSpeaker: (id: string) => void;
+  onBeginReorder: () => boolean;
+  onEndReorder: () => void;
   onSort: () => void;
   onStoredOrder: () => void;
   onGenerateThumbnails: () => void;
@@ -51,7 +58,7 @@ interface EditGesture {
   targets: number[];
 }
 
-export function SourceTimeline({ project, selected, position, busy, currentTrack, waveform, thumbnails, thumbnailVersion, speakers, onSort, onStoredOrder, onGenerateThumbnails, onGenerateWaveform, generatingThumbnails, generatingWaveform, onTrack, onChoose, onListen, onSeek, onBeginEdit, onPreview, onCommitEdit, onBeginSelect, onSelect, onEndSelect }: Props) {
+export function SourceTimeline({ project, selected, position, busy, currentTrack, waveform, thumbnails, thumbnailVersion, speakers, onReorder, onToggleSpeaker, onBeginReorder, onEndReorder, onSort, onStoredOrder, onGenerateThumbnails, onGenerateWaveform, generatingThumbnails, generatingWaveform, onTrack, onChoose, onListen, onSeek, onBeginEdit, onPreview, onCommitEdit, onBeginSelect, onSelect, onEndSelect }: Props) {
   const viewport = useRef<HTMLDivElement>(null);
   const ruler = useRef<HTMLDivElement>(null);
   const gesture = useRef<{ pointer: number; start: number; scroll: number; clientX: number } | null>(null);
@@ -153,12 +160,12 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
 
   // Preview overlays never relayout rows under the pointer; commit recalculates overlap lanes.
   const tracks = useMemo(() => {
-    const entries = ordered(project.entries);
+    const entries = ordered(visibleEntries(project));
     return [
-      { id: 'video', label: '🔒 视频轨', entries: [] as Entry[], color: undefined },
-      ...(showWaveform ? [{ id: 'waveform', label: '音频波形', entries: [] as Entry[], color: undefined }] : []),
-      ...(showOverview ? [{ id: 'overview', label: '字幕总览', entries, color: undefined }] : []),
-      ...speakers.map(s => ({ id: s.id, label: speakerLabel(s.label), color: s.color, entries: entries.filter(e => e.speaker_id === s.id) })),
+      { id: 'video', label: '🔒 视频轨', entries: [] as Entry[], color: undefined, hidden: false },
+      ...(showWaveform ? [{ id: 'waveform', label: '音频波形', entries: [] as Entry[], color: undefined, hidden: false }] : []),
+      ...(showOverview ? [{ id: 'overview', label: '字幕总览', entries, color: undefined, hidden: false }] : []),
+      ...speakers.map(s => ({ id: s.id, label: speakerLabel(s.label), color: s.color, hidden: s.visible === false, entries: entries.filter(e => e.speaker_id === s.id) })),
     ].map(track => {
       const ends: number[] = [];
       const blocks = track.entries.map(entry => {
@@ -171,7 +178,7 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
         return { entry, lane, left: start, width: end - start };
       });
       const minimum = track.id === 'video' || track.id === 'waveform' ? 48 : Math.max(46, ends.length * 35 + 8);
-      const height = Math.max(minimum, heights[track.id] ?? (track.id === 'video' ? 80 : track.id === 'waveform' ? 100 : minimum));
+      const height = track.hidden ? 38 : Math.max(minimum, heights[track.id] ?? (track.id === 'video' ? 80 : track.id === 'waveform' ? 100 : minimum));
       return { ...track, blocks, minimum, height, laneHeight: (height - 8) / Math.max(1, ends.length) };
     });
   }, [project.entries, speakers, duration, width, showWaveform, showOverview, heights]);
@@ -252,7 +259,7 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
     edit.current = { pointer: event.pointerId, clientX: event.clientX, clientY: event.clientY,
       entry: original, entries: originals, next: originals, origin: pointerTime(event.clientX), y: event.clientY,
       mode: edge === 'start' || edge === 'end' ? edge : 'move', moved: false, horizontal: false,
-      targets: [...new Set([position, ...project.entries.filter(e => !originals.some(item => item.id === e.id)).flatMap(e => [e.start_ms, e.end_ms])])] };
+      targets: [...new Set([position, ...visibleEntries(project).filter(e => !originals.some(item => item.id === e.id)).flatMap(e => [e.start_ms, e.end_ms])])] };
     viewport.current!.setPointerCapture(event.pointerId);
   }
 
@@ -284,7 +291,7 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
     setSnapTime(snapped);
     const shift = Math.max(min, Math.min(max, delta));
     const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-speaker-id]')?.dataset.speakerId;
-    const speaker = project.speakers.find(s => s.id === target);
+    const speaker = project.speakers.find(s => s.id === target && s.visible !== false);
     current.next = current.entries.map(e => current.mode === 'start'
       ? { ...e, start_ms: e.start_ms + shift }
       : current.mode === 'end'
@@ -293,7 +300,7 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
           speaker_id: current.entries.length === 1 ? speaker?.id ?? e.speaker_id : e.speaker_id });
     let rejected = false;
     if (current.mode === 'move' && speaker && current.entries.length > 1) {
-      const tracks = speakers;
+      const tracks = speakers.filter(s => s.visible !== false);
       const offset = tracks.findIndex(s => s.id === speaker.id) - tracks.findIndex(s => s.id === current.entry.speaker_id);
       const shifted = offsetSpeakers(current.next, tracks, offset);
       rejected = !shifted;
@@ -370,24 +377,23 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
 
   return <>
     <div className="timeline-navigation">
-      <button aria-pressed={snapping} disabled={!!preview} onClick={() => setSnapping(!snapping)}
-        title="吸附到播放头或其他字幕边界（8 像素内）">吸附</button>
-      <button aria-label="缩小时间轴" disabled={!!preview || zoom <= 0} onClick={() => changeZoom(zoom - .125)}>−</button>
-      <label>缩放 <input aria-label="时间轴缩放" type="range" min="0" max={maxZoom} step="0.125" value={zoom} disabled={!!preview}
+      <IconButton icon="Magnet" label="吸附" aria-pressed={snapping} disabled={!!preview} onClick={() => setSnapping(!snapping)} />
+      <IconButton icon="Minus" label="缩小时间轴" disabled={!!preview || zoom <= 0} onClick={() => changeZoom(zoom - .125)} />
+      <label title="时间轴缩放"><input aria-label="时间轴缩放" type="range" min="0" max={maxZoom} step="0.125" value={zoom} disabled={!!preview}
         onChange={event => changeZoom(Number(event.target.value))} /></label>
-      <button aria-label="放大时间轴" disabled={!!preview || zoom >= maxZoom} onClick={() => changeZoom(zoom + .125)}>＋</button>
+      <IconButton icon="Plus" label="放大时间轴" disabled={!!preview || zoom >= maxZoom} onClick={() => changeZoom(zoom + .125)} />
       <output aria-label="缩放倍率">{Number((2 ** zoom).toFixed(2))}×</output>
-      <button onClick={() => changeZoom(0)} disabled={!!preview}>适合全片</button>
-      <button onClick={focusThirtySeconds} disabled={!!preview} title="以播放头为中心查看约 30 秒，适合长片逐句校对">30 秒视窗</button>
-      <label><input type="checkbox" checked={follow} onChange={e => setFollow(e.target.checked)} />跟随播放头</label>
-      <label><input type="checkbox" checked={showOverview} disabled={!!preview || busy} onChange={e => setShowOverview(e.target.checked)} />字幕总览</label>
-      <label><input type="checkbox" checked={showThumbnails} onChange={e => setShowThumbnails(e.target.checked)} />视频缩略图</label>
-      <label><input type="checkbox" checked={showWaveform} disabled={!!preview || busy} onChange={e => setShowWaveform(e.target.checked)} />音频波形</label>
-      <button disabled={busy || !!preview} onClick={onSort}>按字幕数排序</button>
-      <button disabled={busy || !!preview} onClick={onStoredOrder} title="恢复工程保存的人物顺序">工程轨序</button>
-      {showThumbnails && !thumbnails && <button disabled={busy || generatingThumbnails} onClick={onGenerateThumbnails}>{generatingThumbnails ? '缩略图生成中…' : '生成缩略图'}</button>}
-      {showWaveform && !waveform && <button disabled={busy || generatingWaveform} onClick={onGenerateWaveform}>{generatingWaveform ? '波形生成中…' : '生成波形'}</button>}
-      <span>{invalidTrack ? '轨道越界 · 整次移动不执行' : preview ? `预览 ${preview.length} 条 · ${timeLabel(preview[0].start_ms)} → ${timeLabel(preview[0].end_ms)}${snapTime !== null ? ' · 已吸附' : ''} · 松开提交 / Esc 取消` : '拖动字幕或两端调整 · 空白框选 · Ctrl/Shift 多选 · 拖动刻度定位'}</span>
+      <IconButton icon="Scan" label="适合全片" onClick={() => changeZoom(0)} disabled={!!preview} />
+      <IconButton icon="Timer" label="30 秒视窗" onClick={focusThirtySeconds} disabled={!!preview} />
+      <IconToggle icon="Focus" label="跟随播放头" checked={follow} onChange={e => setFollow(e.target.checked)} />
+      <IconToggle icon="ListVideo" label="字幕总览" checked={showOverview} disabled={!!preview || busy} onChange={e => setShowOverview(e.target.checked)} />
+      <IconToggle icon="Film" label="视频缩略图" checked={showThumbnails} onChange={e => setShowThumbnails(e.target.checked)} />
+      <IconToggle icon="AudioLines" label="音频波形" checked={showWaveform} disabled={!!preview || busy} onChange={e => setShowWaveform(e.target.checked)} />
+      <IconButton icon="ArrowDownWideNarrow" label="按字幕数排序" disabled={busy || !!preview} onClick={onSort} />
+      <IconButton icon="ListOrdered" label="工程轨序" disabled={busy || !!preview} onClick={onStoredOrder} />
+      {showThumbnails && !thumbnails && <IconButton icon="WandSparkles" label={generatingThumbnails ? '缩略图生成中…' : '生成缩略图'} disabled={busy || generatingThumbnails} onClick={onGenerateThumbnails} />}
+      {showWaveform && !waveform && <IconButton icon="WandSparkles" label={generatingWaveform ? '波形生成中…' : '生成波形'} disabled={busy || generatingWaveform} onClick={onGenerateWaveform} />}
+      {invalidTrack && <small role="status">轨道越界</small>}
     </div>
     <div className="tracks" ref={viewport} role="region" aria-label="时间轴轨道滚动区" tabIndex={0}
       onPointerDown={beginBox}
@@ -437,12 +443,14 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
               style={{ left: `${position / duration * 100}%` }} disabled={busy}>▼</button>
           </div>
         </div>
-        {renderedTracks.map(track => <div className="track" key={track.id} style={{ height: track.height + 1 }}
-          data-speaker-id={project.speakers.some(s => s.id === track.id) ? track.id : undefined}>
-          <button className="track-label" style={{ color: track.color }} title={track.label} aria-label={`选择轨道 ${track.label}`}
-            aria-pressed={currentTrack === track.id} disabled={busy || !!preview}
-            onClick={() => onTrack(project.speakers.some(s => s.id === track.id) ? track.id : '')}>{track.label}</button>
-          <div className={`track-body ${track.id === 'video' || track.id === 'waveform' ? 'locked' : ''}`} style={{ height: track.height }}>
+        {renderedTracks.map(track => <div className={`track ${track.hidden ? 'hidden-track' : ''}`} key={track.id} style={{ height: track.height + 1 }}
+          data-speaker-id={!track.hidden && project.speakers.some(s => s.id === track.id) ? track.id : undefined}>
+          <TrackHeader id={track.id} label={track.label} color={track.color} hidden={track.hidden} selected={currentTrack === track.id} busy={busy || !!preview}
+            movable={speakers.some(s => s.id === track.id && !specialSpeaker(s.label))}
+            onSelect={() => onTrack(!track.hidden && project.speakers.some(s => s.id === track.id) ? track.id : '')}
+            onToggle={speakers.some(s => s.id === track.id) ? () => onToggleSpeaker(track.id) : undefined}
+            onBegin={() => !edit.current && !gesture.current && !box.current && onBeginReorder()} onEnd={onEndReorder} onReorder={onReorder} />
+          <div className={`track-body ${track.hidden || track.id === 'video' || track.id === 'waveform' ? 'locked' : ''}`} style={{ height: track.height }}>
             {(track.id === 'video' || track.id === 'waveform') && <TimelineEvidence waveform={track.id === 'waveform' ? waveform : null} thumbnails={track.id === 'video' && showThumbnails ? thumbnails : null}
               duration={duration} width={width} scrollLeft={scrollLeft} viewportWidth={fitWidth} height={track.height} kind={track.id} />}
             {track.blocks.map(({ entry: original, lane, left, width: blockWidth }) => {
@@ -464,12 +472,12 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
             <div className="playhead" style={{ left: `${position / duration * 100}%` }} />
             {snapTime !== null && <div className="snap-guide" style={{ left: `${snapTime / duration * 100}%` }} />}
           </div>
-          <div className="track-height-handle" style={{ left: scrollLeft }} title="拖动调整此轨高度 · Esc 取消">
+          {!track.hidden && <div className="track-height-handle" style={{ left: scrollLeft }} title="拖动调整此轨高度 · Esc 取消">
             <WorkspaceSplitter label={`调整轨道高度 ${track.label}`} horizontal onBegin={() => {
               const original = heights;
               return { move: delta => { if (!busy && !edit.current && !box.current && !gesture.current) setHeights({ ...original, [track.id]: Math.max(track.minimum, Math.min(Math.max(320, track.minimum * 3), track.height + delta)) }); }, cancel: () => setHeights(original) };
             }} />
-          </div>
+          </div>}
         </div>)}
         {marquee && <div className="selection-marquee" aria-label="框选范围" style={marquee} />}
       </div>

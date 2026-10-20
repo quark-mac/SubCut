@@ -2,7 +2,7 @@
 from typing import Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, StrictInt
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt
 
 
 def identity() -> str:
@@ -35,6 +35,7 @@ class Speaker(Model):
     label: str
     color: str
     order: int
+    visible: StrictBool = True
 
 
 class Media(Model):

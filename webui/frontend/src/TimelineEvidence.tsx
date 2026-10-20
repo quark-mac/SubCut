@@ -47,6 +47,6 @@ export const TimelineEvidence = memo(function TimelineEvidence({ waveform, thumb
     </svg>}
     {waveData && !waveData.has_audio && <span className="evidence-message" style={{ left: scrollLeft + 8 }}>无音轨 · 空波形</span>}
     {(waveError || imageError) && <span role="status" className="evidence-message" style={{ left: scrollLeft + 8 }}>时间轴资源加载失败，可刷新波形/缩略图状态重试：{waveError || imageError}</span>}
-    {!waveform && !thumbnails && <span className="evidence-message" style={{ left: scrollLeft + 8 }}>{kind === 'waveform' ? '音频波形未生成 · 点击上方“生成波形”' : '原片 · 缩略图未生成或已隐藏 · 点击上方“生成缩略图”'}</span>}
+    {!waveform && !thumbnails && <span className="evidence-message" style={{ left: scrollLeft + 8 }}>{kind === 'waveform' ? '暂无波形' : '视频'}</span>}
   </div>;
 });

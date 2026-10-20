@@ -37,7 +37,7 @@ test('跳转播放时间后时间轴显示播放头，缩放细分而非两倍�
   await openFixture(page);
   const zoom = page.getByLabel('时间轴缩放', { exact: true });
   await zoom.fill('3');
-  await page.getByLabel('跳转时间', { exact: true }).fill('7');
+  await page.getByLabel('跳转时间', { exact: true }).fill('00:00:07,000');
   await page.getByRole('button', { name: '跳转', exact: true }).click();
   const tracks = page.getByRole('region', { name: '时间轴轨道滚动区' });
   await expect.poll(async () => {
@@ -90,9 +90,10 @@ test('实际缩略图适配轨高且拖动时展示参考帧，波形默认隐�
     const started = await (await page.request.post(`/api/projects/${project.id}/timeline-media/${kind}`, { data: {} })).json();
     await expect.poll(async () => (await (await page.request.get(`/api/projects/${project.id}/tasks/${started.id}`)).json()).state).toBe('succeeded');
   }
+  await page.getByRole('button', { name: '工程资源菜单', exact: true }).click();
   await page.getByRole('button', { name: '刷新缩略图状态', exact: true }).click();
   await page.getByRole('button', { name: '刷新波形状态', exact: true }).click();
-  const image = page.getByRole('img', { name: '原片缩略图 00:00:00.000', exact: true });
+  const image = page.getByRole('img', { name: '原片缩略图 00:00:00,000', exact: true });
   await expect(image).toBeVisible();
   const firstHeight = (await image.boundingBox())!.height;
   const resize = page.getByRole('separator', { name: '调整轨道高度 🔒 视频轨', exact: true });

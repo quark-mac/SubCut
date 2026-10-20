@@ -100,6 +100,7 @@ test('重新定位与新视频副本可用文件选择，取消不会清空已�
   await page.getByRole('button', { name: '打开工程…' }).click();
   await page.getByRole('button', { name: original.name, exact: true }).click();
   for (const action of ['重新定位原片', '用新视频建立工程']) {
+    if (await page.getByRole('button', { name: '工程资源菜单', exact: true }).getAttribute('aria-expanded') === 'false') await page.getByRole('button', { name: '工程资源菜单', exact: true }).click();
     await page.getByRole('button', { name: action, exact: true }).click();
     cancel = false;
     await page.getByRole('button', { name: '选择视频…' }).click();

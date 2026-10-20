@@ -43,9 +43,9 @@ test('逐句双击短句终点停止，轨道双击、慢放循环与明确退�
   await button(page, '字幕总览：目标短句\n第二行').dblclick();
   await expect(page.locator('video')).toHaveJSProperty('currentTime', 1.35);
   await expect(page.locator('video')).toHaveJSProperty('paused', true);
-  await page.getByLabel('跳转时间').fill('00:00:06.200'); await button(page, '跳转').click();
+  await page.getByLabel('跳转时间').fill('00:00:06,200'); await button(page, '跳转').click();
   await expect(page.locator('video')).toHaveJSProperty('currentTime', 6.2);
-  await expect(page.getByLabel('播放位置')).toContainText('00:00:06.200');
+  await expect(page.getByLabel('播放位置')).toContainText('00:00:06,200');
   await expect(row(page, 4)).toHaveClass(/active/);
   await expect(row(page, 1)).toHaveAttribute('aria-pressed', 'true');
   await page.getByLabel('跳转时间').fill('00:70:00'); await button(page, '跳转').click();
@@ -76,7 +76,7 @@ test('搜索及人物筛选仅过滤呈现，不能把全体不连续项变成�
 test('重叠多行工作字幕错位显示，姓名独立开关，草稿提交才更新叠加', async ({ page }) => {
   await fixture(page);
   await row(page, 1).click();
-  await page.getByLabel('跳转时间').fill('1.2'); await button(page, '跳转').click();
+  await page.getByLabel('跳转时间').fill('00:00:01,200'); await button(page, '跳转').click();
   const overlay = page.getByLabel('播放字幕');
   await expect(overlay).toContainText('[甲]'); await expect(overlay).toContainText('[乙]');
   const blocks = overlay.locator(':scope > div');
@@ -195,8 +195,8 @@ test('帮助列出全部已交付快捷键，文件编辑视图菜单执行真�
 test('片尾循环可退出，删除当前试听目标后停止，不把恢复的字幕自动重新播放', async ({ page }) => {
   const p = await fixture(page);
   await row(page, 4).click();
-  await page.getByLabel('开始时间（毫秒）').fill('7700');
-  await page.getByLabel('结束时间（毫秒）').fill('8000');
+  await page.getByLabel('开始时间', { exact: true }).fill('00:00:07,700');
+  await page.getByLabel('结束时间', { exact: true }).fill('00:00:08,000');
   await button(page, '应用修改').click();
   await button(page, '循环当前字幕').click();
   await page.waitForTimeout(1100);

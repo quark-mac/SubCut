@@ -1,7 +1,7 @@
 import { expect, test, type Page, type Locator } from '@playwright/test';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import type { Entry, Project } from '../src/api';
+import { timeLabel, parseTimecode, type Entry, type Project } from '../src/api';
 
 async function open(page: Page, name: string) {
   await page.getByRole('button', { name: '文件', exact: true }).click();
@@ -35,8 +35,8 @@ const undo = (page: Page) => page.getByRole('button', { name: '撤销', exact: t
 const redo = (page: Page) => page.getByRole('button', { name: '重做', exact: true });
 
 async function fields(page: Page, start: number, end: number, speaker = '甲') {
-  await expect(page.getByLabel('开始时间（毫秒）')).toHaveValue(String(start));
-  await expect(page.getByLabel('结束时间（毫秒）')).toHaveValue(String(end));
+  await expect(page.getByLabel('开始时间', { exact: true })).toHaveValue(timeLabel(start));
+  await expect(page.getByLabel('结束时间', { exact: true })).toHaveValue(timeLabel(end));
   await expect(page.getByLabel('说话人名称')).toHaveValue(speaker);
 }
 
@@ -260,9 +260,9 @@ test('2× 与 8× 缩放横纵滚动后按原片毫秒拖动，手势中滚动�
   }
   // Keep the pointer fixed while the real wheel moves source time underneath it.
   await begin(page, clip(page, '甲'), 100);
-  const before = Number(await page.getByLabel('开始时间（毫秒）').inputValue());
+  const before = parseTimecode(await page.getByLabel('开始时间', { exact: true }).inputValue())!;
   await page.mouse.wheel(100, 0);
-  await expect.poll(async () => Number(await page.getByLabel('开始时间（毫秒）').inputValue())).toBeGreaterThan(before + 50);
+  await expect.poll(async () => parseTimecode(await page.getByLabel('开始时间', { exact: true }).inputValue())).toBeGreaterThan(before + 50);
   await page.keyboard.press('Escape');
   await page.mouse.up();
   await fields(page, 5000, 6000);

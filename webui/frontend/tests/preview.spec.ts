@@ -4,11 +4,13 @@ import path from 'node:path';
 import { execFileSync, spawn } from 'node:child_process';
 import net from 'node:net';
 import type { Project } from '../src/api';
+import { timeLabel } from '../src/api';
 
 const root = path.resolve('.test-workspace/preview');
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 async function open(page: Page, name: string) {
   await button(page, '文件').click(); await button(page, '打开工程…').click(); await button(page, name).click();
+  await button(page, '工程资源菜单').click();
 }
 async function fixture(page: Page, large = false) {
   const folder = path.join(root, String(Date.now()));
@@ -23,6 +25,7 @@ async function fixture(page: Page, large = false) {
   await button(page, '解析预览').click();
   const created = page.waitForResponse(r => r.url().endsWith('/api/projects') && r.request().method() === 'POST');
   await button(page, '创建工程').click();
+  await button(page, '工程资源菜单').click();
   return (await (await created).json()) as Project;
 }
 
@@ -39,7 +42,7 @@ test('真实不兼容原片从 UI 转换，Edge 解码并在开头中部结尾�
   await expect.poll(() => page.locator('video').evaluate((v: HTMLVideoElement) => v.readyState)).toBeGreaterThanOrEqual(2);
   const results: unknown[] = [];
   for (const [seconds, rgb, label, hz] of [[1, [255, 0, 0], '红色', 440], [5, [0, 255, 0], '绿色', 880], [8.5, [0, 0, 255], '蓝色', 1320]] as const) {
-    await page.getByLabel('跳转时间', { exact: true }).fill(String(seconds)); await button(page, '跳转').click();
+    await page.getByLabel('跳转时间', { exact: true }).fill(timeLabel(seconds * 1000)); await button(page, '跳转').click();
     await expect(page.locator('.subtitle-overlay')).toContainText(label);
     const observed = await page.locator('video').evaluate(async (v: HTMLVideoElement) => {
       if (v.seeking) await new Promise(resolve => v.addEventListener('seeked', resolve, { once: true }));

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { api, ordered, timeLabel, type Entry, type ExportFormat, type ImportPreview, type ImportFormat, type Project, type ProjectSummary } from './api';
+import { api, ordered, timeLabel, parseTimecode, visibleEntries, type Entry, type ExportFormat, type ImportPreview, type ImportFormat, type Project, type ProjectSummary } from './api';
+import { IconButton, IconToggle } from './IconButton';
 import { useProjectSession } from './useProjectSession';
 import { useAudition } from './useAudition';
 import { WorkspaceSplitter } from './WorkspaceSplitter';
@@ -23,7 +24,7 @@ import { SpeakerManager } from './SpeakerManager';
 import { mergeSpeaker, removeSpeaker, reorderSpeaker, replaceSubtitles, resolveSpeaker, saveSpeaker, speakerDraftError, type SpeakerDraft } from './speakerEditing';
 
 interface Draft { text: string; start: string; end: string; speaker: string }
-const draftFor = (entry: Entry, project: Project): Draft => ({ text: entry.text, start: String(entry.start_ms), end: String(entry.end_ms), speaker: project.speakers.find(s => s.id === entry.speaker_id)!.label });
+const draftFor = (entry: Entry, project: Project): Draft => ({ text: entry.text, start: timeLabel(entry.start_ms), end: timeLabel(entry.end_ms), speaker: project.speakers.find(s => s.id === entry.speaker_id)!.label });
 const exportLabels: Record<ExportFormat, string> = { 'speaker-srt': '说话人 SRT', 'plain-srt': '普通 SRT', 'normalized-jsonl': '项目 JSONL', 'moss-json': 'MOSS JSON' };
 
 export function App() {
@@ -31,6 +32,7 @@ export function App() {
   const { project, dirty } = session;
   const [trackOrder, setTrackOrder] = useState<string[]>([]);
   const trackSpeakers = useMemo(() => visibleSpeakers(project?.speakers ?? [], trackOrder), [project?.speakers, trackOrder]);
+  const visibleProject = useMemo(() => project && { ...project, entries: visibleEntries(project) }, [project]);
   const previewCopy = usePreviewCopy(project);
   const waveform = useTimelineMedia(project, 'waveform');
   const thumbnails = useTimelineMedia(project, 'thumbnails');
@@ -59,6 +61,9 @@ export function App() {
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [position, setPosition] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [muted, setMuted] = useState(false);
+  const videoStage = useRef<HTMLDivElement>(null);
   const [showSubtitles, setShowSubtitles] = useState(true);
   const [showSpeakerNames, setShowSpeakerNames] = useState(true);
   const [search, setSearch] = useState('');
@@ -72,7 +77,7 @@ export function App() {
   const [merging, setMerging] = useState<Set<string> | null>(null);
   const timing = useRef(false);
   const video = useRef<HTMLVideoElement>(null);
-  const audition = useAudition(video, project, playing, setPosition, setError);
+  const audition = useAudition(video, visibleProject, playing, setPosition, setError);
   const [jump, setJump] = useState('');
   const [jumpError, setJumpError] = useState('');
   const textInput = useRef<HTMLTextAreaElement>(null);
@@ -84,6 +89,20 @@ export function App() {
   const speakerOriginal = project?.speakers.find(s => s.id === speakerDraft?.id);
   const speakerChanged = !!speakerDraft && (!speakerOriginal || speakerOriginal.label !== speakerDraft.label || speakerOriginal.color !== speakerDraft.color);
   const unsaved = dirty || draftChanged || speakerChanged;
+
+  useEffect(() => {
+    const allowed = new Set(visibleProject?.entries.map(e => e.id));
+    if ([...selectedIds].some(id => !allowed.has(id))) {
+      const next = new Set([...selectedIds].filter(id => allowed.has(id)));
+      setSelectedIds(next);
+      const single = next.size === 1 ? project?.entries.find(e => next.has(e.id)) : null;
+      setDraft(single && project ? draftFor(single, project) : null); setFieldError(null);
+    }
+    if (anchor.current && !allowed.has(anchor.current)) anchor.current = null;
+    if (audition.range && !allowed.has(audition.range.id)) audition.cancel(true);
+    if (currentTrack && !project?.speakers.some(s => s.id === currentTrack && s.visible !== false)) setCurrentTrack('');
+    if (speakerFilter && !project?.speakers.some(s => s.id === speakerFilter && s.visible !== false)) setSpeakerFilter('');
+  }, [project?.entries, project?.speakers]);
 
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
@@ -136,15 +155,16 @@ export function App() {
     if (!draft.text.trim()) {
       return invalid('text', '字幕正文不能为空');
     }
-    const start = Number(draft.start), end = Number(draft.end);
-    if (!draft.start.trim() || !Number.isSafeInteger(start) || start < 0 || start >= end) {
-      return invalid('start', '开始时间须为整数毫秒，且满足 0 ≤ 开始 < 结束');
+    const start = parseTimecode(draft.start), end = parseTimecode(draft.end);
+    if (start === null || (end !== null && start >= end)) {
+      return invalid('start', '开始时间须为 HH:MM:SS,mmm，且早于结束时间');
     }
-    if (!draft.end.trim() || !Number.isSafeInteger(end) || end <= start || end > project.media.duration_ms) {
-      return invalid('end', '结束时间须为整数毫秒，大于开始且不超过原片时长');
+    if (end === null || end <= start || end > project.media.duration_ms) {
+      return invalid('end', '结束时间须为 HH:MM:SS,mmm，大于开始且不超过原片时长');
     }
     const label = draft.speaker.trim();
     if (!label) return invalid('speaker', '说话人名称不能为空');
+    if (project.speakers.some(s => s.label === label && s.visible === false)) return invalid('speaker', '该轨道已隐藏，请先显示轨道');
     const resolved = resolveSpeaker(project, label, crypto.randomUUID());
     const next = { ...resolved.project, entries: project.entries.map(entry => entry.id === selected
       ? { ...entry, text: draft.text, start_ms: start, end_ms: end, speaker_id: resolved.speaker.id } : entry) };
@@ -183,15 +203,23 @@ export function App() {
     if (next) commitSpeakers(next);
   }
 
+  function toggleSpeaker(id: string) {
+    if (busy || timing.current) return;
+    const snapshot = commitDraft();
+    if (!snapshot) return;
+    session.commit({ ...snapshot, speakers: snapshot.speakers.map(s => s.id === id ? { ...s, visible: s.visible === false } : s) });
+  }
+
   function choose(entry: Entry, modifiers?: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) {
     if (busy) return;
     const snapshot = commitDraft();
     if (!snapshot) return;
     const committed = snapshot.entries.find(item => item.id === entry.id)!;
+    if (!committed || !snapshot.speakers.some(s => s.id === committed.speaker_id && s.visible !== false)) return;
     if (modifiers?.ctrlKey || modifiers?.metaKey || modifiers?.shiftKey) {
       const ids = new Set(selectedIds);
       if (modifiers.shiftKey) {
-        const items = ordered(snapshot.entries);
+        const items = ordered(visibleEntries(snapshot));
         const from = items.findIndex(e => e.id === anchor.current), to = items.findIndex(e => e.id === entry.id);
         if (!modifiers.ctrlKey && !modifiers.metaKey) ids.clear();
         for (const item of items.slice(Math.min(from < 0 ? to : from, to), Math.max(from, to) + 1)) ids.add(item.id);
@@ -223,6 +251,8 @@ export function App() {
 
   function selectIds(ids: Set<string>) {
     const snapshot = session.getProject();
+    const allowed = new Set(snapshot && visibleEntries(snapshot).map(e => e.id));
+    ids = new Set([...ids].filter(id => allowed.has(id)));
     setSelectedIds(ids);
     const single = ids.size === 1 ? snapshot?.entries.find(e => ids.has(e.id)) : null;
     setDraft(single && snapshot ? draftFor(single, snapshot) : null);
@@ -231,11 +261,11 @@ export function App() {
 
   function beginTiming(id: string): Entry[] | null {
     const snapshot = commitDraft();
-    const entry = snapshot?.entries.find(e => e.id === id);
+    const entry = snapshot && visibleEntries(snapshot).find(e => e.id === id);
     if (!snapshot || !entry) return null;
     video.current?.pause();
     timing.current = true;
-    const entries = selectedIds.has(id) ? snapshot.entries.filter(e => selectedIds.has(e.id)) : [entry];
+    const entries = selectedIds.has(id) ? visibleEntries(snapshot).filter(e => selectedIds.has(e.id)) : [entry];
     if (!selectedIds.has(id)) setSelected(id);
     setDraft(entries.length === 1 ? draftFor(entry, snapshot) : null); setEditorTab('subtitles');
     return entries;
@@ -292,7 +322,7 @@ export function App() {
           event.preventDefault();
           const snapshot = commitDraft();
           if (!snapshot) return;
-          const items = ordered(snapshot.entries);
+          const items = ordered(visibleEntries(snapshot));
           const index = items.findIndex(e => e.id === selected);
           const next = items[index < 0 ? (event.key === 'ArrowLeft' ? items.length - 1 : 0) : index + (event.key === 'ArrowLeft' ? -1 : 1)];
           if (next) choose(next);
@@ -316,7 +346,7 @@ export function App() {
   function moveSpeaker(offset: number) {
     const snapshot = commitDraft();
     if (!snapshot) return;
-    const changes = offsetSpeakers(snapshot.entries.filter(e => selectedIds.has(e.id)), visibleSpeakers(snapshot.speakers, trackOrder), offset);
+    const changes = offsetSpeakers(visibleEntries(snapshot).filter(e => selectedIds.has(e.id)), visibleSpeakers(snapshot.speakers, trackOrder).filter(s => s.visible !== false), offset);
     if (!changes?.length) return;
     const byId = new Map(changes.map(e => [e.id, e]));
     const next = { ...snapshot, entries: snapshot.entries.map(e => byId.get(e.id) ?? e) };
@@ -325,7 +355,7 @@ export function App() {
 
   function assignSelected(speakerId: string) {
     const snapshot = commitDraft();
-    if (!snapshot || !snapshot.speakers.some(s => s.id === speakerId)) return;
+    if (!snapshot || !snapshot.speakers.some(s => s.id === speakerId && s.visible !== false)) return;
     session.commit({ ...snapshot, entries: snapshot.entries.map(e => selectedIds.has(e.id) ? { ...e, speaker_id: speakerId } : e) });
   }
 
@@ -343,7 +373,9 @@ export function App() {
     video.current?.pause();
     const start = Math.round((video.current?.currentTime ?? position / 1000) * 1000);
     if (start < 0 || start >= snapshot.media.duration_ms) return;
-    const speakerId = snapshot.speakers.find(s => s.id === currentTrack)?.id ?? snapshot.speakers.find(s => s.label === '?')!.id;
+    const available = trackSpeakers.filter(s => s.visible !== false);
+    const speakerId = available.find(s => s.id === currentTrack)?.id ?? available.find(s => s.label === '?')?.id ?? available[0]?.id;
+    if (!speakerId) return;
     setAddition({ start, end: Math.min(start + 2000, snapshot.media.duration_ms), speakerId });
   }
 
@@ -393,7 +425,7 @@ export function App() {
     const next = session.travel(redo);
     const restoredOrder = session.getRestoredTrackOrder();
     if (restoredOrder) setTrackOrder(restoredOrder);
-    const ids = new Set(next?.entries.filter(e => selectedIds.has(e.id)).map(e => e.id));
+    const ids = new Set(next && visibleEntries(next).filter(e => selectedIds.has(e.id)).map(e => e.id));
     setSelectedIds(ids);
     if (!next?.entries.some(e => e.id === anchor.current)) anchor.current = null;
     const entry = ids.size === 1 ? next?.entries.find(e => ids.has(e.id)) : null;
@@ -484,7 +516,7 @@ export function App() {
     } else video.current.pause();
   }
 
-  const committedEntries = useMemo(() => ordered(project?.entries ?? []), [project?.entries]);
+  const committedEntries = useMemo(() => ordered(visibleProject?.entries ?? []), [visibleProject?.entries]);
   const entries = useMemo(() => {
     if (!timingPreview) return committedEntries;
     const previewById = new Map(timingPreview.map(e => [e.id, e]));
@@ -496,7 +528,7 @@ export function App() {
   const queryOverlay = useMemo(() => activeEntryQuery(committedEntries), [committedEntries]);
   const activeIds = new Set(queryActive(position).map(e => e.id));
   const overlayEntries = queryOverlay(position);
-  const mergeGroup = useMemo(() => project && mergeSelection(project, selectedIds), [project?.entries, selectedIds]);
+  const mergeGroup = useMemo(() => project && mergeSelection(project, selectedIds), [project?.entries, project?.speakers, selectedIds]);
   const speakerName = (id: string) => {
     const label = project?.speakers.find(s => s.id === id)?.label ?? '?';
     return label === '?' ? '未标注 ?' : label === 'NONSPEECH' ? '非对白 NONSPEECH' : label;
@@ -511,14 +543,20 @@ export function App() {
   function listen(entry: Entry, loop = false) {
     if (busy) return;
     const snapshot = commitDraft();
-    if (snapshot) audition.start(entry.id, loop, snapshot);
+    if (snapshot) audition.start(entry.id, loop, { ...snapshot, entries: visibleEntries(snapshot) });
   }
 
   function jumpToTime() {
-    const match = /^(?:(\d+):([0-5]\d):)?([0-5]?\d)(?:[.,](\d{1,3}))?$/.exec(jump.trim());
-    const ms = match ? ((Number(match[1] ?? 0) * 3600 + Number(match[2] ?? 0) * 60 + Number(match[3])) * 1000 + Number((match[4] ?? '').padEnd(3, '0'))) : NaN;
-    if (!Number.isSafeInteger(ms) || ms < 0 || ms > duration) { setJumpError('请输入原片范围内的 HH:MM:SS.mmm 或 0–59 秒'); return; }
+    const ms = parseTimecode(jump);
+    if (ms === null || ms > duration) { setJumpError('请输入原片范围内的 HH:MM:SS,mmm'); return; }
     setJumpError(''); seek(ms);
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await videoStage.current?.requestFullscreen();
+    } catch (reason) { report(reason); }
   }
 
   function beginResize(panel: 'left' | 'right' | 'bottom') {
@@ -555,7 +593,7 @@ export function App() {
           <button disabled={!selected} onClick={() => { if (!commitDraft()) return; setMenu(null); setEditorTab('subtitles'); requestAnimationFrame(() => textInput.current?.focus()); }}>编辑字幕正文</button>
           <button disabled={!session.canUndo && !draftChanged && !speakerChanged} onClick={() => { setMenu(null); history(false); }}>撤销编辑</button>
           <button disabled={!session.canRedo || draftChanged || speakerChanged} onClick={() => { setMenu(null); history(true); }}>重做编辑</button>
-          <button disabled={position >= duration} onClick={() => { setMenu(null); beginAdd(); }}>新增字幕…</button>
+           <button disabled={position >= duration || !trackSpeakers.some(s => s.visible !== false)} onClick={() => { setMenu(null); beginAdd(); }}>新增字幕…</button>
           <button disabled={!current || position <= current.start_ms || position >= current.end_ms} onClick={() => { setMenu(null); splitSubtitle(); }}>在播放头拆分</button>
           <button disabled={!mergeGroup} onClick={() => { setMenu(null); beginMerge(); }}>合并连续选择</button>
           <button disabled={!selectedIds.size} onClick={() => { setMenu(null); deleteSelected(); }}>删除选择</button>
@@ -578,14 +616,14 @@ export function App() {
       <h1>{project?.name ?? '打开一段故事，开始校对'}</h1>
       <span role="status" aria-label="保存状态" className={unsaved || session.saveError ? 'unsaved' : ''}>{session.saving ? '保存中…' : session.saveError ? '保存失败' : unsaved ? '未保存' : project ? '已保存' : '尚未打开工程'}</span>
       <div className="actions">
-        <button onClick={() => void showDialog('new')} disabled={busy || session.saving}>新建工程</button>
-        <button onClick={() => void showDialog('replace')} disabled={!project || busy || session.saving}>替换字幕</button>
-        <button onClick={() => void persist()} disabled={!project || busy}>保存工程</button>
+        <IconButton icon="FolderPlus" label="新建工程" onClick={() => void showDialog('new')} disabled={busy || session.saving} />
+        <IconButton icon="FileInput" label="替换字幕" onClick={() => void showDialog('replace')} disabled={!project || busy || session.saving} />
+        <IconButton icon="Save" label="保存工程" onClick={() => void persist()} disabled={!project || busy} />
         <select aria-label="导出格式" value={exportFormat} onChange={event => setExportFormat(event.target.value as ExportFormat)}>
           {Object.entries(exportLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
-        <label className="export-tags"><input type="checkbox" checked={keepTags} disabled={!exportFormat.endsWith('-srt')} onChange={event => setKeepTags(event.target.checked)} />保留已有元标签</label>
-        <button className="primary" onClick={() => void persist(true)} disabled={!project || busy}>导出{exportLabels[exportFormat]}</button>
+        <IconToggle icon="ListFilter" label="保留已有元标签" checked={keepTags} disabled={!exportFormat.endsWith('-srt')} onChange={event => setKeepTags(event.target.checked)} />
+        <IconButton icon="Download" label={`导出${exportLabels[exportFormat]}`} className="primary" onClick={() => void persist(true)} disabled={!project || busy} />
       </div>
     </div>
     {!dialog && (error || session.saveError || session.exportError) && <div role="alert" className="error">{error || session.saveError || session.exportError}
@@ -599,47 +637,49 @@ export function App() {
       {error && <button aria-label="关闭错误" onClick={() => setError('')}>×</button>}</div>}
     <main className={`workspace ${resourcesVisible ? '' : 'resources-hidden'}`} ref={workspace} style={{ gridTemplateColumns: resourcesVisible ? `minmax(150px, ${layout.left}fr) 7px minmax(260px, ${100 - layout.left - layout.right}fr) 7px minmax(280px, ${layout.right}fr)` : `0px 0px minmax(260px, ${100 - layout.right}fr) 7px minmax(280px, ${layout.right}fr)` }}>
       <aside className="resources panel" aria-label="工程资源" hidden={!resourcesVisible}>
-        <h2>工程资源</h2>
-        {project ? <><PreviewCopyControls preview={previewCopy} busy={busy || !!dialog} onGenerate={() => void previewCopy.generate(async () => !!commitDraft() && await session.persist())} />
+        {project ? <ProjectResources key={project.id} project={project} busy={busy || session.saving} resourceVersion={`${previewCopy.resourceVersion}:${waveform.version}:${thumbnails.version}`}
+          onRelocate={() => void showDialog('relocate')} onNewMedia={() => void showDialog('new-media')}>
+          <PreviewCopyControls preview={previewCopy} busy={busy || !!dialog} onGenerate={() => void previewCopy.generate(async () => !!commitDraft() && await session.persist())} />
           <TimelineMediaControls media={waveform} kind="波形" busy={busy || !!dialog} onGenerate={() => void waveform.generate(async () => !!commitDraft() && await session.persist())} />
           <TimelineMediaControls media={thumbnails} kind="缩略图" busy={busy || !!dialog} onGenerate={() => void thumbnails.generate(async () => !!commitDraft() && await session.persist())} />
-          <ProjectResources key={project.id} project={project} busy={busy || session.saving} resourceVersion={`${previewCopy.resourceVersion}:${waveform.version}:${thumbnails.version}`}
-          onRelocate={() => void showDialog('relocate')} onNewMedia={() => void showDialog('new-media')} />
-          </>
-          : <p className="muted">新建工程，选定本机视频与字幕（SRT / JSONL / MOSS JSON）；也可从“文件”菜单继续已有工程。</p>}
+          </ProjectResources>
+          : <><h2>工程资源</h2><button className="import-tile" onClick={() => void showDialog('new')}><span>＋</span>导入视频与字幕</button></>}
       </aside>
       <WorkspaceSplitter label="调整资源面板宽度" onBegin={() => beginResize('left')} />
       <section className="preview-panel panel" aria-label="视频预览">
         <h2>视频预览 <span>原片时间轴</span></h2>
-        <div className="video-stage">
+        <div className="video-stage" ref={videoStage}>
           {project ? <>
-            <video key={`${project.id}:${previewCopy.src}`} ref={video} src={previewCopy.src} controls preload="auto"
-              onLoadedMetadata={() => { if (video.current) { video.current.currentTime = position / 1000; video.current.playbackRate = audition.speed; setPlaying(!video.current.paused); } }}
+            <video key={`${project.id}:${previewCopy.src}`} ref={video} src={previewCopy.src} preload="auto" muted={muted} playsInline
+              onLoadedMetadata={() => { if (video.current) { video.current.currentTime = position / 1000; video.current.playbackRate = audition.speed; video.current.volume = volume; setPlaying(!video.current.paused); } }}
               onLoadedData={event => previewCopy.decoded(event.currentTarget)}
               onTimeUpdate={() => { if (video.current?.videoWidth) audition.sync(); }} onEnded={audition.sync}
               onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
               onError={previewCopy.failed} />
             {showSubtitles && <div className="subtitle-overlay" aria-label="播放字幕">{overlayEntries.map(entry => <div key={entry.id}>{showSpeakerNames && <span>[{project.speakers.find(s => s.id === entry.speaker_id)?.label ?? '?'}] </span>}{entry.text}</div>)}</div>}
+            <div className="fullscreen-controls"><IconButton icon={playing ? 'Pause' : 'Play'} label="全屏播放暂停" onClick={() => void togglePlayback()} /><IconButton icon="Minimize" label="退出全屏" onClick={() => void toggleFullscreen()} /></div>
           </> : <div className="empty-preview"><span>▷</span><p>视频与字幕，在同一时间线上</p></div>}
         </div>
         <div className="transport">
-          <button onClick={() => void togglePlayback()} disabled={!project}>{playing ? '暂停' : '播放'}</button>
+          <IconButton icon={playing ? 'Pause' : 'Play'} label={playing ? '暂停' : '播放'} onClick={() => void togglePlayback()} disabled={!project} />
           <output aria-label="播放位置">{timeLabel(position)} / {project ? timeLabel(duration) : '—'}</output>
-          <label><input type="checkbox" checked={showSubtitles} onChange={event => setShowSubtitles(event.target.checked)} />字幕</label>
-          <label><input aria-label="叠加人物名称" type="checkbox" checked={showSpeakerNames} onChange={event => setShowSpeakerNames(event.target.checked)} />说话人</label>
+          <IconToggle icon="Captions" label="字幕" checked={showSubtitles} onChange={event => setShowSubtitles(event.target.checked)} />
+          <IconToggle icon="UserRound" label="叠加人物名称" checked={showSpeakerNames} onChange={event => setShowSpeakerNames(event.target.checked)} />
+          <IconButton icon={muted || volume === 0 ? 'VolumeX' : 'Volume2'} label={muted ? '取消静音' : '静音'} aria-pressed={muted} onClick={() => setMuted(!muted)} disabled={!project} />
+          <input className="volume-slider" aria-label="音量" title="音量" type="range" min="0" max="1" step="0.05" value={volume} disabled={!project} onChange={event => { const value = Number(event.target.value); setVolume(value); setMuted(false); if (video.current) video.current.volume = value; }} />
+          <IconButton icon="Maximize" label="全屏" disabled={!project} onClick={() => void toggleFullscreen()} />
         </div>
         <div className="review-transport">
-          <label>速度<select aria-label="播放速度" value={audition.speed} onChange={event => audition.setSpeed(Number(event.target.value))}>{[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map(rate => <option key={rate} value={rate}>{rate}×</option>)}</select></label>
-          <button disabled={!current || busy} onClick={() => current && listen(current, true)}>循环当前字幕</button>
-          <button disabled={!audition.range} onClick={() => audition.cancel(true)}>退出试听</button>
-          <span role="status" aria-label="试听状态">{audition.range ? audition.range.loop ? '循环试听中' : '逐句试听中' : '自由播放'}</span>
+          <select aria-label="播放速度" title="播放速度" value={audition.speed} onChange={event => audition.setSpeed(Number(event.target.value))}>{[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map(rate => <option key={rate} value={rate}>{rate}×</option>)}</select>
+          <IconButton icon="Repeat2" label="循环当前字幕" disabled={!current || busy} aria-pressed={!!audition.range?.loop} onClick={() => current && listen(current, true)} />
+          <IconButton icon="Square" label="退出试听" disabled={!audition.range} onClick={() => audition.cancel(true)} />
+          <span className="sr-only" role="status" aria-label="试听状态">{audition.range ? audition.range.loop ? '循环试听中' : '逐句试听中' : '自由播放'}</span>
           <form onSubmit={event => { event.preventDefault(); jumpToTime(); }}>
-            <input aria-label="跳转时间" aria-invalid={!!jumpError} aria-describedby={jumpError ? 'jump-error' : undefined} placeholder="HH:MM:SS.mmm" value={jump} onChange={event => { setJump(event.target.value); setJumpError(''); }} />
-            <button disabled={!project}>跳转</button>
+            <input aria-label="跳转时间" aria-invalid={!!jumpError} aria-describedby={jumpError ? 'jump-error' : undefined} placeholder="00:00:00,000" value={jump} onChange={event => { setJump(event.target.value); setJumpError(''); }} />
+            <IconButton icon="SkipForward" label="跳转" type="submit" disabled={!project} />
           </form>
           {jumpError && <p id="jump-error" className="field-error">{jumpError}</p>}
         </div>
-        <p className="hint">单击定位 · 双击逐句试听 · 循环后用“退出试听”停止 · Ctrl+S 保存</p>
       </section>
       <WorkspaceSplitter label="调整编辑面板宽度" onBegin={() => beginResize('right')} />
       <section className="editor panel" aria-label="字幕编辑器">
@@ -661,9 +701,9 @@ export function App() {
         <div className="subtitle-filters">
           <input aria-label="搜索字幕" type="search" placeholder="搜索字幕正文" value={search} onChange={event => setSearch(event.target.value)} />
           <select aria-label="筛选说话人" value={project?.speakers.some(s => s.id === speakerFilter) ? speakerFilter : ''} onChange={event => setSpeakerFilter(event.target.value)}>
-            <option value="">全部说话人</option>{project?.speakers.map(s => <option key={s.id} value={s.id}>{speakerName(s.id)}</option>)}
+            <option value="">全部说话人</option>{project?.speakers.filter(s => s.visible !== false).map(s => <option key={s.id} value={s.id}>{speakerName(s.id)}</option>)}
           </select>
-          <button aria-label="清除筛选" title="清除筛选" onClick={() => { setSearch(''); setSpeakerFilter(''); }} disabled={!search && !speakerFilter}>×</button>
+          <IconButton icon="X" label="清除筛选" onClick={() => { setSearch(''); setSpeakerFilter(''); }} disabled={!search && !speakerFilter} />
         </div>
         <SubtitleList entries={entries} speakers={project?.speakers ?? []} selected={selectedIds} active={activeIds}
           search={search} speakerFilter={speakerFilter} busy={busy} onChoose={choose} onListen={listen} />
@@ -671,24 +711,23 @@ export function App() {
           entries={entries.filter(e => selectedIds.has(e.id))} busy={busy || timing.current} onAssign={assignSelected} /> : draft ? <div className="entry-editor" onBlur={event => {
           if (!event.currentTarget.contains(event.relatedTarget as Node | null)) commitDraft();
         }}>
-          <label>字幕正文<textarea ref={textInput} {...fieldProps('text')} value={shownDraft!.text} disabled={busy || !!timingPreview}
+          <label>字幕正文<textarea aria-label="字幕正文" ref={textInput} {...fieldProps('text')} value={shownDraft!.text} disabled={busy || !!timingPreview}
             onChange={event => setDraft({ ...draft, text: event.target.value })} /></label>
           <div className="time-fields">
-            <label>开始时间（毫秒）<input ref={startInput} {...fieldProps('start')} type="number" step="1" value={shownDraft!.start} disabled={busy || !!timingPreview}
+            <label>开始时间<input ref={startInput} {...fieldProps('start')} placeholder="00:00:00,000" value={shownDraft!.start} disabled={busy || !!timingPreview}
               onChange={event => setDraft({ ...draft, start: event.target.value })} /></label>
-            <label>结束时间（毫秒）<input ref={endInput} {...fieldProps('end')} type="number" step="1" value={shownDraft!.end} disabled={busy || !!timingPreview}
+            <label>结束时间<input ref={endInput} {...fieldProps('end')} placeholder="00:00:00,000" value={shownDraft!.end} disabled={busy || !!timingPreview}
               onChange={event => setDraft({ ...draft, end: event.target.value })} /></label>
           </div>
           <label>说话人归属<select aria-label="说话人归属" value={project?.speakers.some(s => s.label === shownDraft!.speaker) ? shownDraft!.speaker : ''} disabled={busy || !!timingPreview} onChange={event => setDraft({ ...draft, speaker: event.target.value })}>
             <option value="" disabled>输入新的说话人名称</option>
-            {project?.speakers.map(s => <option value={s.label} key={s.id}>{speakerName(s.id)}</option>)}
+            {project?.speakers.filter(s => s.visible !== false).map(s => <option value={s.label} key={s.id}>{speakerName(s.id)}</option>)}
           </select></label>
           <label>说话人名称<input ref={speakerInput} {...fieldProps('speaker')} value={shownDraft!.speaker} disabled={busy || !!timingPreview}
             onChange={event => setDraft({ ...draft, speaker: event.target.value })} /></label>
-          <button disabled={busy || !draftChanged} onClick={() => commitDraft()}>应用修改</button>
-          <button disabled={busy || !draftChanged} onClick={cancelDraft}>取消修改</button>
+          <div className="button-row"><IconButton icon="Check" label="应用修改" disabled={busy || !draftChanged} onClick={() => commitDraft()} />
+          <IconButton icon="X" label="取消修改" disabled={busy || !draftChanged} onClick={cancelDraft} /></div>
           {fieldError && <p id="entry-field-error" className="field-error">{fieldError.message}</p>}
-          <p className="hint">离开编辑区或应用修改时提交，随后自动保存。保存/导出先校验输入；Esc 取消草稿。</p>
         </div> : <p className="muted editor-prompt">选择一条字幕，开始校对</p>}
         </>}
       </section>
@@ -696,19 +735,22 @@ export function App() {
     <WorkspaceSplitter label="调整上下分区高度" horizontal onBegin={() => beginResize('bottom')} />
     <section className="timeline panel" aria-label="原片时间轴" style={{ height: `clamp(210px, ${layout.bottom}px, calc(100% - 310px))` }}>
       <div className="timeline-toolbar"><h2>时间轴</h2>
-        <button disabled={busy || (!session.canUndo && !draftChanged && !speakerChanged)} onClick={() => history(false)}>撤销</button>
-        <button disabled={busy || !session.canRedo || draftChanged || speakerChanged} onClick={() => history(true)}>重做</button>
-        <button disabled={busy || !selectedIds.size || timing.current} onClick={deleteSelected}>删除选中字幕</button>
-        <button disabled={!project || busy || timing.current || position >= duration} onClick={beginAdd}>新增字幕</button>
-        <button disabled={busy || timing.current || !current || position <= current.start_ms || position >= current.end_ms} onClick={splitSubtitle} title="Ctrl+B · 单选且播放头严格位于内部，两段复制全文">拆分字幕</button>
-        <button disabled={busy || timing.current || !mergeGroup} onClick={beginMerge} title="Ctrl+M · 全体工作字幕时间排序中连续多选">合并字幕</button>
+        <IconButton icon="Undo2" label="撤销" disabled={busy || (!session.canUndo && !draftChanged && !speakerChanged)} onClick={() => history(false)} />
+        <IconButton icon="Redo2" label="重做" disabled={busy || !session.canRedo || draftChanged || speakerChanged} onClick={() => history(true)} />
+        <IconButton icon="Trash2" label="删除选中字幕" disabled={busy || !selectedIds.size || timing.current} onClick={deleteSelected} />
+        <IconButton icon="Plus" label="新增字幕" disabled={!project || !trackSpeakers.some(s => s.visible !== false) || busy || timing.current || position >= duration} onClick={beginAdd} />
+        <IconButton icon="Scissors" label="拆分字幕" disabled={busy || timing.current || !current || position <= current.start_ms || position >= current.end_ms} onClick={splitSubtitle} />
+        <IconButton icon="Merge" label="合并字幕" disabled={busy || timing.current || !mergeGroup} onClick={beginMerge} />
         <select aria-label="当前说话人轨" value={project?.speakers.some(s => s.id === currentTrack) ? currentTrack : ''} disabled={!project || busy || timing.current} onChange={event => setCurrentTrack(event.target.value)}>
           <option value="">未明确轨道 → ?</option>
-          {project?.speakers.map(s => <option key={s.id} value={s.id}>{speakerName(s.id)}</option>)}
+          {trackSpeakers.filter(s => s.visible !== false).map(s => <option key={s.id} value={s.id}>{speakerName(s.id)}</option>)}
         </select>
-        <span className="muted">视频轨锁定 · 合法重叠保留</span></div>
+        </div>
       {project ? <SourceTimeline key={project.id} project={project} selected={selectedIds} position={position} busy={busy}
         waveform={waveform.url} thumbnails={thumbnails.url} thumbnailVersion={thumbnails.version} speakers={trackSpeakers}
+        onReorder={reorderSpeakers} onToggleSpeaker={toggleSpeaker}
+        onBeginReorder={() => { if (busy || timing.current || !commitDraft()) return false; timing.current = true; session.pauseAutosave(); return true; }}
+        onEndReorder={() => { timing.current = false; session.resumeAutosave(); }}
         onSort={() => { const snapshot = commitDraft(); if (snapshot) setTrackOrder(bySubtitleCount(snapshot)); }}
         onStoredOrder={() => setTrackOrder(project.speakers.map(s => s.id))}
         onGenerateThumbnails={() => void thumbnails.generate(async () => !!commitDraft() && await session.persist())}
@@ -719,22 +761,20 @@ export function App() {
         onSelect={selectIds} onEndSelect={() => { timing.current = false; }}
         onChoose={choose} onListen={listen} onSeek={seek} onBeginEdit={beginTiming} onPreview={previewTiming} onCommitEdit={commitTiming} /> : <div className="timeline-empty">工程打开后将在此显示原片与工作字幕</div>}
     </section>
-    {addition && project && <AddSubtitleDialog {...addition} speakers={project.speakers} onAdd={addSubtitle} onCancel={() => setAddition(null)} />}
-    {merging && project && <MergeSubtitleDialog count={merging.size} speakers={project.speakers} onMerge={speakerId => mergeSubtitles(merging, speakerId)} onCancel={() => setMerging(null)} />}
+    {addition && project && <AddSubtitleDialog {...addition} speakers={project.speakers.filter(s => s.visible !== false)} onAdd={addSubtitle} onCancel={() => setAddition(null)} />}
+    {merging && project && <MergeSubtitleDialog count={merging.size} speakers={project.speakers.filter(s => s.visible !== false)} onMerge={speakerId => mergeSubtitles(merging, speakerId)} onCancel={() => setMerging(null)} />}
     {dialog && <div className="modal-backdrop"><section role="dialog" aria-modal="true" aria-labelledby="dialog-title" className="dialog">
       <header><h2 id="dialog-title">{{ new: '新建编辑工程', replace: '整体替换工作字幕', open: '打开工程', help: '使用帮助', 'save-as': '工程另存为', relocate: '重新定位同一原片', 'new-media': '用新视频建立工程' }[dialog]}</h2>
-        <button disabled={busy} aria-label="关闭对话框" onClick={() => { setDialog(null); if (dialog !== 'help') session.resumeAutosave(); }}>×</button></header>
+        <IconButton icon="X" label="关闭对话框" disabled={busy} onClick={() => { setDialog(null); if (dialog !== 'help') session.resumeAutosave(); }} /></header>
       {error && <p role="alert" className="error">{error}</p>}
       {picking && <p role="status" className="hint">请在系统文件选择窗口中选择文件或取消。如果窗口在后台，请切换到该窗口。</p>}
       {(dialog === 'save-as' || dialog === 'relocate' || dialog === 'new-media') && <>
-        <p className="hint">{dialog === 'relocate' ? '仅接受内容身份完全相同的原片。移动、重命名可恢复，重新编码或换片请新建工程。' : '复制完整工作字幕、人物配置与来源关系，产生独立工程。原视频按路径引用；已有导出与缓存留在原工程。'}</p>
+        <p className="hint">{dialog === 'relocate' ? '选择移动或重命名后的同一原片。' : '保存为独立工程，保留完整字幕与人物配置。'}</p>
         {dialog !== 'relocate' && <label>副本工程名称<input disabled={busy} value={name} onChange={event => setName(event.target.value)} /></label>}
         {dialog !== 'save-as' && <FilePathField label="新视频绝对路径" button="选择视频…" disabled={busy} value={mediaPath} onChange={setMediaPath} onPick={() => void chooseFile('media')} />}
-        {dialog === 'new-media' && <p className="hint">带入当前字幕副本，按新原片时长验证全部字幕。越界失败不会修改当前工程。</p>}
         <button disabled={busy || (dialog !== 'relocate' && !name.trim()) || (dialog !== 'save-as' && !mediaPath.trim())} onClick={() => void projectAction()}>{dialog === 'relocate' ? '验证并重新定位' : '创建独立副本'}</button>
       </>}
       {(dialog === 'new' || dialog === 'replace') && <>
-        <p className="muted">视频和字幕保留在原路径，校对结果保存为独立工程。原片不兼容时可在资源区生成保持原片时间的预览副本。</p>
         {dialog === 'new' && <label>工程名称<input value={name} disabled={busy} onChange={event => setName(event.target.value)} /></label>}
         <FilePathField label="视频绝对路径" button="选择视频…" value={mediaPath} disabled={busy || dialog === 'replace'} onChange={value => { setMediaPath(value); setPreview(null); }} onPick={() => void chooseFile('media')} />
         <label>导入格式<select value={importFormat} disabled={busy} onChange={event => { setImportFormat(event.target.value as ImportFormat); setPreview(null); }}>
@@ -745,7 +785,7 @@ export function App() {
           <option value="moss-json">MOSS JSON · 五字段数组</option>
         </select></label>
         <FilePathField label="字幕绝对路径" button="选择字幕…" value={subtitlePath} disabled={busy} onChange={value => { setSubtitlePath(value); setPreview(null); }} onPick={() => void chooseFile('subtitle')} />
-        <p className="hint">UTF-8 字幕。普通 SRT 不猜测人物；项目 SRT 仅解析前置 MULTI / MERGED，未知花括号起保留正文；MOSS SRT 按首个 ASCII 冒号加空格解析。JSON 时间为秒。替换可一步撤销。</p>
+        <p className="hint">字幕编码：UTF-8</p>
         <button disabled={busy || !mediaPath || !subtitlePath} onClick={() => void importAction(false)}>{busy ? '处理中…' : '解析预览'}</button>
         {preview && <div className="import-preview"><h3>预览 · {preview.entries.length} 条</h3>
           {preview.entries.map((entry, index) => <div key={entry.id}><small>{index + 1} · {timeLabel(entry.start_ms)} → {timeLabel(entry.end_ms)} · [{preview.speakers.find(s => s.id === entry.speaker_id)?.label}]</small><p>{entry.text}</p>

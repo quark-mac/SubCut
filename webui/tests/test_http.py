@@ -177,6 +177,33 @@ class ProjectHTTPTests(unittest.TestCase):
         self.assertIn(project["id"], [p["id"] for p in listing])
         self.assertEqual(self.subtitle.read_text(encoding="utf-8"), SRT)
 
+    def test_hidden_speakers_persist_copy_and_export_only_visible_entries(self):
+        project = self.create()
+        url = f'/api/projects/{project["id"]}'
+        unknown = next(s for s in project['speakers'] if s['label'] == '?')
+        unknown['visible'] = False
+        body = {k: project[k] for k in ('revision', 'name', 'entries', 'speakers', 'subtitle_sources')}
+        response = self.client.put(url, json=body)
+        self.assertEqual(response.status_code, 200, response.text)
+        saved = response.json()
+        self.assertEqual(saved['entries'], project['entries'])
+        self.assertFalse(next(s for s in self.client.get(url).json()['speakers'] if s['label'] == '?')['visible'])
+        duplicate = self.client.post(url + '/save-as', json={'revision': saved['revision'], 'name': '隐藏副本'}).json()
+        self.assertEqual(duplicate['speakers'], saved['speakers'])
+        for format in ('speaker-srt', 'plain-srt', 'normalized-jsonl', 'moss-json'):
+            exported = self.client.post(url + '/exports', json={'revision': saved['revision'], 'format': format})
+            self.assertEqual(exported.status_code, 201, exported.text)
+            result = exported.json()
+            text = self.client.get(result['url']).text
+            self.assertEqual(json.loads(text) if format == 'moss-json' else text, [] if format == 'moss-json' else '')
+            saved = result['project']
+        for speaker in saved['speakers']:
+            speaker['visible'] = True
+        restored = self.client.put(url, json={k: saved[k] for k in body}).json()
+        self.assertEqual(restored['entries'], project['entries'])
+        exported = self.client.post(url + '/exports', json={'revision': restored['revision']}).json()
+        self.assertEqual(self.client.get(exported['url']).text.count('-->'), len(project['entries']))
+
     def test_save_as_copies_complete_editing_document_with_independent_project_identity(self):
         project = self.create()
         url = f'/api/projects/{project["id"]}'
@@ -399,7 +426,7 @@ class ProjectHTTPTests(unittest.TestCase):
                                              "entries": entries, "speakers": speakers})
         self.assertEqual(response.status_code, 200, response.text)
         reopened = self.client.get(url).json()
-        self.assertEqual(reopened["speakers"], speakers)
+        self.assertEqual(reopened["speakers"], [{"visible": True, **s} for s in speakers])
         self.assertEqual(reopened["entries"], entries)
         # Undoing attribution also restores the complete previous speaker configuration.
         response = self.client.put(url, json={"revision": 2, "name": project["name"],
@@ -425,7 +452,7 @@ class ProjectHTTPTests(unittest.TestCase):
             self.assertEqual(response.status_code, status, response.text)
             after = self.client.get(url).json()
             if status == 200:
-                self.assertEqual(after["speakers"], config)
+                self.assertEqual(after["speakers"], [{"visible": True, **s} for s in config])
                 self.assertEqual(after["entries"], items)
                 self.assertEqual(after["subtitle_sources"], project["subtitle_sources"])
             else:

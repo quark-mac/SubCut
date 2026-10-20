@@ -14,6 +14,7 @@ async function open(page: Page, name: string) {
   const handle = (await page.getByRole('separator', { name: '调整轨道高度 🔒 视频轨', exact: true }).boundingBox())!;
   await page.mouse.move(handle.x + 40, handle.y + 3); await page.mouse.down();
   await page.mouse.move(handle.x + 40, handle.y - 23); await page.mouse.up();
+  await button(page, '工程资源菜单').click();
 }
 async function fixture(page: Page, { incompatible = false, silent = false, delayed = false, large = false, pulses = false, progress = false }: {
   incompatible?: boolean; silent?: boolean; delayed?: boolean; large?: boolean; pulses?: boolean; progress?: boolean;
@@ -109,7 +110,7 @@ test('真实原片生成、缓存与视频轨可见范围在多个缩放滚动�
     observations.push({ zoom, ...observed });
   }
   await button(page, '适合全片').click();
-  await page.getByLabel('跳转时间', { exact: true }).fill('5'); await button(page, '跳转').click();
+  await page.getByLabel('跳转时间', { exact: true }).fill('00:00:05,000'); await button(page, '跳转').click();
   await expect(page.locator('.subtitle-overlay')).toContainText('绿色');
   await expect.poll(() => locked.locator('img[data-time-ms="5000"]').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
   const pixel = await locked.locator('img[data-time-ms="5000"]').evaluate((img: HTMLImageElement) => {
@@ -143,7 +144,7 @@ test('非零 PTS 与延迟音轨使用原片零点，预览切换不移动波形
   const before = await page.locator('.locked').first().evaluate(el => [...el.querySelectorAll('img')].map(img => ({ time: img.dataset.timeMs, src: img.src, left: img.getBoundingClientRect().left })));
   await button(page, '生成预览副本').click();
   await expect(page.getByRole('status', { name: '浏览器解码状态' })).toContainText('已解码');
-  await page.getByLabel('跳转时间', { exact: true }).fill('5'); await button(page, '跳转').click();
+  await page.getByLabel('跳转时间', { exact: true }).fill('00:00:05,000'); await button(page, '跳转').click();
   await expect.poll(() => page.locator('video').evaluate((v: HTMLVideoElement) => !v.seeking && Math.abs(v.currentTime - 5) < .01)).toBe(true);
   const pixels = await page.evaluate(() => {
     const canvas = document.createElement('canvas'); canvas.width = 1; canvas.height = 1;

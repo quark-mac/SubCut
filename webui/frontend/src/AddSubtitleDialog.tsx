@@ -11,7 +11,7 @@ export function AddSubtitleDialog({ start, end, speakerId, speakers, onAdd, onCa
   useEffect(() => { dialog.current?.showModal(); }, []);
   return <dialog ref={dialog} className="dialog structure-dialog" aria-labelledby="add-title" onCancel={event => { event.preventDefault(); onCancel(); }}>
     <h2 id="add-title">在播放头新增字幕</h2>
-    <p className="hint">{timeLabel(start)} → {timeLabel(end)} · 填写正文后才创建，取消不保存草稿。</p>
+    <p className="hint">{timeLabel(start)} → {timeLabel(end)}</p>
     <label>新增字幕正文<textarea autoFocus value={text} onChange={event => setText(event.target.value)} /></label>
     <label>新增说话人归属<select value={speaker} onChange={event => setSpeaker(event.target.value)}>
       {speakers.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}

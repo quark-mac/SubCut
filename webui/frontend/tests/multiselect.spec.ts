@@ -110,8 +110,8 @@ test('共同与混合属性如实呈现，明确目标批量改人仅一步历�
   await page.mouse.up();
   await expect(page.getByLabel('选择数量')).toHaveText('已选 2 条');
   await expect(page.getByLabel('共同正文')).toHaveText('不同值');
-  await expect(page.getByLabel('共同开始时间')).toHaveText('1000 ms');
-  await expect(page.getByLabel('共同结束时间')).toHaveText('2000 ms');
+  await expect(page.getByLabel('共同开始时间')).toHaveText('00:00:01,000');
+  await expect(page.getByLabel('共同结束时间')).toHaveText('00:00:02,000');
   await expect(page.getByLabel('共同说话人')).toHaveText('甲');
   await row(page, 3).click({ modifiers: ['Control'] });
   await expect(page.getByLabel('共同开始时间')).toHaveText('不同值');
