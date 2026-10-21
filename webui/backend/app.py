@@ -1,4 +1,5 @@
 import os
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -13,7 +14,8 @@ from .file_picker import pick_file
 from .formats import EXPORT_TYPES, read_subtitles, validate_entries, validate_sources, write_subtitles
 from .media import inspect_media, local_file, probe_media, verify_media
 from .resources import inventory, open_folder
-from .models import CopyRequest, CreateRequest, Export, ExportRequest, FilePickerRequest, ImportRequest, NewMediaRequest, PreviewRequest, Project, RelocateRequest, SaveRequest, SubtitleSource, TimelineMediaRequest, identity
+from .models import CopyRequest, CreateRequest, DeleteRequest, Export, ExportRequest, FilePickerRequest, ImportRequest, NewMediaRequest, PreviewRequest, Project, RelocateRequest, SaveRequest, SubtitleSource, TimelineMediaRequest, identity
+from .recycle import RecycleBin
 from .preview import PreviewTasks, cached_preview, parameters, valid_artifact
 from .storage import Store, atomic_write
 from .speakers import validate_speakers
@@ -22,12 +24,26 @@ from . import timeline_media
 
 store = Store(Path(os.environ.get("WEBUI_WORKSPACE", Path(__file__).resolve().parents[1] / "workspace")))
 tasks = PreviewTasks(store)
+recycle = RecycleBin(store)
 
 
 @asynccontextmanager
 async def lifespan(app):
-    yield
-    tasks.close()
+    await asyncio.to_thread(recycle.cleanup)
+    async def sweep():
+        while True:
+            await asyncio.sleep(3600)
+            await asyncio.to_thread(recycle.cleanup)
+    cleaner = asyncio.create_task(sweep())
+    try:
+        yield
+    finally:
+        cleaner.cancel()
+        try:
+            await cleaner
+        except asyncio.CancelledError:
+            pass
+        tasks.close()
 
 
 app = FastAPI(title="字幕校对 WebUI", version="0.1.0", lifespan=lifespan)
@@ -108,6 +124,27 @@ def get_project(project_id: str):
     with store.lock:
         project = store.load(project_id)
     return project
+
+
+@app.delete('/api/projects/{project_id}')
+def delete_project(project_id: str, body: DeleteRequest):
+    # Same lock order as submit_media: no queued worker may publish into a moved project.
+    with tasks.lock, store.lock:
+        project = store.load(project_id)
+        check_revision(project, body.revision)
+        if any(tasks.task_path(project_id, task_id).is_file() for task_id in tasks.active):
+            raise Problem('此工程正在生成媒体，请等待任务完成再删除', status=409, code='project_busy')
+        return recycle.discard(project)
+
+
+@app.get('/api/recycle-bin')
+def list_recycled_projects():
+    return recycle.listing()
+
+
+@app.post('/api/recycle-bin/{project_id}/restore')
+def restore_project(project_id: str):
+    return recycle.restore(project_id)
 
 
 @app.get("/api/projects/{project_id}/media")
@@ -261,6 +298,13 @@ def save_project(project_id: str, body: SaveRequest):
         if not body.name.strip():
             raise Problem("工程名称不能为空", field="name")
         speakers = body.speakers if body.speakers is not None else project.speakers
+        if body.speakers is not None:
+            # Clients predating the lock field must not accidentally unlock a
+            # track simply by saving its otherwise unchanged speaker payload.
+            old_by_id = {speaker.id: speaker for speaker in project.speakers}
+            speakers = [speaker.model_copy(update={'locked': old_by_id[speaker.id].locked})
+                        if 'locked' not in speaker.model_fields_set and speaker.id in old_by_id else speaker
+                        for speaker in speakers]
         validate_speakers(speakers, project.speakers)
         validate_entries(body.entries, project.media.duration_ms, {s.id for s in speakers})
         sources = body.subtitle_sources if body.subtitle_sources is not None else project.subtitle_sources

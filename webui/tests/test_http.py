@@ -426,7 +426,7 @@ class ProjectHTTPTests(unittest.TestCase):
                                              "entries": entries, "speakers": speakers})
         self.assertEqual(response.status_code, 200, response.text)
         reopened = self.client.get(url).json()
-        self.assertEqual(reopened["speakers"], [{"visible": True, **s} for s in speakers])
+        self.assertEqual(reopened["speakers"], [{"visible": True, "locked": False, **s} for s in speakers])
         self.assertEqual(reopened["entries"], entries)
         # Undoing attribution also restores the complete previous speaker configuration.
         response = self.client.put(url, json={"revision": 2, "name": project["name"],
@@ -452,7 +452,7 @@ class ProjectHTTPTests(unittest.TestCase):
             self.assertEqual(response.status_code, status, response.text)
             after = self.client.get(url).json()
             if status == 200:
-                self.assertEqual(after["speakers"], [{"visible": True, **s} for s in config])
+                self.assertEqual(after["speakers"], [{"visible": True, "locked": False, **s} for s in config])
                 self.assertEqual(after["entries"], items)
                 self.assertEqual(after["subtitle_sources"], project["subtitle_sources"])
             else:

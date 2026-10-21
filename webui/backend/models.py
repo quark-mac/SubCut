@@ -36,6 +36,7 @@ class Speaker(Model):
     color: str
     order: int
     visible: StrictBool = True
+    locked: StrictBool = False
 
 
 class Media(Model):
@@ -111,6 +112,10 @@ class ExportRequest(Model):
     revision: StrictInt
     format: Literal["plain-srt", "speaker-srt", "normalized-jsonl", "moss-json"] = "speaker-srt"
     keep_tags: bool = False
+
+
+class DeleteRequest(Model):
+    revision: StrictInt
 
 
 class CopyRequest(Model):
