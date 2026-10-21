@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .errors import Problem
 from .models import Entry, Source, Speaker
+from .speaker_colors import next_color, SPECIAL_COLORS
 
 
 STAMP = r"([0-9]{1,3}):([0-5][0-9]):([0-5][0-9]),([0-9]{3})"
@@ -112,8 +113,10 @@ def read_subtitles(path: Path, duration_ms: int, source_id: str, format: str, ex
 
 def build_speakers(entries, labels):
     names = list(dict.fromkeys(label for label in labels if label not in {"?", "NONSPEECH"})) + ["?", "NONSPEECH"]
-    colors = ["#71a8cc", "#a695ce", "#7db7a2", "#c6a272"]
-    speakers = [Speaker(label=label, color=colors[index % len(colors)], order=index) for index, label in enumerate(names)]
+    speakers = []
+    for index, label in enumerate(names):
+        color = SPECIAL_COLORS[label] if label in SPECIAL_COLORS else next_color(s.color for s in speakers)
+        speakers.append(Speaker(label=label, color=color, order=index))
     by_label = {s.label: s.id for s in speakers}
     for entry, label in zip(entries, labels):
         entry.speaker_id = by_label[label]

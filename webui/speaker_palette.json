@@ -1,0 +1,4 @@
+{
+  "special": { "?": "#b8c2cc", "NONSPEECH": "#a89b88" },
+  "candidates": ["#62b5f5", "#fa897b", "#7ed486", "#c79bf2", "#f1cc64", "#52cfc5", "#ed94c5", "#a8c963", "#f5a65d", "#94a3f5", "#6bd5ef", "#d3b49a"]
+}

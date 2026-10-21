@@ -20,7 +20,7 @@ export function BatchEditor({ entries, project, busy, onAssign }: {
     <label>当前说话人<output aria-label="共同说话人">{common(e => project.speakers.find(s => s.id === e.speaker_id)!.label)}</output></label>
     <label>批量说话人归属<select aria-label="批量说话人归属" value={target} disabled={busy} onChange={event => setTarget(event.target.value)}>
       <option value="">请选择目标说话人</option>
-      {project.speakers.filter(s => s.visible !== false).map(s => <option key={s.id} value={s.label}>{s.label}</option>)}
+      {project.speakers.filter(s => s.visible !== false && !s.locked).map(s => <option key={s.id} value={s.label}>{s.label}</option>)}
     </select></label>
     <IconButton icon="Check" label="应用批量归属" disabled={busy || !target || !project.speakers.some(s => s.label === target)} onClick={() => {
       onAssign(project.speakers.find(s => s.label === target)!.id); setTarget('');

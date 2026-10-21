@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { api, ordered, timeLabel, parseTimecode, visibleEntries, type Entry, type ExportFormat, type ImportPreview, type ImportFormat, type Project, type ProjectSummary } from './api';
+import { api, editableSelection, editableSpeaker, ordered, timeLabel, parseTimecode, visibleEntries, type Entry, type ExportFormat, type ImportPreview, type ImportFormat, type Project } from './api';
+import { ProjectBrowser } from './ProjectBrowser';
+import { SpeakerColorDialog } from './SpeakerColorDialog';
 import { IconButton, IconToggle } from './IconButton';
 import { useProjectSession } from './useProjectSession';
 import { useAudition } from './useAudition';
@@ -21,13 +23,14 @@ import { MergeSubtitleDialog } from './MergeSubtitleDialog';
 import { addSubtitle as addEntry, splitSubtitle as splitEntry, mergeSubtitles as mergeEntries, mergeSelection } from './structureEditing';
 import { offsetSpeakers } from './selectionEditing';
 import { SpeakerManager } from './SpeakerManager';
-import { mergeSpeaker, removeSpeaker, reorderSpeaker, replaceSubtitles, resolveSpeaker, saveSpeaker, speakerDraftError, type SpeakerDraft } from './speakerEditing';
+import { deleteTrack, mergeSpeaker, removeSpeaker, reorderSpeaker, replaceSubtitles, resolveSpeaker, saveSpeaker, speakerDraftError, type SpeakerDraft } from './speakerEditing';
 
 interface Draft { text: string; start: string; end: string; speaker: string }
 const draftFor = (entry: Entry, project: Project): Draft => ({ text: entry.text, start: timeLabel(entry.start_ms), end: timeLabel(entry.end_ms), speaker: project.speakers.find(s => s.id === entry.speaker_id)!.label });
 const exportLabels: Record<ExportFormat, string> = { 'speaker-srt': '说话人 SRT', 'plain-srt': '普通 SRT', 'normalized-jsonl': '项目 JSONL', 'moss-json': 'MOSS JSON' };
 
 export function App() {
+  const [colorPreview, setColorPreview] = useState(false);
   const session = useProjectSession();
   const { project, dirty } = session;
   const [trackOrder, setTrackOrder] = useState<string[]>([]);
@@ -51,7 +54,6 @@ export function App() {
   const defaultLayout = () => ({ left: 20, right: 29, bottom: Math.round(window.innerHeight * .4) });
   const [layout, setLayout] = useState(defaultLayout);
   const [resourcesVisible, setResourcesVisible] = useState(true);
-  const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [name, setName] = useState('新建校对工程');
   const [mediaPath, setMediaPath] = useState('');
   const [subtitlePath, setSubtitlePath] = useState('');
@@ -85,6 +87,8 @@ export function App() {
   const endInput = useRef<HTMLInputElement>(null);
   const speakerInput = useRef<HTMLInputElement>(null);
   const current = project?.entries.find(entry => entry.id === selected);
+  const selectionEditable = !!project && editableSelection(project, selectedIds);
+  const currentLocked = !!project?.speakers.some(s => s.id === current?.speaker_id && s.locked);
   const draftChanged = !!(project && current && draft && JSON.stringify(draftFor(current, project)) !== JSON.stringify(draft));
   const speakerOriginal = project?.speakers.find(s => s.id === speakerDraft?.id);
   const speakerChanged = !!speakerDraft && (!speakerOriginal || speakerOriginal.label !== speakerDraft.label || speakerOriginal.color !== speakerDraft.color);
@@ -100,7 +104,7 @@ export function App() {
     }
     if (anchor.current && !allowed.has(anchor.current)) anchor.current = null;
     if (audition.range && !allowed.has(audition.range.id)) audition.cancel(true);
-    if (currentTrack && !project?.speakers.some(s => s.id === currentTrack && s.visible !== false)) setCurrentTrack('');
+    if (currentTrack && !project?.speakers.some(s => s.id === currentTrack && editableSpeaker(s))) setCurrentTrack('');
     if (speakerFilter && !project?.speakers.some(s => s.id === speakerFilter && s.visible !== false)) setSpeakerFilter('');
   }, [project?.entries, project?.speakers]);
 
@@ -152,6 +156,7 @@ export function App() {
     if (JSON.stringify(draftFor(current, project)) === JSON.stringify(draft)) {
       setFieldError(null); setError(''); return project;
     }
+    if (!editableSelection(project, new Set([current.id]))) return invalid('text', '该轨道已锁定或隐藏，请先解锁并显示');
     if (!draft.text.trim()) {
       return invalid('text', '字幕正文不能为空');
     }
@@ -165,6 +170,7 @@ export function App() {
     const label = draft.speaker.trim();
     if (!label) return invalid('speaker', '说话人名称不能为空');
     if (project.speakers.some(s => s.label === label && s.visible === false)) return invalid('speaker', '该轨道已隐藏，请先显示轨道');
+    if (project.speakers.some(s => s.label === label && s.locked)) return invalid('speaker', '目标轨道已锁定，请先解锁');
     const resolved = resolveSpeaker(project, label, crypto.randomUUID());
     const next = { ...resolved.project, entries: project.entries.map(entry => entry.id === selected
       ? { ...entry, text: draft.text, start_ms: start, end_ms: end, speaker_id: resolved.speaker.id } : entry) };
@@ -208,6 +214,33 @@ export function App() {
     const snapshot = commitDraft();
     if (!snapshot) return;
     session.commit({ ...snapshot, speakers: snapshot.speakers.map(s => s.id === id ? { ...s, visible: s.visible === false } : s) });
+  }
+
+  function lockSpeaker(id: string) {
+    if (busy || timing.current) return;
+    const snapshot = commitDraft();
+    if (!snapshot) return;
+    const locked = id === 'overview' ? !snapshot.speakers.every(s => s.locked) : !snapshot.speakers.find(s => s.id === id)?.locked;
+    const speakers = visibleSpeakers(snapshot.speakers, trackOrder).map(s => id === 'overview' || s.id === id ? { ...s, locked } : s);
+    session.commit({ ...snapshot, speakers }, { before: trackSpeakers.map(s => s.id), after: speakers.map(s => s.id) });
+  }
+
+  function manageSpeaker(id: string) {
+    const snapshot = commitDraft();
+    const speaker = snapshot?.speakers.find(s => s.id === id);
+    if (!speaker) return;
+    setEditorTab('speakers'); setSpeakerDraft(speaker.locked ? null : speaker); setSpeakerError('');
+    requestAnimationFrame(() => document.querySelector(`[data-speaker-card="${CSS.escape(id)}"]`)?.scrollIntoView({ block: 'nearest' }));
+  }
+
+  function deleteSpeakerTrack(id: string) {
+    const snapshot = commitDraft();
+    const speaker = snapshot?.speakers.find(s => s.id === id);
+    if (!snapshot || !speaker || speaker.locked) return;
+    const count = snapshot.entries.filter(e => e.speaker_id === id).length;
+    if (!window.confirm(`删除「${speaker.label}」轨道及其 ${count} 条字幕？可以撤销。`)) return;
+    const next = deleteTrack(snapshot, id);
+    if (next) commitSpeakers(next);
   }
 
   function choose(entry: Entry, modifiers?: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) {
@@ -262,7 +295,7 @@ export function App() {
   function beginTiming(id: string): Entry[] | null {
     const snapshot = commitDraft();
     const entry = snapshot && visibleEntries(snapshot).find(e => e.id === id);
-    if (!snapshot || !entry) return null;
+    if (!snapshot || !entry || !editableSelection(snapshot, selectedIds.has(id) ? selectedIds : new Set([id]))) return null;
     video.current?.pause();
     timing.current = true;
     const entries = selectedIds.has(id) ? visibleEntries(snapshot).filter(e => selectedIds.has(e.id)) : [entry];
@@ -278,14 +311,14 @@ export function App() {
 
   function commitTiming(entries: Entry[]) {
     const snapshot = session.getProject();
-    if (!snapshot) return;
+    if (!snapshot || !editableSelection(snapshot, new Set(entries.map(e => e.id))) || entries.some(e => !snapshot.speakers.some(s => s.id === e.speaker_id && editableSpeaker(s)))) return;
     const byId = new Map(entries.map(e => [e.id, e]));
     const next = { ...snapshot, entries: snapshot.entries.map(e => byId.get(e.id) ?? e) };
     session.commit(next); setDraft(entries.length === 1 ? draftFor(entries[0], next) : null); setFieldError(null); setError('');
   }
 
   async function persist(exporting = false) {
-    if (busy || dialog || addition || merging) return;
+    if (busy || dialog || addition || merging || colorPreview) return;
     const snapshot = commitDraft();
     if (!snapshot) return;
     setError('');
@@ -298,7 +331,7 @@ export function App() {
       if (event.key === 'Escape' && (menu || dialog === 'help')) {
         event.preventDefault(); setMenu(null); if (dialog === 'help') setDialog(null); return;
       }
-      if (addition || merging) {
+      if (addition || merging || colorPreview) {
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') event.preventDefault();
         return;
       }
@@ -355,13 +388,13 @@ export function App() {
 
   function assignSelected(speakerId: string) {
     const snapshot = commitDraft();
-    if (!snapshot || !snapshot.speakers.some(s => s.id === speakerId && s.visible !== false)) return;
+    if (!snapshot || !editableSelection(snapshot, selectedIds) || !snapshot.speakers.some(s => s.id === speakerId && editableSpeaker(s))) return;
     session.commit({ ...snapshot, entries: snapshot.entries.map(e => selectedIds.has(e.id) ? { ...e, speaker_id: speakerId } : e) });
   }
 
   function deleteSelected() {
     const snapshot = commitDraft();
-    if (!snapshot || !snapshot.entries.some(e => selectedIds.has(e.id))) return;
+    if (!snapshot || !editableSelection(snapshot, selectedIds)) return;
     session.commit({ ...snapshot, entries: snapshot.entries.filter(e => !selectedIds.has(e.id)) });
     setSelected(null); setDraft(null); setFieldError(null);
   }
@@ -373,7 +406,7 @@ export function App() {
     video.current?.pause();
     const start = Math.round((video.current?.currentTime ?? position / 1000) * 1000);
     if (start < 0 || start >= snapshot.media.duration_ms) return;
-    const available = trackSpeakers.filter(s => s.visible !== false);
+    const available = trackSpeakers.filter(editableSpeaker);
     const speakerId = available.find(s => s.id === currentTrack)?.id ?? available.find(s => s.label === '?')?.id ?? available[0]?.id;
     if (!speakerId) return;
     setAddition({ start, end: Math.min(start + 2000, snapshot.media.duration_ms), speakerId });
@@ -438,6 +471,7 @@ export function App() {
     if (kind === 'replace') {
       const current = commitDraft();
       if (!current) return;
+      if (current.speakers.some(s => s.locked)) { setError('请先解锁全部轨道再整体替换字幕'); return; }
       setMediaPath(current.media.path); setSubtitlePath('');
     } else if (kind !== 'help' && project) {
       if (!commitDraft()) return;
@@ -449,12 +483,7 @@ export function App() {
     if (kind !== 'help') session.pauseAutosave();
     if (kind === 'save-as' || kind === 'new-media') setName(`${session.getProject()?.name ?? '工程'}-副本`);
     if (kind === 'relocate' || kind === 'new-media') setMediaPath('');
-    if (kind === 'open') {
-      setBusy(true);
-      try { setProjects(await api<ProjectSummary[]>('/projects')); setDialog(kind); }
-      catch (reason) { report(reason); session.resumeAutosave(); }
-      finally { setBusy(false); }
-    } else { setPreview(null); setDialog(kind); }
+    setPreview(null); setDialog(kind);
   }
 
   async function chooseFile(kind: 'media' | 'subtitle') {
@@ -582,6 +611,7 @@ export function App() {
         {menu === 'file' && <div className="menu-popup">
           <button onClick={() => void showDialog('new')}>新建工程…</button>
           <button onClick={() => void showDialog('open')}>打开工程…</button>
+          <button onClick={() => void showDialog('open')}>管理工程 / 回收站…</button>
           <button disabled={!project} onClick={() => void showDialog('save-as')}>工程另存为…</button>
           <button disabled={!project} onClick={() => void showDialog('replace')}>替换工作字幕…</button>
           <button disabled={!project} onClick={() => { setMenu(null); void persist(); }}>保存</button>
@@ -590,13 +620,13 @@ export function App() {
       </div>
       <div className="file-menu"><button onClick={() => setMenu(menu === 'edit' ? null : 'edit')} disabled={!project || busy}>编辑</button>
         {menu === 'edit' && <div className="menu-popup">
-          <button disabled={!selected} onClick={() => { if (!commitDraft()) return; setMenu(null); setEditorTab('subtitles'); requestAnimationFrame(() => textInput.current?.focus()); }}>编辑字幕正文</button>
+          <button disabled={!selected || currentLocked} onClick={() => { if (!commitDraft()) return; setMenu(null); setEditorTab('subtitles'); requestAnimationFrame(() => textInput.current?.focus()); }}>编辑字幕正文</button>
           <button disabled={!session.canUndo && !draftChanged && !speakerChanged} onClick={() => { setMenu(null); history(false); }}>撤销编辑</button>
           <button disabled={!session.canRedo || draftChanged || speakerChanged} onClick={() => { setMenu(null); history(true); }}>重做编辑</button>
-           <button disabled={position >= duration || !trackSpeakers.some(s => s.visible !== false)} onClick={() => { setMenu(null); beginAdd(); }}>新增字幕…</button>
-          <button disabled={!current || position <= current.start_ms || position >= current.end_ms} onClick={() => { setMenu(null); splitSubtitle(); }}>在播放头拆分</button>
+           <button disabled={position >= duration || !trackSpeakers.some(editableSpeaker)} onClick={() => { setMenu(null); beginAdd(); }}>新增字幕…</button>
+          <button disabled={!current || currentLocked || position <= current.start_ms || position >= current.end_ms} onClick={() => { setMenu(null); splitSubtitle(); }}>在播放头拆分</button>
           <button disabled={!mergeGroup} onClick={() => { setMenu(null); beginMerge(); }}>合并连续选择</button>
-          <button disabled={!selectedIds.size} onClick={() => { setMenu(null); deleteSelected(); }}>删除选择</button>
+          <button disabled={!selectionEditable} onClick={() => { setMenu(null); deleteSelected(); }}>删除选择</button>
         </div>}
       </div>
       <div className="file-menu"><button onClick={() => setMenu(menu === 'view' ? null : 'view')}>视图</button>
@@ -656,7 +686,10 @@ export function App() {
               onTimeUpdate={() => { if (video.current?.videoWidth) audition.sync(); }} onEnded={audition.sync}
               onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
               onError={previewCopy.failed} />
-            {showSubtitles && <div className="subtitle-overlay" aria-label="播放字幕">{overlayEntries.map(entry => <div key={entry.id}>{showSpeakerNames && <span>[{project.speakers.find(s => s.id === entry.speaker_id)?.label ?? '?'}] </span>}{entry.text}</div>)}</div>}
+            {showSubtitles && <div className="subtitle-overlay" aria-label="播放字幕">{overlayEntries.map(entry => {
+              const speaker = project.speakers.find(s => s.id === entry.speaker_id);
+              return <div key={entry.id}>{showSpeakerNames && <span className="overlay-speaker" style={{ color: speaker?.color }}>[{speaker?.label ?? '?'}] </span>}{entry.text}</div>;
+            })}</div>}
             <div className="fullscreen-controls"><IconButton icon={playing ? 'Pause' : 'Play'} label="全屏播放暂停" onClick={() => void togglePlayback()} /><IconButton icon="Minimize" label="退出全屏" onClick={() => void toggleFullscreen()} /></div>
           </> : <div className="empty-preview"><span>▷</span><p>视频与字幕，在同一时间线上</p></div>}
         </div>
@@ -696,6 +729,7 @@ export function App() {
           onReorder={reorderSpeakers}
           onMerge={mergeSpeakers}
           onDelete={deleteSpeaker}
+          onDeleteTrack={deleteSpeakerTrack} onLock={lockSpeaker} onOptimize={() => setColorPreview(true)}
           onCancel={() => { setSpeakerDraft(null); setSpeakerError(''); }} /> : <p className="editor-prompt muted">请先打开工程</p> : <>
         <h2>字幕 <span>{entries.length} 条</span></h2>
         <div className="subtitle-filters">
@@ -708,22 +742,23 @@ export function App() {
         <SubtitleList entries={entries} speakers={project?.speakers ?? []} selected={selectedIds} active={activeIds}
           search={search} speakerFilter={speakerFilter} busy={busy} onChoose={choose} onListen={listen} />
         {selectedIds.size > 1 && project ? <BatchEditor key={[...selectedIds].sort().join(',')} project={project}
-          entries={entries.filter(e => selectedIds.has(e.id))} busy={busy || timing.current} onAssign={assignSelected} /> : draft ? <div className="entry-editor" onBlur={event => {
+          entries={entries.filter(e => selectedIds.has(e.id))} busy={busy || timing.current || !selectionEditable} onAssign={assignSelected} /> : draft ? <div className="entry-editor" onBlur={event => {
           if (!event.currentTarget.contains(event.relatedTarget as Node | null)) commitDraft();
         }}>
-          <label>字幕正文<textarea aria-label="字幕正文" ref={textInput} {...fieldProps('text')} value={shownDraft!.text} disabled={busy || !!timingPreview}
+          {currentLocked && <small className="hint">轨道已锁定 · 解锁后编辑</small>}
+          <label>字幕正文<textarea aria-label="字幕正文" ref={textInput} {...fieldProps('text')} value={shownDraft!.text} disabled={busy || !!timingPreview || currentLocked}
             onChange={event => setDraft({ ...draft, text: event.target.value })} /></label>
           <div className="time-fields">
-            <label>开始时间<input ref={startInput} {...fieldProps('start')} placeholder="00:00:00,000" value={shownDraft!.start} disabled={busy || !!timingPreview}
+            <label>开始时间<input ref={startInput} {...fieldProps('start')} placeholder="00:00:00,000" value={shownDraft!.start} disabled={busy || !!timingPreview || currentLocked}
               onChange={event => setDraft({ ...draft, start: event.target.value })} /></label>
-            <label>结束时间<input ref={endInput} {...fieldProps('end')} placeholder="00:00:00,000" value={shownDraft!.end} disabled={busy || !!timingPreview}
+            <label>结束时间<input ref={endInput} {...fieldProps('end')} placeholder="00:00:00,000" value={shownDraft!.end} disabled={busy || !!timingPreview || currentLocked}
               onChange={event => setDraft({ ...draft, end: event.target.value })} /></label>
           </div>
-          <label>说话人归属<select aria-label="说话人归属" value={project?.speakers.some(s => s.label === shownDraft!.speaker) ? shownDraft!.speaker : ''} disabled={busy || !!timingPreview} onChange={event => setDraft({ ...draft, speaker: event.target.value })}>
+          <label>说话人归属<select aria-label="说话人归属" value={project?.speakers.some(s => s.label === shownDraft!.speaker) ? shownDraft!.speaker : ''} disabled={busy || !!timingPreview || currentLocked} onChange={event => setDraft({ ...draft, speaker: event.target.value })}>
             <option value="" disabled>输入新的说话人名称</option>
-            {project?.speakers.filter(s => s.visible !== false).map(s => <option value={s.label} key={s.id}>{speakerName(s.id)}</option>)}
+            {project?.speakers.filter(s => s.visible !== false).map(s => <option disabled={s.locked} value={s.label} key={s.id}>{speakerName(s.id)}</option>)}
           </select></label>
-          <label>说话人名称<input ref={speakerInput} {...fieldProps('speaker')} value={shownDraft!.speaker} disabled={busy || !!timingPreview}
+          <label>说话人名称<input ref={speakerInput} {...fieldProps('speaker')} value={shownDraft!.speaker} disabled={busy || !!timingPreview || currentLocked}
             onChange={event => setDraft({ ...draft, speaker: event.target.value })} /></label>
           <div className="button-row"><IconButton icon="Check" label="应用修改" disabled={busy || !draftChanged} onClick={() => commitDraft()} />
           <IconButton icon="X" label="取消修改" disabled={busy || !draftChanged} onClick={cancelDraft} /></div>
@@ -737,18 +772,19 @@ export function App() {
       <div className="timeline-toolbar"><h2>时间轴</h2>
         <IconButton icon="Undo2" label="撤销" disabled={busy || (!session.canUndo && !draftChanged && !speakerChanged)} onClick={() => history(false)} />
         <IconButton icon="Redo2" label="重做" disabled={busy || !session.canRedo || draftChanged || speakerChanged} onClick={() => history(true)} />
-        <IconButton icon="Trash2" label="删除选中字幕" disabled={busy || !selectedIds.size || timing.current} onClick={deleteSelected} />
-        <IconButton icon="Plus" label="新增字幕" disabled={!project || !trackSpeakers.some(s => s.visible !== false) || busy || timing.current || position >= duration} onClick={beginAdd} />
-        <IconButton icon="Scissors" label="拆分字幕" disabled={busy || timing.current || !current || position <= current.start_ms || position >= current.end_ms} onClick={splitSubtitle} />
+        <IconButton icon="Trash2" label="删除选中字幕" disabled={busy || !selectionEditable || timing.current} onClick={deleteSelected} />
+        <IconButton icon="Plus" label="新增字幕" disabled={!project || !trackSpeakers.some(editableSpeaker) || busy || timing.current || position >= duration} onClick={beginAdd} />
+        <IconButton icon="Scissors" label="拆分字幕" disabled={busy || timing.current || !current || currentLocked || position <= current.start_ms || position >= current.end_ms} onClick={splitSubtitle} />
         <IconButton icon="Merge" label="合并字幕" disabled={busy || timing.current || !mergeGroup} onClick={beginMerge} />
         <select aria-label="当前说话人轨" value={project?.speakers.some(s => s.id === currentTrack) ? currentTrack : ''} disabled={!project || busy || timing.current} onChange={event => setCurrentTrack(event.target.value)}>
           <option value="">未明确轨道 → ?</option>
-          {trackSpeakers.filter(s => s.visible !== false).map(s => <option key={s.id} value={s.id}>{speakerName(s.id)}</option>)}
+          {trackSpeakers.filter(editableSpeaker).map(s => <option key={s.id} value={s.id}>{speakerName(s.id)}</option>)}
         </select>
         </div>
       {project ? <SourceTimeline key={project.id} project={project} selected={selectedIds} position={position} busy={busy}
         waveform={waveform.url} thumbnails={thumbnails.url} thumbnailVersion={thumbnails.version} speakers={trackSpeakers}
         onReorder={reorderSpeakers} onToggleSpeaker={toggleSpeaker}
+        onLockSpeaker={lockSpeaker} onManageSpeaker={manageSpeaker}
         onBeginReorder={() => { if (busy || timing.current || !commitDraft()) return false; timing.current = true; session.pauseAutosave(); return true; }}
         onEndReorder={() => { timing.current = false; session.resumeAutosave(); }}
         onSort={() => { const snapshot = commitDraft(); if (snapshot) setTrackOrder(bySubtitleCount(snapshot)); }}
@@ -761,8 +797,16 @@ export function App() {
         onSelect={selectIds} onEndSelect={() => { timing.current = false; }}
         onChoose={choose} onListen={listen} onSeek={seek} onBeginEdit={beginTiming} onPreview={previewTiming} onCommitEdit={commitTiming} /> : <div className="timeline-empty">工程打开后将在此显示原片与工作字幕</div>}
     </section>
-    {addition && project && <AddSubtitleDialog {...addition} speakers={project.speakers.filter(s => s.visible !== false)} onAdd={addSubtitle} onCancel={() => setAddition(null)} />}
-    {merging && project && <MergeSubtitleDialog count={merging.size} speakers={project.speakers.filter(s => s.visible !== false)} onMerge={speakerId => mergeSubtitles(merging, speakerId)} onCancel={() => setMerging(null)} />}
+    {colorPreview && project && <SpeakerColorDialog speakers={project.speakers} onCancel={() => setColorPreview(false)} onApply={speakers => {
+      const snapshot = session.getProject();
+      if (snapshot) {
+        const colors = new Map(speakers.map(s => [s.id, s.color]));
+        commitSpeakers({ ...snapshot, speakers: snapshot.speakers.map(s => s.locked ? s : { ...s, color: colors.get(s.id) ?? s.color }) });
+      }
+      setColorPreview(false);
+    }} />}
+    {addition && project && <AddSubtitleDialog {...addition} speakers={project.speakers.filter(editableSpeaker)} onAdd={addSubtitle} onCancel={() => setAddition(null)} />}
+    {merging && project && <MergeSubtitleDialog count={merging.size} speakers={project.speakers.filter(editableSpeaker)} onMerge={speakerId => mergeSubtitles(merging, speakerId)} onCancel={() => setMerging(null)} />}
     {dialog && <div className="modal-backdrop"><section role="dialog" aria-modal="true" aria-labelledby="dialog-title" className="dialog">
       <header><h2 id="dialog-title">{{ new: '新建编辑工程', replace: '整体替换工作字幕', open: '打开工程', help: '使用帮助', 'save-as': '工程另存为', relocate: '重新定位同一原片', 'new-media': '用新视频建立工程' }[dialog]}</h2>
         <IconButton icon="X" label="关闭对话框" disabled={busy} onClick={() => { setDialog(null); if (dialog !== 'help') session.resumeAutosave(); }} /></header>
@@ -794,11 +838,12 @@ export function App() {
         </div>}
         <footer><button disabled={busy || !preview || (dialog === 'new' && !name.trim())} className="primary" onClick={() => void importAction(true)}>{dialog === 'replace' ? '应用替换' : '创建工程'}</button></footer>
       </>}
-      {dialog === 'open' && <div className="project-list">{projects.length ? projects.map(item => <div key={item.id}>
-        <button disabled={busy} onClick={() => void openProject(item.id)}>{item.name}</button>
-        <small>{item.error?.message ?? `修订 ${item.revision}`} · {item.id}</small>
-        {item.media && <small className="path">{item.media_missing ? '原片失联 · 字幕可编辑' : '原片路径'} · {item.media.path}</small>}
-      </div>) : <p>尚无工程，请先新建。</p>}</div>}
+      {dialog === 'open' && <ProjectBrowser busy={busy} onBusy={setBusy} onError={report} onOpen={id => void openProject(id)}
+        onDeleted={id => {
+          if (session.getProject()?.id !== id) return;
+          audition.cancel(true); video.current?.pause(); session.close();
+          setSelected(null); setDraft(null); setSpeakerDraft(null); setCurrentTrack(''); setPosition(0); setPlaying(false);
+        }} />}
       {dialog === 'help' && <WorkspaceHelp />}
     </section></div>}
   </div>;

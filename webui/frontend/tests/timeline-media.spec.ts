@@ -89,10 +89,10 @@ test('真实原片生成、缓存与视频轨可见范围在多个缩放滚动�
   for (const zoom of [0, 1, 3]) {
     await page.getByLabel('时间轴缩放', { exact: true }).fill(String(zoom));
     await page.getByRole('region', { name: '时间轴轨道滚动区' }).evaluate(el => { el.scrollLeft = (el.scrollWidth - el.clientWidth) * .6; });
-    await expect.poll(() => locked.locator('svg rect').count()).toBeGreaterThan(0);
+    await expect.poll(() => locked.locator('.timeline-evidence svg rect').count()).toBeGreaterThan(0);
     await expect.poll(async () => locked.evaluate(el => {
       const track = el.querySelector('.track-body.locked')!.getBoundingClientRect(), viewport = document.querySelector('.tracks')!;
-      const last = el.querySelector('svg rect:last-child') as SVGElement;
+      const last = el.querySelector('.timeline-evidence svg rect:last-child') as SVGElement;
       return Number(last.dataset.timeMs) <= (viewport.scrollLeft + viewport.clientWidth - 150) / track.width * 9000;
     })).toBe(true);
     const observed = await locked.evaluate(el => {
@@ -100,8 +100,8 @@ test('真实原片生成、缓存与视频轨可见范围在多个缩放滚动�
       const ruler = document.querySelector('.ruler')!.getBoundingClientRect();
       return { width: track.width, left: track.left, rulerLeft: ruler.left,
         images: [...el.querySelectorAll('img')].map(img => ({ ms: Number(img.dataset.timeMs), left: img.getBoundingClientRect().left, loaded: img.complete && img.naturalWidth > 0 })),
-        bars: [...el.querySelectorAll('svg rect')].map(bar => ({ ms: Number((bar as SVGElement).dataset.timeMs), peak: Number((bar as SVGElement).dataset.peak), left: bar.getBoundingClientRect().left })),
-        svgWidth: el.querySelector('svg')!.getBoundingClientRect().width, viewport: document.querySelector('.tracks')!.clientWidth };
+        bars: [...el.querySelectorAll('.timeline-evidence svg rect')].map(bar => ({ ms: Number((bar as SVGElement).dataset.timeMs), peak: Number((bar as SVGElement).dataset.peak), left: bar.getBoundingClientRect().left })),
+        svgWidth: el.querySelector('.timeline-evidence svg')!.getBoundingClientRect().width, viewport: document.querySelector('.tracks')!.clientWidth };
     });
     for (const item of [...observed.images, ...observed.bars]) expect(Math.abs(item.left - (observed.rulerLeft + item.ms / 9000 * observed.width))).toBeLessThan(1.1);
     expect(observed.svgWidth).toBeLessThanOrEqual(observed.viewport + 2);

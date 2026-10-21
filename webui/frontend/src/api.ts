@@ -12,7 +12,7 @@ export type ImportFormat = 'plain-srt' | 'speaker-srt' | 'moss-srt' | 'normalize
 export type ExportFormat = Exclude<ImportFormat, 'moss-srt'>;
 export interface ExportOptions { format: ExportFormat; keep_tags: boolean }
 
-export interface Speaker { id: string; label: string; color: string; order: number; visible?: boolean }
+export interface Speaker { id: string; label: string; color: string; order: number; visible?: boolean; locked?: boolean }
 export interface ExportFile { id: string; filename: string; path: string; format: string; revision: number }
 export interface Imported {
   media: { path: string; duration_ms: number; identity: string | null; size_bytes: number | null };
@@ -63,6 +63,14 @@ export const ordered = (entries: Entry[]) => [...entries].sort((a, b) => a.start
 export function timeLabel(ms: number): string {
   const whole = Math.floor(ms / 1000);
   return `${String(Math.floor(whole / 3600)).padStart(2, '0')}:${String(Math.floor(whole / 60) % 60).padStart(2, '0')}:${String(whole % 60).padStart(2, '0')},${String(Math.floor(ms % 1000)).padStart(3, '0')}`;
+}
+export interface TrashedProject { id: string; name: string; deleted_at: string; expires_at: string }
+
+export const editableSpeaker = (speaker: Speaker) => speaker.visible !== false && !speaker.locked;
+export function editableSelection(project: Project, ids: Set<string>): boolean {
+  const allowed = new Set(project.speakers.filter(editableSpeaker).map(s => s.id));
+  const entries = new Set(project.entries.filter(e => allowed.has(e.speaker_id)).map(e => e.id));
+  return ids.size > 0 && [...ids].every(id => entries.has(id));
 }
 
 export function parseTimecode(value: string): number | null {

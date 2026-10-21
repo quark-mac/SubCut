@@ -4,13 +4,13 @@ import { Play, Pause, Square, Repeat2, Volume2, VolumeX, Maximize, Minimize, Ski
   Magnet, Scan, Focus, ListVideo, Film, AudioLines, ListFilter, ArrowDownWideNarrow, ListOrdered,
   Eye, EyeOff, Settings2, RefreshCw, WandSparkles, Check, X, Users, Captions, UserRound, Search,
   Pencil, GripVertical, Folder, FileText, ChevronDown, MapPin, Copy, Upload, Timer, PanelLeftClose,
-  type LucideIcon } from 'lucide-react';
+  LockKeyhole, LockKeyholeOpen, type LucideIcon } from 'lucide-react';
 
 const icons = { Play, Pause, Square, Repeat2, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward,
   Plus, Minus, FolderPlus, FolderOpen, Save, Download, FileInput, Undo2, Redo2, Trash2, Scissors, Merge,
   Magnet, Scan, Focus, ListVideo, Film, AudioLines, ListFilter, ArrowDownWideNarrow, ListOrdered,
   Eye, EyeOff, Settings2, RefreshCw, WandSparkles, Check, X, Users, Captions, UserRound, Search,
-  Pencil, GripVertical, Folder, FileText, ChevronDown, MapPin, Copy, Upload, Timer, PanelLeftClose } satisfies Record<string, LucideIcon>;
+   Pencil, GripVertical, Folder, FileText, ChevronDown, MapPin, Copy, Upload, Timer, PanelLeftClose, LockKeyhole, LockKeyholeOpen } satisfies Record<string, LucideIcon>;
 export type IconName = keyof typeof icons;
 export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
   const Component = icons[name];

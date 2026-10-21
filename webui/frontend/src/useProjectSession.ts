@@ -40,6 +40,15 @@ export function useProjectSession() {
     update(next); setDirty(false);
   }
 
+  function close() {
+    clearTimeout(timer.current); epoch.current++;
+    current.current = null; render(null); past.current = []; future.current = [];
+    restoredTrackOrder.current = null;
+    generation.current = 0; savedGeneration.current = 0; uncertain.current = null;
+    queue.current = Promise.resolve(); pending.current = 0;
+    setSaving(false); setDirty(false); setSaveError(''); setExportError('');
+  }
+
   function commit(next: Project, trackOrder?: { before: string[]; after: string[] }) {
     const before = current.current;
     if (!before || (JSON.stringify(content(before)) === JSON.stringify(content(next)) && (!trackOrder || trackOrder.before.join() === trackOrder.after.join()))) return before;
@@ -147,7 +156,7 @@ export function useProjectSession() {
     update({ ...current.current!, media: next.media, revision: next.revision });
   }
 
-  return { project, dirty, saving, saveError, exportError, open, commit, travel, persist, relocate, pauseAutosave, resumeAutosave,
+  return { project, dirty, saving, saveError, exportError, open, close, commit, travel, persist, relocate, pauseAutosave, resumeAutosave,
     getRestoredTrackOrder: () => restoredTrackOrder.current,
     isSaving: () => pending.current > 0,
     getProject: () => current.current, canUndo: past.current.length > 0, canRedo: future.current.length > 0 };

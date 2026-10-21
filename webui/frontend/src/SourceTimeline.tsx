@@ -20,6 +20,8 @@ interface Props {
   speakers: Project['speakers'];
   onReorder: (source: string, target: string) => void;
   onToggleSpeaker: (id: string) => void;
+  onLockSpeaker: (id: string) => void;
+  onManageSpeaker: (id: string) => void;
   onBeginReorder: () => boolean;
   onEndReorder: () => void;
   onSort: () => void;
@@ -58,11 +60,13 @@ interface EditGesture {
   targets: number[];
 }
 
-export function SourceTimeline({ project, selected, position, busy, currentTrack, waveform, thumbnails, thumbnailVersion, speakers, onReorder, onToggleSpeaker, onBeginReorder, onEndReorder, onSort, onStoredOrder, onGenerateThumbnails, onGenerateWaveform, generatingThumbnails, generatingWaveform, onTrack, onChoose, onListen, onSeek, onBeginEdit, onPreview, onCommitEdit, onBeginSelect, onSelect, onEndSelect }: Props) {
+export function SourceTimeline({ project, selected, position, busy, currentTrack, waveform, thumbnails, thumbnailVersion, speakers, onReorder, onToggleSpeaker, onLockSpeaker, onManageSpeaker, onBeginReorder, onEndReorder, onSort, onStoredOrder, onGenerateThumbnails, onGenerateWaveform, generatingThumbnails, generatingWaveform, onTrack, onChoose, onListen, onSeek, onBeginEdit, onPreview, onCommitEdit, onBeginSelect, onSelect, onEndSelect }: Props) {
   const viewport = useRef<HTMLDivElement>(null);
   const ruler = useRef<HTMLDivElement>(null);
   const gesture = useRef<{ pointer: number; start: number; scroll: number; clientX: number } | null>(null);
   const [scrubbing, setScrubbing] = useState(false);
+  const [reordering, setReordering] = useState<{ source: string; target: string; delta: number } | null>(null);
+  const lastSortPositions = useRef<Map<string, number> | null>(null);
   const [showOverview, setShowOverview] = useState(true);
   const [showThumbnails, setShowThumbnails] = useState(true);
   const [showWaveform, setShowWaveform] = useState(false);
@@ -177,13 +181,26 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
         ends[lane] = end;
         return { entry, lane, left: start, width: end - start };
       });
-      const minimum = track.id === 'video' || track.id === 'waveform' ? 48 : Math.max(46, ends.length * 35 + 8);
-      const height = track.hidden ? 38 : Math.max(minimum, heights[track.id] ?? (track.id === 'video' ? 80 : track.id === 'waveform' ? 100 : minimum));
+      const minimum = track.id === 'video' || track.id === 'waveform' ? 56 : Math.max(60, ends.length * 35 + 12);
+      const height = track.hidden ? 52 : Math.max(minimum, heights[track.id] ?? (track.id === 'video' ? 80 : track.id === 'waveform' ? 100 : minimum));
       return { ...track, blocks, minimum, height, laneHeight: (height - 8) / Math.max(1, ends.length) };
     });
   }, [project.entries, speakers, duration, width, showWaveform, showOverview, heights]);
 
   const colors = useMemo(() => new Map(project.speakers.map(s => [s.id, s.color])), [project.speakers]);
+  useLayoutEffect(() => {
+    const rows = [...viewport.current!.querySelectorAll<HTMLElement>('.track[data-track-id]')];
+    if (reordering) {
+      lastSortPositions.current = new Map(rows.map(row => [row.dataset.trackId!, row.getBoundingClientRect().top]));
+    } else if (lastSortPositions.current) {
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) for (const row of rows) {
+        const before = lastSortPositions.current.get(row.dataset.trackId!);
+        const delta = before === undefined ? 0 : before - row.getBoundingClientRect().top;
+        if (Math.abs(delta) > 1) row.animate([{ transform: `translateY(${delta}px)` }, { transform: 'translateY(0)' }], { duration: 160, easing: 'cubic-bezier(.2,.8,.2,1)' });
+      }
+      lastSortPositions.current = null;
+    }
+  }, [reordering, tracks]);
   const tickStep = useMemo(() => {
     const target = duration / width * 110;
     const magnitude = 10 ** Math.floor(Math.log10(Math.max(1, target)));
@@ -244,6 +261,9 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
 
   function beginEdit(event: PointerEvent<HTMLButtonElement>, entry: Entry) {
     if (busy || event.button !== 0 || edit.current || gesture.current) return;
+    if (project.speakers.some(s => s.id === entry.speaker_id && s.locked)) {
+      event.preventDefault(); suppressClick.current = true; clickedEntry.current = entry.id; onChoose(entry, event); return;
+    }
     event.preventDefault();
     suppressClick.current = true;
     if (event.ctrlKey || event.metaKey || event.shiftKey) {
@@ -298,8 +318,9 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
         ? { ...e, end_ms: e.end_ms + shift }
         : { ...e, start_ms: e.start_ms + shift, end_ms: e.end_ms + shift,
           speaker_id: current.entries.length === 1 ? speaker?.id ?? e.speaker_id : e.speaker_id });
-    let rejected = false;
-    if (current.mode === 'move' && speaker && current.entries.length > 1) {
+    let rejected = !!speaker?.locked;
+    if (rejected) current.next = current.entries;
+    if (!rejected && current.mode === 'move' && speaker && current.entries.length > 1) {
       const tracks = speakers.filter(s => s.visible !== false);
       const offset = tracks.findIndex(s => s.id === speaker.id) - tracks.findIndex(s => s.id === current.entry.speaker_id);
       const shifted = offsetSpeakers(current.next, tracks, offset);
@@ -389,8 +410,8 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
       <IconToggle icon="ListVideo" label="字幕总览" checked={showOverview} disabled={!!preview || busy} onChange={e => setShowOverview(e.target.checked)} />
       <IconToggle icon="Film" label="视频缩略图" checked={showThumbnails} onChange={e => setShowThumbnails(e.target.checked)} />
       <IconToggle icon="AudioLines" label="音频波形" checked={showWaveform} disabled={!!preview || busy} onChange={e => setShowWaveform(e.target.checked)} />
-      <IconButton icon="ArrowDownWideNarrow" label="按字幕数排序" disabled={busy || !!preview} onClick={onSort} />
-      <IconButton icon="ListOrdered" label="工程轨序" disabled={busy || !!preview} onClick={onStoredOrder} />
+      <IconButton icon="ArrowDownWideNarrow" label="按字幕数排序" disabled={busy || !!preview || !!reordering || speakers.some(s => s.locked)} onClick={onSort} />
+      <IconButton icon="ListOrdered" label="工程轨序" disabled={busy || !!preview || !!reordering || speakers.some(s => s.locked)} onClick={onStoredOrder} />
       {showThumbnails && !thumbnails && <IconButton icon="WandSparkles" label={generatingThumbnails ? '缩略图生成中…' : '生成缩略图'} disabled={busy || generatingThumbnails} onClick={onGenerateThumbnails} />}
       {showWaveform && !waveform && <IconButton icon="WandSparkles" label={generatingWaveform ? '波形生成中…' : '生成波形'} disabled={busy || generatingWaveform} onClick={onGenerateWaveform} />}
       {invalidTrack && <small role="status">轨道越界</small>}
@@ -443,10 +464,25 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
               style={{ left: `${position / duration * 100}%` }} disabled={busy}>▼</button>
           </div>
         </div>
-        {renderedTracks.map(track => <div className={`track ${track.hidden ? 'hidden-track' : ''}`} key={track.id} style={{ height: track.height + 1 }}
+        {renderedTracks.map((track, index) => {
+          const speaker = speakers.find(s => s.id === track.id);
+          const locked = speaker ? !!speaker.locked : track.id === 'overview' ? speakers.every(s => s.locked) : true;
+          const movable = !!speaker && !speaker.locked && !specialSpeaker(speaker.label);
+          const from = tracks.findIndex(t => t.id === reordering?.source), to = tracks.findIndex(t => t.id === reordering?.target);
+          const distance = from >= 0 ? tracks[from].height + 1 : 0;
+          const shifted = reordering && index > from && index <= to ? -distance : reordering && index >= to && index < from ? distance : 0;
+          return <div className={`track ${track.hidden ? 'hidden-track' : ''} ${locked ? 'track-locked' : ''} ${reordering ? 'sorting' : ''} ${reordering?.source === track.id ? 'sort-source' : ''}`}
+          aria-label={reordering?.source === track.id ? '轨道排序预览' : undefined}
+          data-reorder-id={movable ? track.id : undefined}
+          data-sort-locked={speaker?.locked ? 'true' : undefined}
+          data-track-id={track.id}
+          key={track.id} style={{ height: track.height + 1, transform: reordering ? `translateY(${index === from ? reordering.delta : shifted}px)` : undefined }}
           data-speaker-id={!track.hidden && project.speakers.some(s => s.id === track.id) ? track.id : undefined}>
           <TrackHeader id={track.id} label={track.label} color={track.color} hidden={track.hidden} selected={currentTrack === track.id} busy={busy || !!preview}
-            movable={speakers.some(s => s.id === track.id && !specialSpeaker(s.label))}
+            locked={locked} count={speaker ? project.entries.filter(e => e.speaker_id === track.id).length : undefined}
+            onLock={speaker || track.id === 'overview' ? () => onLockSpeaker(track.id) : undefined}
+            onManage={speaker && !specialSpeaker(speaker.label) ? () => onManageSpeaker(track.id) : undefined}
+            onPreview={setReordering} movable={movable}
             onSelect={() => onTrack(!track.hidden && project.speakers.some(s => s.id === track.id) ? track.id : '')}
             onToggle={speakers.some(s => s.id === track.id) ? () => onToggleSpeaker(track.id) : undefined}
             onBegin={() => !edit.current && !gesture.current && !box.current && onBeginReorder()} onEnd={onEndReorder} onReorder={onReorder} />
@@ -458,7 +494,7 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
               const previewLeft = Math.min(entry.start_ms / duration * width, width - 4);
               const displayWidth = entry === original ? blockWidth : Math.max(4, entry.end_ms / duration * width - previewLeft);
               return <button key={entry.id} disabled={busy} data-entry-id={entry.id}
-              className={`clip ${displayWidth < 12 ? 'narrow' : ''} ${selected.has(entry.id) ? 'selected' : ''} ${entry.start_ms <= position && entry.end_ms > position ? 'active' : ''}`}
+               className={`clip ${speakers.some(s => s.id === entry.speaker_id && s.locked) ? 'clip-locked' : ''} ${displayWidth < 12 ? 'narrow' : ''} ${selected.has(entry.id) ? 'selected' : ''} ${entry.start_ms <= position && entry.end_ms > position ? 'active' : ''}`}
               aria-pressed={selected.has(entry.id)} aria-label={`${track.label}：${entry.text}`} title={`${timeLabel(entry.start_ms)} → ${timeLabel(entry.end_ms)}\n${entry.text}`}
               onPointerDown={event => beginEdit(event, entry)} onClick={event => onChoose(entry, event)}
               style={{ left: entry === original ? left : previewLeft,
@@ -478,7 +514,12 @@ export function SourceTimeline({ project, selected, position, busy, currentTrack
               return { move: delta => { if (!busy && !edit.current && !box.current && !gesture.current) setHeights({ ...original, [track.id]: Math.max(track.minimum, Math.min(Math.max(320, track.minimum * 3), track.height + delta)) }); }, cancel: () => setHeights(original) };
             }} />
           </div>}
-        </div>)}
+        </div>; })}
+        {reordering && reordering.source !== reordering.target && <div className="sort-insertion" aria-label="轨道插入位置" style={{
+          top: 30 + tracks.slice(0, tracks.findIndex(t => t.id === reordering.target)).reduce((sum, t) => sum + t.height + 1, 0)
+            + (tracks.findIndex(t => t.id === reordering.source) < tracks.findIndex(t => t.id === reordering.target)
+              ? (tracks.find(t => t.id === reordering.target)!.height - tracks.find(t => t.id === reordering.source)!.height) : 0),
+        }} />}
         {marquee && <div className="selection-marquee" aria-label="框选范围" style={marquee} />}
       </div>
     </div>

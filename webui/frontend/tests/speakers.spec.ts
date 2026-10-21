@@ -138,7 +138,8 @@ test('真实拖动重排后换轨使用新顺序，撤销恢复目标，特殊�
   await travel(page, true);
   await page.getByRole('tab', { name: '说话人', exact: true }).click();
   for (const label of ['?', 'NONSPEECH']) {
-    await expect(card(page, label).getByRole('button')).toHaveCount(0);
+    await expect(card(page, label).getByRole('button')).toHaveCount(1);
+    await expect(card(page, label).getByRole('button', { name: '锁定人物轨', exact: true })).toBeVisible();
     await handle('乙').dragTo(card(page, label));
     expect((await saved(page, project)).speakers).toEqual(reordered.speakers);
   }

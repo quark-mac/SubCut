@@ -1,6 +1,7 @@
 import type { Project, Speaker } from './api';
 
 export function bySubtitleCount(project: Project): string[] {
+  if (project.speakers.some(s => s.locked)) return [...project.speakers].sort((a, b) => a.order - b.order).map(s => s.id);
   const counts = new Map<string, number>();
   for (const entry of project.entries) counts.set(entry.speaker_id, (counts.get(entry.speaker_id) ?? 0) + 1);
   const speakers = [...project.speakers].sort((a, b) => a.order - b.order);
