@@ -1,0 +1,411 @@
+
+
+> subtitle-editing-webui@0.1.0 test:browser
+
+> playwright test --reporter=line
+
+
+
+
+
+node.exe : [WebServer] INFO:     Started server process [35364]
+
+所在位置 行:1 字符: 1
+
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
+
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    + CategoryInfo          : NotSpecified: ([We...process [35364]:String) [], RemoteException
+
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+
+[WebServer] INFO:     Waiting for application startup.
+
+[WebServer] INFO:     Application startup complete.
+
+
+
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:18761 (Press CTRL+C to quit)
+
+
+
+
+
+Running 106 tests using 1 worker
+
+
+
+[1/106] tests\drag-timing.spec.ts:123:1 鈥?妯嫋棰勮涓嶈惤鐩橈紝閲婃斁鍙彁浜や竴姝ュ巻鍙诧紝鍙岃鍥句笌閲嶅紑涓€鑷?[2/106] tests\drag-timing.spec.ts:170:1 鈥?绾垫嫋浠呮崲杞紝鏂滄嫋鏃堕棿褰掑睘涓€姝ユ彁浜わ紝鎬昏鍜屾棤鏁堢洰鏍囦繚鐣欏綊灞?[3/106] tests\drag-timing.spec.ts:221:1 鈥?涓ょ resize 鍜屾暣浣撶Щ鍔ㄩ檺鍒跺獟浣撹竟鐣屽強涓€姣鏃堕暱锛屼繚鐣欓噸鍙犲拰鏈€夋潯鐩?[4/106] tests\drag-timing.spec.ts:286:1 鈥?鍚搁檮鍙紑鍏筹紝鏁村潡涓庝袱绔惛闄勬挱鏀惧ご鍜屽叾浠栧瓧骞曡竟鐣岋紝鍏抽棴淇濈暀鑷敱姣缁撴灉
+
+[5/106] tests\drag-timing.spec.ts:361:1 鈥?Esc 鍙栨秷妯枩鎷栧拰 resize 鎭㈠棰勮涓斾笉澧炲姞鍘嗗彶锛屼繚鐣欐棦鏈夐噸鍋氬垎鏀?[6/106] tests\drag-timing.spec.ts:397:1 鈥?2脳 涓?8脳 缂╂斁妯旱婊氬姩鍚庢寜鍘熺墖姣鎷栧姩锛屾墜鍔夸腑婊氬姩涔熺珛鍗虫洿鏂伴瑙?[7/106] tests\drag-timing.spec.ts:459:1 鈥?楂樺€嶇巼鍚搁檮浣跨敤灞忓箷璺濈锛屽叧闂悗鍙井璋冧竴姣锛屾瀬鐭潡绉诲姩涓嶆敼鍙樼湡瀹炴椂闀?[8/106] tests\editing.spec.ts:34:1 鈥?杩炵画姝ｆ枃銆佹椂闂村強寮€鏀句汉鐗╁綊灞為€愭鎾ら攢閲嶅仛锛屼繚瀛樹繚鐣欏巻鍙诧紝閲嶅紑閲嶇疆鍘嗗彶
+
+[9/106] tests\editing.spec.ts:122:1 鈥?绂诲紑缂栬緫鍖烘彁浜ゅ苟鑷姩淇濆瓨锛屼繚瀛樻湡闂翠粛鍙紪杈戜笖鏃у搷搴斾笉鑳界‘璁ゆ柊鑽夌
+
+[10/106] tests\editing.spec.ts:162:1 鈥?鏂囧瓧蹇嵎閿繚鐣欑劍鐐硅涔夛紝闈炴硶鍜屽彇娑堣緭鍏ヤ笉杩涘叆鍘嗗彶锛屽垎鏀紪杈戞竻闄ら噸鍋?[11/106] tests\editing.spec.ts:266:1 鈥?鏈嶅姟宸茶惤鐩樹絾鍝嶅簲涓㈠け鍚庯紝缁х画缂栬緫骞堕噸璇曡兘鎭㈠鏈€鏂扮増鏈?[12/106] tests\editing.spec.ts:313:1 鈥?寤惰繜淇濆瓨鍥炴墽涓茶澶勭悊锛岃緝鏂扮紪杈戜笉琚鐩栵紝瀵煎嚭鍥哄畾瑙﹀彂鏃跺揩鐓?[13/106] tests\editing.spec.ts:381:1 鈥?澶栭儴淇鍐茬獊鏄庣‘鎻愮ず涓斾繚鐣欏綋鍓嶇紪杈戯紝涓嶈鐩栫鐩樻柊鐗堟湰
+
+[14/106] tests\editing.spec.ts:432:1 鈥?鍒囨崲宸ョ▼绛夊緟鏈夋晥缂栬緫钀界洏锛屾棫鑷姩淇濆瓨璁℃椂鍣ㄤ笉浼氶殢鍚庨噸澶嶅啓鍥?[15/106] tests\editing.spec.ts:485:1 鈥?瀵煎嚭澶辫触涓庡伐绋嬩繚瀛樼姸鎬佸尯鍒嗭紝閲嶈瘯瀵煎嚭浠嶄娇鐢ㄦ湁鏁堣緭鍏?[16/106] tests\editing.spec.ts:519:1 鈥?鏅€?SRT 浠庨瑙堛€佸師鐗囨挱鏀俱€佹鏂囨牎瀵瑰埌淇濆瓨閲嶅紑鍜岀湡瀹炴枃浠跺鍑?[17/106] tests\editing.spec.ts:616:1 鈥?閲嶅閫夋嫨姝ｅ湪缂栬緫鐨勫瓧骞曚細淇濈暀鍒氭彁浜ょ殑姝ｆ枃锛屽苟鍚屾鎬昏涓庝汉鐗╄建
+
+[18/106] tests\editing.spec.ts:642:1 鈥?闈炴硶杈撳叆闃绘淇濆瓨鍜屽鍑猴紝淇濆瓨澶辫触淇濈暀杈撳叆骞跺彲閲嶈瘯
+
+[19/106] tests\editor-controls.spec.ts:60:1 鈥?闅愯棌浜虹墿璐┛鏄剧ず瀵艰埅閫夋嫨涓庡洓鏍煎紡瀵煎嚭锛屼繚瀛樺壇鏈拰鎭㈠涓嶄涪瀛楀箷
+
+[20/106] tests\editor-controls.spec.ts:132:1 鈥?杞ㄩ亾鏍囬闀挎寜鎺掑簭銆佺煭鎸変笉鎺掑簭锛屾澗寮€涓€姝ユ彁浜わ紝Esc鍙栨秷骞跺彲鎾ら攢閲嶅仛
+
+[21/106] tests\editor-controls.spec.ts:171:1 鈥?绮剧畝璧勬簮鍗′笌鍥炬爣鎸夐挳銆佽嚜鏈夋挱鏀鹃煶閲忔帶鍒躲€丼RT鏃堕棿鐮佹牎楠屽苟淇濆瓨
+
+[22/106] tests\editor-controls.spec.ts:229:1 鈥?闅愯棌鍙栨秷鐩爣璇曞惉锛屽叏闅愯棌鍙繚瀛樺拰绌哄鍑猴紝鎭㈠鍚庣粨鏋勭紪杈戝彧鏀瑰彲瑙侀€夋嫨
+
+[23/106] tests\editor-controls.spec.ts:258:1 鈥?闅愯棌鏇存柊宸叉湁澶氶€夌殑鍚堝苟鏉′欢锛屼汉鐗╃鐞嗕笉鑳戒慨鏀归殣钘忓瓧骞曟垨杞叆闅愯棌杞?[24/106] tests\editor-controls.spec.ts:306:1 鈥?闀挎寜璺ㄨ绐楁粴鍔ㄤ笉涓㈡墜鍔匡紝鎸変綇鏈熼棿涓嶄繚瀛橈紝閲婃斁鍚庡畬鏁翠繚瀛樿建搴?[25/106] tests\exchange.spec.ts:66:1 鈥?瀹屾暣棰勮鍚庢浛鎹竴姝ユ挙閿€涓庨噸鍋氾紝韬唤鏉ユ簮鏍囩鍙婁汉鐗╁畬鏁存仮澶嶅苟淇濆瓨閲嶅紑
+
+[26/106] tests\exchange.spec.ts:133:1 鈥?UI 鏂板缓 JSONL 宸ョ▼骞惰Е鍙戝洓绉嶅疄闄呭鍑猴紝榛樿骞插噣浜虹墿 SRT 涓庡厓鏍囩鏄惧紡寮€鍏?[27/106] tests\exchange.spec.ts:212:1 鈥?涓夌 SRT 鏄惧紡棰勮銆佸け璐ュ拰鍙栨秷涓嶆敼鍙樺伐绋嬶紝MOSS 鏉ユ簮 ID 淇濈暀涓斿鍑轰笉浼€?ASS 绱㈠紩
+
+[28/106] tests\exchange.spec.ts:348:1 鈥?鏂板缓鏃舵潵婧愬湪棰勮鍚庡彉鍖栭渶閲嶆柊棰勮锛屽け璐ヤ笉鍒涘缓宸ョ▼
+
+[29/106] tests\file-picker.spec.ts:5:1 鈥?閫夋嫨瑙嗛鍜屽瓧骞曞悗瑙ｆ瀽骞跺垱寤哄伐绋嬶紝鏃犻渶鎵嬪姩杈撳叆璺緞
+
+[30/106] tests\file-picker.spec.ts:54:1 鈥?鏇挎崲瀛楀箷閫夋嫨涓攣瀹氭搷浣滐紝鍙栨秷淇濈暀棰勮锛屽け璐ュ彲閲嶈瘯锛岄噸鏂伴€夊彇浣挎棫棰勮澶辨晥
+
+[31/106] tests\file-picker.spec.ts:191:1 鈥?閲嶆柊瀹氫綅涓庢柊瑙嗛鍓湰鍙敤鏂囦欢閫夋嫨锛屽彇娑堜笉浼氭竻绌哄凡鏈夎棰?[32/106] tests\integration.spec.ts:12:1 鈥?璺ㄧエ缁勫悎锛氭潵婧愭爣绛锯啋閲嶆帓鍙岃鍥炬壒閲忊啋绛涢€夌粨鏋勨啋鏁呴殰鎭㈠鈫掔嫭绔嬪壇鏈洓鏍煎紡
+
+[33/106] tests\launcher.spec.ts:13:1 鈥?Windows start.cmd 鐪熸鍚姩鏈嶅姟骞惰嚜鍔ㄦ墦寮€鐙珛 Edge 绐楀彛锛屽け璐ュ彲鐞嗚В
+
+[34/106] tests\long-film.spec.ts:30:1 鈥?闀跨墖30绉掕绐楀眳涓挱鏀惧ご锛屾墜鍔ㄦ粴璧板悗閲嶅鐐瑰嚮浠嶅彲鎵惧洖
+
+[WebServer] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+
+[WebServer] handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+
+[WebServer] Traceback (most recent call last):
+
+[WebServer]   File "D:\whisper-diarization\env\lib\asyncio\events.py", line 80, in _run
+
+[WebServer]     self._context.run(self._callback, *self._args)
+
+[WebServer]   File "D:\whisper-diarization\env\lib\asyncio\proactor_events.py", line 165, in _call_connection_
+
+lost
+
+[WebServer]     self._sock.shutdown(socket.SHUT_RDWR)
+
+[WebServer] ConnectionResetError: [WinError 10054] 远锟斤拷锟斤拷锟斤拷强锟饺关憋拷锟斤拷一锟斤拷锟斤拷锟叫碉拷锟斤拷锟接★拷
+
+
+
+[35/106] tests\long-film.spec.ts:67:1 鈥?涓ゅ皬鏃?000鏉?6浜虹墿鍙鑼冨洿銆佹粴鍔ㄧ缉鏀惧強瀹屾暣缂栬緫淇濆瓨瀵煎嚭
+
+
+
+[WebServer] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+
+[WebServer] handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+
+[WebServer] Traceback (most recent call last):
+
+[WebServer]   File "D:\whisper-diarization\env\lib\asyncio\events.py", line 80, in _run
+
+[WebServer]     self._context.run(self._callback, *self._args)
+
+[WebServer]   File "D:\whisper-diarization\env\lib\asyncio\proactor_events.py", line 165, in _call_connection_
+
+lost
+
+[WebServer]     self._sock.shutdown(socket.SHUT_RDWR)
+
+[WebServer] ConnectionResetError: [WinError 10054] 远锟斤拷锟斤拷锟斤拷强锟饺关憋拷锟斤拷一锟斤拷锟斤拷锟叫碉拷锟斤拷锟接★拷
+
+[36/106] tests\long-film.spec.ts:339:1 鈥?寮€鏀鹃暱浜虹墿鍚嶄笉浼氭敼鍙樿櫄鎷熻建閬撳潗鏍囷紝绾靛悜婊氬姩鍚庡瓧骞曚粛鍙偣鍑绘閫?[37/106] tests\long-film.spec.ts:386:1 鈥?闀跨墖閲嶅彔閿欏眰鍙懡涓紝铏氭嫙鍗歌浇鍚庣殑璺ㄨ绐楁閫夊拰鍙岃鍥惧幓閲嶅畬鏁存挙閿€
+
+
+
+[WebServer] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+
+[WebServer] handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+
+[WebServer] Traceback (most recent call last):
+
+[WebServer]   File "D:\whisper-diarization\env\lib\asyncio\events.py", line 80, in _run
+
+[WebServer]     self._context.run(self._callback, *self._args)
+
+[WebServer]   File "D:\whisper-diarization\env\lib\asyncio\proactor_events.py", line 165, in _call_connection_
+
+lost
+
+[WebServer]     self._sock.shutdown(socket.SHUT_RDWR)
+
+[WebServer] ConnectionResetError: [WinError 10054] 远锟斤拷锟斤拷锟斤拷强锟饺关憋拷锟斤拷一锟斤拷锟斤拷锟叫碉拷锟斤拷锟接★拷
+
+[38/106] tests\multiselect.spec.ts:84:1 鈥?Ctrl 璺ㄨ鍥惧垏鎹㈠悓涓€韬唤锛孲hift 鎸夌ǔ瀹氭椂闂撮『搴忚繛閫夛紝淇グ閿笉鏆傚仠鎴栧畾浣?[39/106] tests\multiselect.spec.ts:147:1 鈥?绌虹櫧妗嗛€夎法鎬昏浜虹墿杞ㄦ寜 ID 鍘婚噸锛屾挱鏀剧户缁紝Esc 鎭㈠鎵嬪娍鍓嶉€夋嫨涓旀棤鍘嗗彶
+
+[40/106] tests\multiselect.spec.ts:183:1 鈥?鍏卞悓涓庢贩鍚堝睘鎬у瀹炲憟鐜帮紝鏄庣‘鐩爣鎵归噺鏀逛汉浠呬竴姝ュ巻鍙插苟淇濆瓨閲嶅紑
+
+[41/106] tests\multiselect.spec.ts:227:1 鈥?澶氶€変笂涓嬮敭浣跨敤閲嶆帓鍚庣殑杞ㄥ簭淇濇寔闂磋窛锛屼换涓€瓒婄晫鍏ㄦ嫆缁濅笖涓嶇牬鍧忛噸鍋?[42/106] tests\multiselect.spec.ts:288:1 鈥?Delete 鍗曢€夊閫夊悇涓€姝ワ紝杈撳叆鐒︾偣浼樺厛鏂囧瓧锛孍sc 娓呴€夋嫨涓庢挙閿€鎭㈠瀹屾暣韬唤鏉ユ簮
+
+[43/106] tests\multiselect.spec.ts:361:1 鈥?澶氶€夋í鎷栨暣浣撳す鍙栫墖澶寸墖灏句繚鎸佺浉瀵规椂闂存椂闀匡紝棰勮涓嶈惤鐩橈紝涓€姝ュ巻鍙?[44/106] tests\multiselect.spec.ts:421:1 鈥?澶氶€夌旱鏂滄嫋淇濇寔杞ㄩ亾闂磋窛锛岃秺鐣岃繛鍚屾椂闂村叏鎷掔粷锛孍sc 鍙栨秷淇濈暀閲嶅仛锛岄噸寮€涓€鑷?[45/106] tests\multiselect.spec.ts:495:1 鈥?鏃犳晥姝ｆ枃闃绘淇グ閿€夋嫨骞朵繚鐣欓敊璇劍鐐癸紝鍙栨秷鍚庡彲缁х画澶氶€?[46/106] tests\multiselect.spec.ts:516:1 鈥?鎾ら攢鏁翠綋鏇挎崲娓呴櫎澶辨晥鐨勫閫夎韩浠斤紝缁х画閫夋嫨涓嶄細鍑虹幇骞界伒鏉＄洰
+
+[47/106] tests\multiselect.spec.ts:547:1 鈥?鍙岃鍥炬閫夊湪 2脳 鍚搁檮绉诲姩鍙敼姣忔潯涓€娆★紝鍙栨秷鍜岀┖鐩爣涓嶅啓鍘嗗彶
+
+[48/106] tests\multiselect.spec.ts:595:1 鈥?浜虹墿閲嶆帓鍚庣殑澶氶€夐紶鏍囧亸绉讳娇鐢ㄥ綋鍓嶉『搴忥紝杈圭紭鎵归噺璋冩暣澶瑰彇鍏卞悓鍚堟硶鑼冨洿
+
+[49/106] tests\preview.spec.ts:42:1 鈥?鐪熷疄涓嶅吋瀹瑰師鐗囦粠 UI 杞崲锛孍dge 瑙ｇ爜骞跺湪寮€澶翠腑閮ㄧ粨灏句繚鎸侀煶鐢诲瓧骞曞強缂撳瓨
+
+tests\preview.spec.ts:42:1 鈥?鐪熷疄涓嶅吋瀹瑰師鐗囦粠 UI 杞崲锛孍dge 瑙ｇ爜骞跺湪寮€澶翠腑閮ㄧ粨灏句繚鎸侀煶鐢诲瓧骞曞強缂撳瓨
+
+
+
+
+
+[50/106] tests\preview.spec.ts:160:1 鈥?璐ㄩ噺鍒囨崲鐨勬棫鎾斁鏌ヨ鏅氫簬鐢熸垚鍥炴墽鏃讹紝浠嶈窡韪綋鍓嶄换鍔″苟瑙ｇ爜鏂板壇鏈?
+
+
+
+[51/106] tests\preview.spec.ts:259:1 鈥?绛夊緟淇濆瓨鏃跺悓涓婁笅鏂囧埛鏂伴瑙堜粛鎻愪氦宸茬偣鍑荤殑鐢熸垚骞舵挱鏀剧湡瀹炲壇鏈?
+
+
+
+[52/106] tests\preview.spec.ts:324:1 鈥?鍚屽伐绋嬪師鐗囬噸鏂板畾浣嶅悗锛屾櫄鍒扮敓鎴愬洖鎵т笉鑳芥浛鎹㈠綋鍓嶆簮鐨勬挱鏀剧姸鎬?
+
+
+
+[53/106] tests\preview.spec.ts:402:1 鈥?鍚庡彴瀹屾垚涓庤嚜鍔ㄤ繚瀛樺洖鎵т氦閿欙紝鍒囨崲鍚庢棫浠诲姟鍥炴墽涓嶈鐩栨柊宸ョ▼鎴栬崏绋?
+
+
+
+
+
+
+
+tests\preview.spec.ts:160:1 鈥?璐ㄩ噺鍒囨崲鐨勬棫鎾斁鏌ヨ鏅氫簬鐢熸垚鍥炴墽鏃讹紝浠嶈窡韪綋鍓嶄换鍔″苟瑙ｇ爜鏂板壇鏈?tests\preview.spec.ts:259:
+
+1 鈥?绛夊緟淇濆瓨鏃跺悓涓婁笅鏂囧埛鏂伴瑙堜粛鎻愪氦宸茬偣鍑荤殑鐢熸垚骞舵挱鏀剧湡瀹炲壇鏈?tests\preview.spec.ts:324:1 鈥?鍚屽伐绋嬪師鐗囬噸鏂板畾浣嶅悗锛屾櫄鍒扮敓鎴愬洖鎵т笉鑳芥浛鎹㈠綋
+
+鍓嶆簮鐨勬挱鏀剧姸鎬?tests\preview.spec.ts:402:1 鈥?鍚庡彴瀹屾垚涓庤嚜鍔ㄤ繚瀛樺洖鎵т氦閿欙紝鍒囨崲鍚庢棫浠诲姟鍥炴墽涓嶈鐩栨柊宸ョ▼鎴栬崏绋?[We
+
+bServer] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+
+[WebServer] handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+
+
+
+[WebServer] Traceback (most recent call last):
+
+[WebServer]   File "D:\whisper-diarization\env\lib\asyncio\events.py", line 80, in _run
+
+[WebServer]     self._context.run(self._callback, *self._args)
+
+[WebServer]   File "D:\whisper-diarization\env\lib\asyncio\proactor_events.py", line 165, in _call_connection_
+
+lost
+
+[WebServer]     self._sock.shutdown(socket.SHUT_RDWR)
+
+[WebServer] ConnectionResetError: [WinError 10054] 远锟斤拷锟斤拷锟斤拷强锟饺关憋拷锟斤拷一锟斤拷锟斤拷锟叫碉拷锟斤拷锟接★拷
+
+[54/106] tests\preview.spec.ts:523:1 鈥?鐪熷疄缂哄伐鍏峰強 FFmpeg 澶辫触鏄剧ず鍘熷洜锛岃ˉ榻愬伐鍏峰悗浠?UI 閲嶈瘯鎴愬姛涓斿凡淇濆瓨瀛楀箷淇濈暀
+
+tests\preview.spec.ts:523:1 鈥?鐪熷疄缂哄伐鍏峰強 FFmpeg 澶辫触鏄剧ず鍘熷洜锛岃ˉ榻愬伐鍏峰悗浠?UI 閲嶈瘯鎴愬姛涓斿凡淇濆瓨瀛楀箷淇濈暀
+
+
+
+
+
+[55/106] tests\resources.spec.ts:57:1 鈥?鍙﹀瓨涓烘彁浜ゆ湁鏁堜汉鐗╀笌缁撴瀯缂栬緫锛屽鍒跺畬鏁存潵婧愰厤缃苟鐙珛鍒囨崲閲嶅紑
+
+[56/106] tests\resources.spec.ts:116:1 鈥?鍒囨崲鍜屽彟瀛樹负鎷掔粷鏃犳晥鑽夌锛屼繚瀛樺け璐ヤ繚鐣欑紪杈戝巻鍙蹭笖閲嶈瘯鍚庢仮澶?[57/106] tests\resources.spec.ts:179:1 鈥?濯掍綋绉诲姩浠嶅彲閲嶅紑缂栬緫锛岄噸瀹氫綅楠岃瘉韬唤涓旀仮澶嶅疄闄呮挱鏀句綅缃紝鎹㈢煭鐗囧け璐ヤ笉鏀瑰師宸ョ▼
+
+tests\resources.spec.ts:179:1 鈥?濯掍綋绉诲姩浠嶅彲閲嶅紑缂栬緫锛岄噸瀹氫綅楠岃瘉韬唤涓旀仮澶嶅疄闄呮挱鏀句綅缃紝鎹㈢煭鐗囧け璐ヤ笉鏀瑰師宸ョ▼
+
+
+
+
+
+
+
+
+
+[WebServer] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+
+[WebServer] handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+
+[WebServer] Traceback (most recent call last):
+
+[WebServer]   File "D:\whisper-diarization\env\lib\asyncio\events.py", line 80, in _run
+
+[WebServer]     self._context.run(self._callback, *self._args)
+
+
+
+[WebServer]   File "D:\whisper-diarization\env\lib\asyncio\proactor_events.py", line 165, in _call_connection_
+
+lost
+
+[WebServer]     self._sock.shutdown(socket.SHUT_RDWR)
+
+[WebServer] ConnectionResetError: [WinError 10054] 远锟斤拷锟斤拷锟斤拷强锟饺关憋拷锟斤拷一锟斤拷锟斤拷锟叫碉拷锟斤拷锟接★拷
+
+[58/106] tests\resources.spec.ts:250:1 鈥?MOSS 鏁翠綋鏇挎崲銆佸悎骞朵笌浜虹墿鎺掑簭鍚庡彟瀛樹负淇濇寔鏉ユ簮锛屽鍒跺け璐ヤ繚鐣欏師宸ョ▼鍙噸璇?[59/106] tests\resources.spec.ts:324:1 鈥?璧勬簮鍖烘墦寮€瀹為檯瀵煎嚭浣嶇疆锛學indows Explorer 绐楀彛涓庣湡瀹炴枃浠朵竴鑷?
+
+
+
+[60/106] tests\review.spec.ts:55:1 鈥?閫愬彞鍙屽嚮鐭彞缁堢偣鍋滄锛岃建閬撳弻鍑汇€佹參鏀惧惊鐜笌鏄庣‘閫€鍑猴紝璺宠浆鍚屾
+
+[61/106] tests\review.spec.ts:90:1 鈥?鎼滅储鍙婁汉鐗╃瓫閫変粎杩囨护鍛堢幇锛屼笉鑳芥妸鍏ㄤ綋涓嶈繛缁」鍙樻垚鍙悎骞堕」
+
+[62/106] tests\review.spec.ts:112:1 鈥?閲嶅彔澶氳宸ヤ綔瀛楀箷閿欎綅鏄剧ず锛屽鍚嶇嫭绔嬪紑鍏筹紝鑽夌鎻愪氦鎵嶆洿鏂板彔鍔?[63/106] tests\review.spec.ts:153:1 鈥?寰幆楂樹寒涓庡彟涓€鏉＄殑缂栬緫閫夋嫨鍒嗙锛岃緭鍏ョ劍鐐瑰拰鎻愪氦涓嶆敼鍙樿瘯鍚璞?[64/106] tests\review.spec.ts:194:1 鈥?涓夐潰鏉夸笌涓婁笅鍒嗗尯鎷栧姩鍙敤锛屽彇娑堟仮澶嶏紝瑙嗗浘澶嶄綅涓嶅啓鍘嗗彶
+
+[65/106] tests\review.spec.ts:253:1 鈥?甯姪鍒楀嚭鍏ㄩ儴宸蹭氦浠樺揩鎹烽敭锛屾枃浠剁紪杈戣鍥捐彍鍗曟墽琛岀湡瀹炴搷浣?[66/106] tests\review.spec.ts:302:1 鈥?鐗囧熬寰幆鍙€€鍑猴紝鍒犻櫎褰撳墠璇曞惉鐩爣鍚庡仠姝紝涓嶆妸鎭㈠鐨勫瓧骞曡嚜鍔ㄩ噸鏂版挱鏀?[67/106] tests\speakers.spec.ts:95:1 鈥?鍒涘缓寮€鏀炬爣绛捐繘鍏ヤ竴姝ュ巻鍙插拰鑷姩淇濆瓨锛岄噸寮€淇濈暀绋冲畾浜虹墿韬唤涓斾笉鏀瑰彉瀛楀箷
+
+[68/106] tests\speakers.spec.ts:143:1 鈥?閲嶅懡鍚嶅強閰嶈壊鍚屾鎵€鏈夎鍥撅紝鍐茬獊鍜屽彇娑堜笉浜х敓鍘嗗彶锛屼繚瀛樻彁浜ゆ湁鏁堜汉鐗╄崏绋?[69/106] tests\speakers.spec.ts:271:1 鈥?鐪熷疄鎷栧姩閲嶆帓鍚庢崲杞ㄤ娇鐢ㄦ柊椤哄簭锛屾挙閿€鎭㈠鐩爣锛岀壒娈婅建鍥哄畾涓斿彇娑堟嫋鍔ㄦ棤鍘嗗彶
+
+[70/106] tests\speakers.spec.ts:344:1 鈥?鏄庣‘閫夋嫨鏅€氱洰鏍囧悎骞讹紝閲嶅彔瀛楀箷鍜屾潵婧愯韩浠藉畬鏁翠繚鐣欙紝涓€姝ユ挙閿€閲嶅仛涓旇嚜鍔ㄤ繚瀛?[71/106] tests\speakers.spec.ts:425:1 鈥?鍒犻櫎鏈夊瓧骞曚汉鐗╄浆鍏ユ湭鏍囨敞锛岀┖杞ㄤ篃鑳戒竴姝ユ仮澶嶏紝鍒犻櫎鍚庢柊缂栬緫娓呴櫎閲嶅仛鍒嗘敮
+
+[72/106] tests\speakers.spec.ts:514:1 鈥?鍐嶆缂栬緫褰撳墠浜虹墿娌跨敤鍒氭彁浜ょ殑鑽夌锛岀┖鍚嶅拰淇濈暀鍚嶉樆姝繚瀛樺鍑猴紝鍙栨秷涓嶅啓鍘嗗彶
+
+[73/106] tests\structure.spec.ts:90:1 鈥?鏂板鐗囧ご榛樿涓ょ鍜屾湭鐭ュ綊灞烇紝绌虹櫧鍙婂彇娑堜笉钀界洏锛屾彁浜や竴姝ュ巻鍙蹭笖鏃犺櫄鏋勬潵婧?[74/106] tests\structure.spec.ts:133:1 鈥?鏄庣‘杞ㄩ亾鏂板鏅€氫綅缃袱绉掋€佺墖灏剧缉鐭紝濯掍綋缁堢偣鎷掔粷闆舵椂闀匡紝閲嶅紑淇濇寔
+
+[75/106] tests\structure.spec.ts:169:1 鈥?鎷嗗垎涓ユ牸鍐呴儴鍗曢€夛紝蹇嵎閿鍒朵袱娈靛叏鏂囦笌鏉ユ簮鍏冩爣绛撅紝涓€姝ユ挙閿€鎭㈠鍘熻韩浠?[76/106] tests\structure.spec.ts:220:1 鈥?鍚堝苟蹇呴』鍦ㄥ叏浣撳伐浣滃瓧骞曚腑杩炵画锛屽悓浜洪噸鍙犲拰闂撮殭鎸夌ǔ瀹氶『搴忓悎骞朵笖淇濈暀鏉ユ簮
+
+[77/106] tests\structure.spec.ts:259:1 鈥?璺ㄤ汉蹇嵎閿悎骞堕』鏄庣‘閫夋嫨鐩爣锛岄€夋嫨涓庡彇娑堜笉鏀瑰伐绋嬪巻鍙诧紝纭瀹屾暣涓€姝ユ挙閿€
+
+[78/106] tests\structure.spec.ts:308:1 鈥?鏂板鎷嗗垎鍚堝苟淇濆瓨閲嶅紑鍚庡洓鏍煎紡瀹為檯鏂囦欢鎺掑簭銆侀噸鏂扮紪鍙枫€佸厓鏍囩涓庢潵婧愪繚鎸佷竴鑷?[79/106] tests\structure.spec.ts:439:1 鈥?鍚屼汉鐗╄建涓湅浼肩浉閭讳粛鎸夊叏浣撴帓搴忔牎楠岋紝宓屽閲嶅彔鍚堝苟鍙栨渶鏅氱粨鏉?[80/106] tests\structure.spec.ts:483:1 鈥?鏄庣‘鐐瑰嚮浜虹墿杞ㄦ爣棰樺彲鍦ㄧ┖杞ㄦ柊澧烇紝閫夋嫨鎬昏娓呴櫎褰掑睘鐩爣锛屼笉浠ュ瓧骞曢€夋嫨鐚滄祴浜虹墿
+
+[81/106] tests\structure.spec.ts:499:1 鈥?MOSS 閲嶅鏉ユ簮 ID 缁忔媶鍒嗗悎骞朵粛淇濈暀锛岃緭鍑鸿韩浠藉敮涓€涓斾笉浼€犲師鏉ユ簮绱㈠紩
+
+[82/106] tests\timeline-media.spec.ts:89:1 鈥?鐪熷疄鍘熺墖鐢熸垚銆佺紦瀛樹笌瑙嗛杞ㄥ彲瑙佽寖鍥村湪澶氫釜缂╂斁婊氬姩浣嶇疆鎸夊師鐗囨椂闂村榻?
+
+
+
+
+
+
+
+
+
+
+
+[83/106] tests\timeline-media.spec.ts:215:1 鈥?闈為浂 PTS 涓庡欢杩熼煶杞ㄤ娇鐢ㄥ師鐗囬浂鐐癸紝棰勮鍒囨崲涓嶇Щ鍔ㄦ尝褰㈢缉鐣ュ浘锛涙棤闊宠建涓虹┖
+
+tests\resources.spec.ts:324:1 鈥?璧勬簮鍖烘墦寮€瀹為檯瀵煎嚭浣嶇疆锛學indows Explorer 绐楀彛涓庣湡瀹炴枃浠朵竴鑷?tests\timeline-media.s
+
+pec.ts:89:1 鈥?鐪熷疄鍘熺墖鐢熸垚銆佺紦瀛樹笌瑙嗛杞ㄥ彲瑙佽寖鍥村湪澶氫釜缂╂斁婊氬姩浣嶇疆鎸夊師鐗囨椂闂村榻?tests\timeline-media.spec.ts:21
+
+5:1 鈥?闈為浂 PTS 涓庡欢杩熼煶杞ㄤ娇鐢ㄥ師鐗囬浂鐐癸紝棰勮鍒囨崲涓嶇Щ鍔ㄦ尝褰㈢缉鐣ュ浘锛涙棤闊宠建涓虹┖
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[84/106] tests\timeline-media.spec.ts:286:1 鈥?鎸変笅鐢熸垚娉㈠舰鍒版澗寮€涔嬮棿杩斿洖鐪熷疄濯掍綋淇℃伅锛屼笉涓㈠け鐐瑰嚮鎴栨柊瀵嗗害鐢熸垚鎰忓浘
+
+tests\timeline-media.spec.ts:286:1 鈥?鎸変笅鐢熸垚娉㈠舰鍒版澗寮€涔嬮棿杩斿洖鐪熷疄濯掍綋淇℃伅锛屼笉涓㈠け鐐瑰嚮鎴栨柊瀵嗗害鐢熸垚鎰忓浘
+
+
+
+
+
+
+
+
+
+[85/106] tests\timeline-media.spec.ts:390:1 鈥?鏅氬埌鏃?GET 涓嶈兘瑕嗙洊鏂板瘑搴︿换鍔★紝鏅氬埌瀹屾垚涓庤嚜鍔ㄤ繚瀛樺洖鎵т笉鑳借鐩栧叾浠栧伐绋嬭崏绋?
+
+
+
+
+
+
+
+[86/106] tests\timeline-media.spec.ts:516:1 鈥?鐪熷疄缂哄伐鍏峰拰閿欒宸ュ叿澶辫触浠嶅彲缂栬緫锛屼慨澶嶅伐鍏峰悗 UI 閲嶈瘯鎴愬姛
+
+
+
+
+
+tests\timeline-media.spec.ts:390:1 鈥?鏅氬埌鏃?GET 涓嶈兘瑕嗙洊鏂板瘑搴︿换鍔★紝鏅氬埌瀹屾垚涓庤嚜鍔ㄤ繚瀛樺洖鎵т笉鑳借鐩栧叾浠栧伐绋嬭崏绋?[
+
+1Atests\timeline-media.spec.ts:516:1 鈥?鐪熷疄缂哄伐鍏峰拰閿欒宸ュ叿澶辫触浠嶅彲缂栬緫锛屼慨澶嶅伐鍏峰悗 UI 閲嶈瘯鎴愬姛
+
+
+
+
+
+[87/106] tests\timeline-media.spec.ts:604:1 鈥?鍚屽伐绋嬬敓鎴愮瓑寰呯湡瀹炰繚瀛樺洖鎵ф椂鍒锋柊鐘舵€侊紝涓嶄涪寮冨凡缁忕偣鍑荤殑鐢熸垚鎰忓浘
+
+tests\timeline-media.spec.ts:604:1 鈥?鍚屽伐绋嬬敓鎴愮瓑寰呯湡瀹炰繚瀛樺洖鎵ф椂鍒锋柊鐘舵€侊紝涓嶄涪寮冨凡缁忕偣鍑荤殑鐢熸垚鎰忓浘
+
+
+
+
+
+
+
+
+
+[88/106] tests\timeline-media.spec.ts:650:1 鈥?54绉掑師鐗囧揩閫熷畬鎴愬彲浠ュ彧鍥炴墽鎴愬姛锛屼笉瑕佹眰宸茬粡閿欒繃鐨勪腑闂寸姸鎬?
+
+
+
+
+
+
+
+tests\timeline-media.spec.ts:650:1 鈥?54绉掑師鐗囧揩閫熷畬鎴愬彲浠ュ彧鍥炴墽鎴愬姛锛屼笉瑕佹眰宸茬粡閿欒繃鐨勪腑闂寸姸鎬?[We
+
+bServer] Exception in callback _ProactorBasePipeTransport._call_connection_lost(None)
+
+[WebServer] handle: <Handle _ProactorBasePipeTransport._call_connection_lost(None)>
+
+[WebServer] Traceback (most recent call last):
+
+[WebServer]   File "D:\whisper-diarization\env\lib\asyncio\events.py", line 80, in _run
+
+[WebServer]     self._context.run(self._callback, *self._args)
+
+[WebServer]   File "D:\whisper-diarization\env\lib\asyncio\proactor_events.py", line 165, in _call_connection_
+
+lost
+
+[WebServer]     self._sock.shutdown(socket.SHUT_RDWR)
+
+[WebServer] ConnectionResetError: [WinError 10054] 远锟斤拷锟斤拷锟斤拷强锟饺关憋拷锟斤拷一锟斤拷锟斤拷锟叫碉拷锟斤拷锟接★拷
+
+
+
+[89/106] tests\timeline-media.spec.ts:691:1 鈥?鐪熷疄杈冮暱濯掍綋鏄剧ず涓棿杩涘害銆佹椿鍔ㄤ换鍔″幓閲嶏紝鏈畬鎴愪骇鐗╀笉渚涚粰鏃堕棿杞?
+
+
+
+[90/106] tests\timeline.spec.ts:85:1 鈥?鍗曟潯鎸夎建閬撻『搴忔崲杞ㄣ€佽竟鐣屼笉寰幆锛屼竴姝ュ巻鍙蹭笌淇濆瓨閲嶅紑淇濈暀绋冲畾韬唤
+
+[91/106] tests\timeline.spec.ts:140:1 鈥?杞ㄥ簭閰嶈壊涓€鑷达紝鍚岃建鍚屾椂闂撮敊灞傚彲鐐瑰嚮锛岃法瑙嗗浘姝ｆ枃鏃堕棿褰掑睘鍚屾涓斿鍑轰笉澶嶅埗鏉＄洰
+
+[92/106] tests\timeline.spec.ts:220:1 鈥?宸﹀彸閫夋嫨绌烘牸鎾斁涓?Esc 娓呴櫎涓嶅啓鍘嗗彶锛屾挱鏀鹃珮浜笉鎶㈣崏绋匡紝杈撳叆鍙婂璇濇闅旂蹇嵎閿?[93/106] tests\timeline.spec.ts:289:1 鈥?缂╂斁鍜屽弻鍚戞粴鍔ㄥ悗鎾斁澶翠粛鎸夊師鐗囧潗鏍囨洿鏂板疄闄呭抚锛孍sc 鍙栨秷鎷栧姩涓斿鑸笉鍐欏巻鍙?[94/106] tests\timeline.spec.ts:379:1 鈥?鍏ㄧ墖缂╂斁涓嬬墖灏句竴姣鍚岃建鏉＄洰浠嶅彲鍒嗗埆鐐瑰嚮锛屾嫋鍔ㄨ秴鍑哄師鐗囨椂闄愪細鍋滃湪杈圭晫
+
+[95/106] tests\track-management.spec.ts:34:1 鈥?鎺掑簭鐭暱鎸夊悗璺熼殢鎸囬拡骞跺湪鏉炬墜鍓嶈浣嶏紝鍙栨秷涓嶄繚瀛?[96/106] tests\track-management.spec.ts:69:1 鈥?閿佸畾璐┛鎬昏銆佸垪琛ㄣ€侀敭鐩樸€佹壒閲忓拰浜虹墿绠＄悊锛屼繚瀛橀噸寮€鍙婂鍑轰繚鎸佸唴瀹?[97/106] tests\track-management.spec.ts:132:1 鈥?鏁磋建鍒犻櫎纭鍙栨秷涓庝竴姝ユ挙閿€鎭㈠鍏ㄩ儴瀛楀箷锛岃建閬撳叆鍙ｅ彲閲嶅懡鍚?[98/106] tests\track-management.spec.ts:175:1 鈥?蹇€熻В閿佺紪杈戝啀閿佸畾涓庤繛缁挙閿€閮借兘瀹屾暣淇濆瓨
+
+[99/106] tests\track-management.spec.ts:207:1 鈥?褰撳墠宸ョ▼绉诲叆涓冨ぉ鍥炴敹绔欏悗鍏抽棴锛屾仮澶嶉噸鏂版墦寮€淇濈暀鍐呭
+
+[100/106] tests\workspace-usability.spec.ts:29:1 鈥?鏅€氭祻瑙堝櫒绐楀彛鏃犻渶缂╁皬椤甸潰锛屽伐浣滃尯鍜屾椂闂磋酱鍧囧畬鏁村彲鐢?[101/106] tests\workspace-usability.spec.ts:72:1 鈥?璺宠浆鎾斁鏃堕棿鍚庢椂闂磋酱鏄剧ず鎾斁澶达紝缂╂斁缁嗗垎鑰岄潪涓ゅ€嶈烦鍙?[102/106] tests\workspace-usability.spec.ts:110:1 鈥?闅愯棌鎬昏鍜岃皟鑺傝建楂樹笉鏀瑰伐绋嬶紝杈圭紭鎷栧姩鎸佺画婊氬姩涓?Esc 鎭㈠
+
+[103/106] tests\workspace-usability.spec.ts:166:1 鈥?瀹為檯缂╃暐鍥鹃€傞厤杞ㄩ珮涓旀嫋鍔ㄦ椂灞曠ず鍙傝€冨抚锛屾尝褰㈤粯璁ら殣钘忓彲鐙珛鎵撳紑
+
+[104/106] tests\workspace-usability.spec.ts:244:1 鈥?鎵撳紑鎸夊瓧骞曟潯鏁伴檷搴忥紝缂栬緫鏈熼棿涓嶈烦杞紝鎵嬪姩鎺掑簭鍚庨敭鐩樻寜鍙椤哄簭鎹汉
+
+[105/106] tests\workspace-usability.spec.ts:324:1 鈥?璁℃暟鎺掑簭涓庝繚瀛樿建搴忎笉鍚屾椂鎵嬪姩閲嶆帓鍙畬鏁存挙閿€鍜岄噸鍋?[106/106] tests\workspace-usability.spec.ts:380:1 鈥?澶ч噺閲嶅彔灞傜殑杞ㄩ亾浠嶅彲澧為珮锛岃皟鏁翠笉鏀瑰彉瀛楀箷鍜屽伐绋?  106 passed (5.6m)
+
+tests\timeline-media.spec.ts:691:1 鈥?鐪熷疄杈冮暱濯掍綋鏄剧ず涓棿杩涘害銆佹椿鍔ㄤ换鍔″幓閲嶏紝鏈畬鎴愪骇鐗╀笉渚涚粰鏃堕棿杞?

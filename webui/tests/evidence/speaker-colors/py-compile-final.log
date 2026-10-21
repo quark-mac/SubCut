@@ -1,0 +1,2 @@
+Command: env\python.exe -m py_compile webui/backend/formats.py webui/backend/speaker_colors.py webui/backend/app.py webui/backend/models.py webui/tests/test_http.py webui/tests/test_recycle.py webui/tests/test_speaker_colors.py
+Exit code: 0

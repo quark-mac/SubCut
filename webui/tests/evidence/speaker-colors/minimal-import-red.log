@@ -1,0 +1,39 @@
+env\python.exe : test_five_speakers_do_not_repeat (webui.tests.test_speaker_colors.SpeakerColorTests) ... FAIL
+
+所在位置 行:6 字符: 1
+
++ env\python.exe -m unittest webui.tests.test_speaker_colors -v *> "$ro ...
+
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    + CategoryInfo          : NotSpecified: (test_five_speak...Tests) ... FAIL:String) [], RemoteException
+
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+
+
+
+======================================================================
+
+FAIL: test_five_speakers_do_not_repeat (webui.tests.test_speaker_colors.SpeakerColorTests)
+
+----------------------------------------------------------------------
+
+Traceback (most recent call last):
+
+  File "D:\whisper-diarization\webui\tests\test_speaker_colors.py", line 18, in test_five_speakers_do_not_repeat
+
+    self.assertEqual(len({s.color.lower() for s in ordinary}), 5, [s.color for s in ordinary])
+
+AssertionError: 4 != 5 : ['#71a8cc', '#a695ce', '#7db7a2', '#c6a272', '#71a8cc']
+
+
+
+----------------------------------------------------------------------
+
+Ran 1 test in 0.007s
+
+
+
+FAILED (failures=1)

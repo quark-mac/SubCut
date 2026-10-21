@@ -1,0 +1,79 @@
+
+
+> subtitle-editing-webui@0.1.0 test:browser
+
+> playwright test [/\\](speaker-colors|speakers|editor-controls|track-management)\.spec\.ts$ --reporter=list
+
+
+
+node.exe : [WebServer] INFO:     Started server process [35980]
+
+所在位置 行:1 字符: 1
+
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
+
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    + CategoryInfo          : NotSpecified: ([WebServer]...process [35980]:String) [], RemoteException
+
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+
+[WebServer] INFO:     Waiting for application startup.
+
+[WebServer] INFO:     Application startup complete.
+
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:18761 (Press CTRL+C to quit)
+
+
+
+Running 21 tests using 1 worker
+
+
+
+  ok  1 tests\editor-controls.spec.ts:60:1 鈥?闅愯棌浜虹墿璐┛鏄剧ず瀵艰埅閫夋嫨涓庡洓鏍煎紡瀵煎嚭锛屼繚瀛樺壇鏈拰鎭㈠涓嶄涪瀛楀箷 (4.7s)
+
+  ok  2 tests\editor-controls.spec.ts:132:1 鈥?杞ㄩ亾鏍囬闀挎寜鎺掑簭銆佺煭鎸変笉鎺掑簭锛屾澗寮€涓€姝ユ彁浜わ紝Esc鍙栨秷骞跺彲鎾ら攢閲嶅仛 (2.8s)
+
+  ok  3 tests\editor-controls.spec.ts:171:1 鈥?绮剧畝璧勬簮鍗′笌鍥炬爣鎸夐挳銆佽嚜鏈夋挱鏀鹃煶閲忔帶鍒躲€丼RT鏃堕棿鐮佹牎楠屽苟淇濆瓨 (1.9s)
+
+  ok  4 tests\editor-controls.spec.ts:229:1 鈥?闅愯棌鍙栨秷鐩爣璇曞惉锛屽叏闅愯棌鍙繚瀛樺拰绌哄鍑猴紝鎭㈠鍚庣粨鏋勭紪杈戝彧鏀瑰彲瑙侀€夋嫨 (2.0s)
+
+  ok  5 tests\editor-controls.spec.ts:258:1 鈥?闅愯棌鏇存柊宸叉湁澶氶€夌殑鍚堝苟鏉′欢锛屼汉鐗╃鐞嗕笉鑳戒慨鏀归殣钘忓瓧骞曟垨杞叆闅愯棌杞?(1.7s)
+
+  ok  6 tests\editor-controls.spec.ts:306:1 鈥?闀挎寜璺ㄨ绐楁粴鍔ㄤ笉涓㈡墜鍔匡紝鎸変綇鏈熼棿涓嶄繚瀛橈紝閲婃斁鍚庡畬鏁翠繚瀛樿建搴?(6.1s)
+
+  ok  7 tests\speaker-colors.spec.ts:94:1 鈥?瀵煎叆鍜屽墠绔垎閰嶄竴鑷达紝瓒呭嚭鍥哄畾鑹叉澘浠嶅敮涓€锛屽紑鏀惧悕绉颁笉璇綔鐗规畩杞?(532ms)
+
+  ok  8 tests\speaker-colors.spec.ts:114:1 鈥?闅愯棌鑹蹭粛鍗犵敤锛屾墜鍔ㄦ柊澧炲拰褰掑睘鍒涘缓涓嶉噸閰嶆棫浜猴紝鏇挎崲鍏堜繚鐣欐墍鏈夊悓鍚嶈壊 (2.4s)
+
+  ok  9 tests\speaker-colors.spec.ts:175:1 鈥?浼樺寲棰勮鍙栨秷鏃犲巻鍙诧紝纭涓€姝ユ挙閿€閲嶅仛锛岄殣钘忓拰閿佸畾鐗规畩杞ㄨ鍒欎笌淇濆瓨閲嶅紑 (3.1s)
+
+  ok 10 tests\speaker-colors.spec.ts:225:1 鈥?鎸夎韩浠戒繚鎸侀鑹诧細鎺掑簭闅愯棌閲嶅懡鍚嶅悎骞舵墜閫夊悓鑹诧紝瀹為檯姝ｅ父閫変腑閿佸畾鍧椾繚鎸佸姣?(3.8s)
+
+  ok 11 tests\speakers.spec.ts:95:1 鈥?鍒涘缓寮€鏀炬爣绛捐繘鍏ヤ竴姝ュ巻鍙插拰鑷姩淇濆瓨锛岄噸寮€淇濈暀绋冲畾浜虹墿韬唤涓斾笉鏀瑰彉瀛楀箷 (5.5s)
+
+  ok 12 tests\speakers.spec.ts:143:1 鈥?閲嶅懡鍚嶅強閰嶈壊鍚屾鎵€鏈夎鍥撅紝鍐茬獊鍜屽彇娑堜笉浜х敓鍘嗗彶锛屼繚瀛樻彁浜ゆ湁鏁堜汉鐗╄崏绋?(6.8s)
+
+  ok 13 tests\speakers.spec.ts:271:1 鈥?鐪熷疄鎷栧姩閲嶆帓鍚庢崲杞ㄤ娇鐢ㄦ柊椤哄簭锛屾挙閿€鎭㈠鐩爣锛岀壒娈婅建鍥哄畾涓斿彇娑堟嫋鍔ㄦ棤鍘嗗彶 (6.9s)
+
+  ok 14 tests\speakers.spec.ts:344:1 鈥?鏄庣‘閫夋嫨鏅€氱洰鏍囧悎骞讹紝閲嶅彔瀛楀箷鍜屾潵婧愯韩浠藉畬鏁翠繚鐣欙紝涓€姝ユ挙閿€閲嶅仛涓旇嚜鍔ㄤ繚瀛?(5.7s)
+
+  ok 15 tests\speakers.spec.ts:425:1 鈥?鍒犻櫎鏈夊瓧骞曚汉鐗╄浆鍏ユ湭鏍囨敞锛岀┖杞ㄤ篃鑳戒竴姝ユ仮澶嶏紝鍒犻櫎鍚庢柊缂栬緫娓呴櫎閲嶅仛鍒嗘敮 (9.4s)
+
+  ok 16 tests\speakers.spec.ts:514:1 鈥?鍐嶆缂栬緫褰撳墠浜虹墿娌跨敤鍒氭彁浜ょ殑鑽夌锛岀┖鍚嶅拰淇濈暀鍚嶉樆姝繚瀛樺鍑猴紝鍙栨秷涓嶅啓鍘嗗彶 (4.7s)
+
+  ok 17 tests\track-management.spec.ts:34:1 鈥?鎺掑簭鐭暱鎸夊悗璺熼殢鎸囬拡骞舵彁鍓嶈浣嶏紝鍙栨秷涓嶄繚瀛橈紝閲婃斁涓嶈烦鍥炶捣鐐?(2.2s)
+
+  ok 18 tests\track-management.spec.ts:85:1 鈥?閿佸畾璐┛鎬昏銆佸垪琛ㄣ€侀敭鐩樸€佹壒閲忓拰浜虹墿绠＄悊锛屼繚瀛橀噸寮€鍙婂鍑轰繚鎸佸唴瀹?(2.8s)
+
+  ok 19 tests\track-management.spec.ts:148:1 鈥?鏁磋建鍒犻櫎纭鍙栨秷涓庝竴姝ユ挙閿€鎭㈠鍏ㄩ儴瀛楀箷锛岃建閬撳叆鍙ｅ彲閲嶅懡鍚?(1.8s)
+
+  ok 20 tests\track-management.spec.ts:191:1 鈥?蹇€熻В閿佺紪杈戝啀閿佸畾涓庤繛缁挙閿€閮借兘瀹屾暣淇濆瓨 (1.9s)
+
+  ok 21 tests\track-management.spec.ts:223:1 鈥?褰撳墠宸ョ▼绉诲叆涓冨ぉ鍥炴敹绔欏悗鍏抽棴锛屾仮澶嶉噸鏂版墦寮€淇濈暀鍐呭 (4.2s)
+
+
+
+  21 passed (1.4m)

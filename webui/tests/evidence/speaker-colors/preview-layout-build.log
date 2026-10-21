@@ -1,0 +1,45 @@
+
+
+> subtitle-editing-webui@0.1.0 build
+
+> tsc --noEmit && vite build
+
+
+
+vite v7.3.7 building client environment for production...
+
+transforming...
+
+node.exe : node_modules/lucide-react/dist/esm/context.mjs (2:0): Module level directives cause errors when bundled
+
+, "use client" in "node_modules/lucide-react/dist/esm/context.mjs" was ignored.
+
+所在位置 行:1 字符: 1
+
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
+
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    + CategoryInfo          : NotSpecified: (node_modul...s ignored.:String) [], RemoteException
+
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+
+node_modules/lucide-react/dist/esm/Icon.mjs (2:0): Module level directives cause errors when bundled, "use client"
+
+ in "node_modules/lucide-react/dist/esm/Icon.mjs" was ignored.
+
+鉁?[39m 1966 modules transformed.
+
+rendering chunks...
+
+computing gzip size...
+
+dist/index.html                   0.41 kB 鈹?gzip:  0.31 kB
+
+dist/assets/index-DmomrI2t.css   19.89 kB 鈹?gzip:  5.12 kB
+
+dist/assets/index-NSCuhCI4.js   303.48 kB 鈹?gzip: 98.69 kB
+
+鉁?built in 1.65s

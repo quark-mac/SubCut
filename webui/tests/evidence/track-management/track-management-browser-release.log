@@ -1,0 +1,59 @@
+
+
+> subtitle-editing-webui@0.1.0 test:browser
+
+> playwright test [/\\](track-management|editor-controls)\.spec\.ts$ --reporter=list
+
+
+
+node.exe : [WebServer] INFO:     Started server process [37160]
+
+所在位置 行:1 字符: 1
+
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
+
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    + CategoryInfo          : NotSpecified: ([WebServer]...process [37160]:String) [], RemoteException
+
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+
+[WebServer] INFO:     Waiting for application startup.
+
+[WebServer] INFO:     Application startup complete.
+
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:18761 (Press CTRL+C to quit)
+
+
+
+Running 11 tests using 1 worker
+
+
+
+  ok  1 tests\editor-controls.spec.ts:60:1 鈥?闅愯棌浜虹墿璐┛鏄剧ず瀵艰埅閫夋嫨涓庡洓鏍煎紡瀵煎嚭锛屼繚瀛樺壇鏈拰鎭㈠涓嶄涪瀛楀箷 (2.5s)
+
+  ok  2 tests\editor-controls.spec.ts:132:1 鈥?杞ㄩ亾鏍囬闀挎寜鎺掑簭銆佺煭鎸変笉鎺掑簭锛屾澗寮€涓€姝ユ彁浜わ紝Esc鍙栨秷骞跺彲鎾ら攢閲嶅仛 (2.2s)
+
+  ok  3 tests\editor-controls.spec.ts:171:1 鈥?绮剧畝璧勬簮鍗′笌鍥炬爣鎸夐挳銆佽嚜鏈夋挱鏀鹃煶閲忔帶鍒躲€丼RT鏃堕棿鐮佹牎楠屽苟淇濆瓨 (1.2s)
+
+  ok  4 tests\editor-controls.spec.ts:229:1 鈥?闅愯棌鍙栨秷鐩爣璇曞惉锛屽叏闅愯棌鍙繚瀛樺拰绌哄鍑猴紝鎭㈠鍚庣粨鏋勭紪杈戝彧鏀瑰彲瑙侀€夋嫨 (1.2s)
+
+  ok  5 tests\editor-controls.spec.ts:258:1 鈥?闅愯棌鏇存柊宸叉湁澶氶€夌殑鍚堝苟鏉′欢锛屼汉鐗╃鐞嗕笉鑳戒慨鏀归殣钘忓瓧骞曟垨杞叆闅愯棌杞?(1.1s)
+
+  ok  6 tests\editor-controls.spec.ts:306:1 鈥?闀挎寜璺ㄨ绐楁粴鍔ㄤ笉涓㈡墜鍔匡紝鎸変綇鏈熼棿涓嶄繚瀛橈紝閲婃斁鍚庡畬鏁翠繚瀛樿建搴?(4.8s)
+
+  ok  7 tests\track-management.spec.ts:34:1 鈥?鎺掑簭鐭暱鎸夊悗璺熼殢鎸囬拡骞舵彁鍓嶈浣嶏紝鍙栨秷涓嶄繚瀛橈紝閲婃斁涓嶈烦鍥炶捣鐐?(1.6s)
+
+  ok  8 tests\track-management.spec.ts:85:1 鈥?閿佸畾璐┛鎬昏銆佸垪琛ㄣ€侀敭鐩樸€佹壒閲忓拰浜虹墿绠＄悊锛屼繚瀛橀噸寮€鍙婂鍑轰繚鎸佸唴瀹?(1.6s)
+
+  ok  9 tests\track-management.spec.ts:148:1 鈥?鏁磋建鍒犻櫎纭鍙栨秷涓庝竴姝ユ挙閿€鎭㈠鍏ㄩ儴瀛楀箷锛岃建閬撳叆鍙ｅ彲閲嶅懡鍚?(958ms)
+
+  ok 10 tests\track-management.spec.ts:191:1 鈥?蹇€熻В閿佺紪杈戝啀閿佸畾涓庤繛缁挙閿€閮借兘瀹屾暣淇濆瓨 (984ms)
+
+  ok 11 tests\track-management.spec.ts:223:1 鈥?褰撳墠宸ョ▼绉诲叆涓冨ぉ鍥炴敹绔欏悗鍏抽棴锛屾仮澶嶉噸鏂版墦寮€淇濈暀鍐呭 (2.0s)
+
+
+
+  11 passed (22.3s)

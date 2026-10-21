@@ -4,6 +4,12 @@
 
 2026-10-19 精简控制、长按排序与轨道隐藏：[界面截图](editor-controls-workspace.jpg)、[任务与回归记录](../../../.scratch/webui/editor-controls.md)。
 
+2026-10-20 轨道拖动反馈、锁定、整轨删除与七天回收站：[任务与验收](../../../.scratch/webui/track-management.md)、[桌面锁定轨](track-management/desktop-locked.jpg)、[窄窗口回收站](track-management/tablet-recycle.jpg)。本轮[后端 51/51](track-management/track-management-backend-final.log)、[完整浏览器 106/106](track-management/track-management-browser-final.log)、[补充释放坐标断言后定向 11/11](track-management/track-management-browser-release.log)。
+
+2026-10-21 说话人颜色分配/旧工程显式优化：[任务、完整验证及 Standards/Spec 审查](../../../.scratch/webui/speaker-colors.md)、[10 角色实际浏览器轨道](speaker-colors/browser-multi-track.jpg)、[优化预览](speaker-colors/color-preview.png)、[正常](speaker-colors/normal-clip.png)/[选中](speaker-colors/selected-clip.png)/[锁定块](speaker-colors/locked-selected-clip.png)。最终 [54/54 Python](speaker-colors/backend-final.log)、[110/110 完整 Edge](speaker-colors/browser-final-full.log)、[定向 21/21](speaker-colors/browser-after-review.log)。
+
+2026-10-20 清理主目录的合成测试素材及临时产物，约 **805 MiB**：`webui/frontend/.test-workspace/`、`test-results/`，以及系统临时目录 `opencode/webui-editor-controls-*` 下的演示、备份、生成证据、trace 和两份运行日志。本目录已提交证据保留；10 月 19 日的原始临时日志已不在，仅有任务摘要与截图。下面的“素材保留”描述仅代表 10 月 18 日当时状态。
+
 ## 优先阅读
 
 | 目的 | 记录 |
@@ -15,7 +21,7 @@
 | 4000 条 / 7200 秒工程的规模与输出记录 | [最终集成采样](final-integration/ticket-13-scale.json)、[组合编辑与输出](final-integration/ticket-13-combination.json)、[界面截图](final-integration/ticket-13-long-film.jpg) |
 | 实际 Windows 启动及导出目录 | [启动记录](final-integration/ticket-13-launcher.json)、[Explorer 回执](final-integration/ticket-10-export-location.json) |
 
-`final-review/` 是修复工作树的验收；`final-integration/` 是随后在主目录实际执行的独立集成验收，两轮结果不混用。后者从主目录已有的 `webui/frontend/.test-workspace/final-review-integration-verified/` 原字节提取，并逐文件核验 SHA-256。本次清理没有重跑测试。
+`final-review/` 是修复工作树的验收；`final-integration/` 是随后在主目录实际执行的独立集成验收，两轮结果不混用。后者在 10 月 18 日从主目录的 `webui/frontend/.test-workspace/final-review-integration-verified/` 原字节提取，并逐文件核验 SHA-256；该轮清理没有重跑测试。10 月 20 日的维护验证另见 [Retro 记录](../../../.scratch/webui/editor-controls.md#retro-与维护2026-10-20)。
 
 ## 保留的关键故障记录
 
@@ -36,7 +42,7 @@
 - 34 份原有证据、18 份提取记录的原始字节大小与 SHA-256。
 - 169 份已删除的已跟踪证据及各自的 Git 恢复位置。
 
-已移除 `feat/webui-01` 至 `feat/webui-13`、`feat/webui-review-fixes` 及其工作树。重复截图、重复回归副本、大体积 trace 和工作树内的生成媒体、测试工程、依赖/构建缓存已清理；不为这些临时素材另建整批备份。主目录 `feat/webui`、现有主目录 `.test-workspace/` 和工作树外的验收/演示目录保留。
+已移除 `feat/webui-01` 至 `feat/webui-13`、`feat/webui-review-fixes` 及其工作树。重复截图、重复回归副本、大体积 trace 和工作树内的生成媒体、测试工程、依赖/构建缓存已清理；不为这些临时素材另建整批备份。主目录 `feat/webui`、当时的主目录 `.test-workspace/` 和工作树外验收/演示目录在该轮保留；其中主目录测试 workspace 及 10 月 19 日临时验收目录已于 2026-10-20 清理。
 
 ## Historical artifacts
 
@@ -54,4 +60,4 @@ git show 'd742d30c38de382e51996cb556f1a84efac6878e:webui/tests/evidence/ticket-1
 git restore --source=d742d30c38de382e51996cb556f1a84efac6878e --worktree -- webui/tests/evidence/ticket-01-workspace.jpg
 ```
 
-该恢复方式只适用于 Git 中的文件；已清理且未纳入 Git 的生成媒体、工程和缓存不能据此恢复。重新验收可使用 `webui/README.md` 的测试入口生成新素材，新一轮结果不替代本目录历史记录。
+该恢复方式只适用于 Git 中的文件；已清理且未纳入 Git 的生成媒体、工程和缓存不能据此恢复。重新验收使用 [测试入口与产物管理](../../README.md#可重复验证) 生成新素材，新一轮结果不替代本目录历史记录。

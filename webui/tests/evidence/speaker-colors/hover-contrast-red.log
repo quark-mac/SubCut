@@ -1,0 +1,91 @@
+
+
+> subtitle-editing-webui@0.1.0 test:browser
+
+> playwright test [/\\]speaker-colors\.spec\.ts$ --grep 鎸夎韩浠戒繚鎸侀鑹?--reporter=list
+
+
+
+node.exe : [WebServer] INFO:     Started server process [36476]
+
+所在位置 行:1 字符: 1
+
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
+
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    + CategoryInfo          : NotSpecified: ([WebServer]...process [36476]:String) [], RemoteException
+
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+
+[WebServer] INFO:     Waiting for application startup.
+
+[WebServer] INFO:     Application startup complete.
+
+[WebServer] INFO:     Uvicorn running on http://127.0.0.1:18761 (Press CTRL+C to quit)
+
+
+
+Running 1 test using 1 worker
+
+
+
+  x  1 tests\speaker-colors.spec.ts:225:1 鈥?鎸夎韩浠戒繚鎸侀鑹诧細鎺掑簭闅愯棌閲嶅懡鍚嶅悎骞舵墜閫夊悓鑹诧紝瀹為檯姝ｅ父閫変腑閿佸畾鍧椾繚鎸佸姣?(3.8s)
+
+
+
+
+
+  1) tests\speaker-colors.spec.ts:225:1 鈥?鎸夎韩浠戒繚鎸侀鑹诧細鎺掑簭闅愯棌閲嶅懡鍚嶅悎骞舵墜閫夊悓鑹诧紝瀹為檯姝ｅ父閫変腑閿佸畾鍧椾繚鎸佸姣?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
+
+
+    Error: {"image":"none","base":"rgb(250, 137, 123)","foreground":"rgb(255, 255, 255)","contrast":[]}
+
+
+
+    expect(received).toHaveLength(expected)
+
+
+
+    Expected length: 2
+
+    Received length: 0
+
+    Received array:  []
+
+
+
+      25 |     }) };
+
+      26 |   });
+
+    > 27 |   expect(result.contrast, JSON.stringify(result)).toHaveLength(2);
+
+         |                                                   ^
+
+      28 |   expect(Math.min(...result.contrast), JSON.stringify(result)).toBeGreaterThan(4.5);
+
+      29 |   await expect(clip).toHaveCSS('opacity', '1');
+
+      30 | }
+
+        at readableClip (D:\whisper-diarization\webui\frontend\tests\speaker-colors.spec.ts:27:51)
+
+        at D:\whisper-diarization\webui\frontend\tests\speaker-colors.spec.ts:142:3
+
+
+
+    Test timeout of 30000ms exceeded.
+
+
+
+    Error Context: test-results\speaker-colors-鎸夎韩浠戒繚鎸侀鑹诧細鎺掑簭闅愯棌閲嶅懡鍚嶅悎骞舵墜閫夊悓鑹诧紝瀹為檯姝ｅ父閫変腑閿佸畾鍧椾繚鎸佸姣擻error-context.md
+
+
+
+  1 failed
+
+    tests\speaker-colors.spec.ts:225:1 鈥?鎸夎韩浠戒繚鎸侀鑹诧細鎺掑簭闅愯棌閲嶅懡鍚嶅悎骞舵墜閫夊悓鑹诧紝瀹為檯姝ｅ父閫変腑閿佸畾鍧椾繚鎸佸姣?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
