@@ -1,0 +1,42 @@
+name: WebUI checks
+
+on:
+  push:
+    paths:
+      - "webui/**"
+      - ".github/workflows/webui-checks.yml"
+  pull_request:
+    paths:
+      - "webui/**"
+      - ".github/workflows/webui-checks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: webui/frontend/package-lock.json
+      - run: npm --prefix webui/frontend ci
+      - name: Typecheck and build frontend
+        run: npm --prefix webui/frontend run build
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install backend and media tools
+        run: |
+          python -m pip install -r webui/requirements.txt
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - name: Compile Python sources
+        run: python -m compileall -q webui/__main__.py webui/backend webui/tests
+      - name: Test HTTP and media behavior
+        run: python -m unittest discover -s webui/tests -p 'test_*.py' -v

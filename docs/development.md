@@ -40,6 +40,7 @@ Subsystems:
 - Gemini inference
 - Gold evaluation
 - extraction
+- WebUI editor
 - documentation/baseline maintenance
 
 Do not combine algorithm changes, default changes, cleanup, and documentation restructuring in one task.
@@ -94,6 +95,10 @@ For normalization changes:
 2. Compare normalized entries structurally.
 3. Preserve Gold/manual timeline corrections.
 4. Re-run downstream plan checks before paid API calls.
+
+For WebUI changes, use the commands and test-file map in [webui/README.md](../webui/README.md#可重复验证). Build before browser checks: Playwright serves `frontend/dist`, not the Vite development source. The WebUI CI workflow runs the existing TypeScript/Vite build, Python compilation, and Python HTTP/media suite on Linux; Windows-only tests are skipped there, so desktop and browser behavior still require the documented local checks.
+
+Record the tested commit or WIP scope, exact commands, failures, and repair reruns in the task record. Distinguish a single clean full-suite run from coverage assembled across a full run and targeted reruns. Archive useful failure logs before cleanup; keep historical evidence tied to its tested version.
 
 ## Commit Strategy
 

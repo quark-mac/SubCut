@@ -59,4 +59,22 @@ Blocked by: none
 - 合计 **101 项不同浏览器用例、46 项不同 Python 用例**经完整运行与相关修复回归全部覆盖通过；不是最终一次 101/101 或 46/46 的单次完整运行。
 - OpenChamber 浏览器实际创建自建样本工程并打开资源菜单；截图由真实 Edge 用例保存。没有调用模型 API。
 - 历史证据在执行前备份，生成后恢复原字节与清理状态，仅新增本任务截图。
-- 本机日志与完整失败 trace：`C:/Users/machi/AppData/Local/Temp/opencode/webui-editor-controls-{browser-full.log,python-full.log,full-results,targeted-results,generated-evidence}`。
+- 当时的本机日志与完整失败 trace 位于 `C:/Users/machi/AppData/Local/Temp/opencode/webui-editor-controls-{browser-full.log,python-full.log,full-results,targeted-results,generated-evidence}`；2026-10-20 清理时已移除。当前保留本节结果摘要与已提交界面截图，无法再从该临时路径读取原始日志。
+
+## Retro 与维护（2026-10-20）
+
+维护基线 `1a60a27`。按用户要求清理测试垃圾并改进现有文档；删除范围见 [证据索引](../../webui/tests/evidence/README.md)。约 805 MiB 的合成媒体、测试工程和临时产物已移除。
+
+按影响排序的发现与处理：
+
+1. **自动检查未接入**：已有 build / unittest，但没有 CI 或启用的 Git hook。新增 `.github/workflows/webui-checks.yml`，接入 TypeScript/Vite、Python 编译及 Linux HTTP/媒体测试；Windows 专属及浏览器行为继续本机验证。
+2. **历史证据被测试覆盖**：多个 spec 直接写 `tests/evidence/`。README 已明确备份、分开归档、逐项恢复和清理步骤；后续应将自动产物统一改为 Playwright `testInfo.outputPath()`，通过显式归档更新精选证据。本次尚未改测试输出代码。
+3. **入口与文档漂移**：根 AGENTS 增加 WebUI 导航指针；README 用测试索引替换验收流水，补充精确正则选例、缓存位置和清理语义；修正“隐藏只影响导出”及合并连续性的旧说明。
+
+本轮验证：
+
+- 前端 build（含 TypeScript）：通过；Lucide 两处 `use client` 指令被 Vite 忽略的提示仍存在。
+- Python 编译：修正不存在的 `webui/__init__.py` 路径后通过。
+- `env\python.exe -m unittest discover -s webui/tests -p 'test_*.py' -v`：Windows 本机 **46/46 一次完整通过**，约 49 秒。
+- 精确文件参数 `[/\\]review\.spec\.ts$` 配合 `--list`：仅列出 `review.spec.ts` 的 7 项，没有误匹配 preview；本轮未执行浏览器行为回归。
+- 工作流 YAML 经 Prettier 解析检查通过；本地文档链接目标、`git diff --check` 通过。Linux GitHub runner 尚未实际运行。

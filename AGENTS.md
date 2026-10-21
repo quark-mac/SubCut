@@ -38,6 +38,8 @@ Generated output under `sub/output/` can be regenerated, but ask before deleting
 
 ## Production Modules
 
+For local subtitle-editor UI, import/export, playback, or WebUI test work, read `webui/README.md` (behavior and validation) and `docs/design/webui.md` (design); task records are under `.scratch/webui/`.
+
 - `sub/normalize/normalize_sdh.py` - source SDH subtitle to `normalized.srt` / JSONL.
 - `sub/normalize/normalize_mkv.py` - inspect, extract, and policy-filter MKV text subtitle tracks into candidate normalized files.
 - `sub/llm/scene_segmenter.py` - DeepSeek semantic scene generation and refine.
