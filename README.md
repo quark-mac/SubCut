@@ -1,8 +1,17 @@
-# Cosmic Princess Kaguya Speaker Labeling
+# SubCut
 
-Subtitle-driven multimodal speaker labeling toolkit for the `Cosmic Princess Kaguya` project.
+Subtitle-driven multimodal speaker labeling and character clip extraction, maintained by **quark-mac**.
 
-This working tree no longer uses the original Whisper/NeMo diarization pipeline. The current flow starts from SDH subtitles, creates semantic scenes with a text LLM, labels speakers from video/audio with Gemini, and evaluates against a structurally edited Gold Set.
+SubCut starts from existing subtitles, normalizes them, creates semantic scenes with a text LLM, assigns speakers using Gemini video/audio analysis, and exports speaker-labeled subtitles and character-specific clips. `Cosmic Princess Kaguya` is the current evaluation dataset and workflow example, not the project name.
+
+## Project
+
+- **Maintainer:** [quark-mac](https://github.com/quark-mac)
+- **Repository:** [quark-mac/SubCut](https://github.com/quark-mac/SubCut)
+- **Issues:** [SubCut issue tracker](https://github.com/quark-mac/SubCut/issues)
+- **License:** [BSD 2-Clause](LICENSE)
+- **Main branch:** subtitle normalization, semantic scenes, multimodal speaker labeling, evaluation, and clip extraction.
+- **WebUI development:** the [`feat/webui` branch](https://github.com/quark-mac/SubCut/tree/feat/webui) contains the local subtitle editor; it is not yet merged into `main`.
 
 ## Start Here
 
@@ -88,3 +97,7 @@ Use the sample configuration files under `sub/llm/`. Do not commit API keys.
 Only one conversation should write to the main worktree at a time. Use read-only conversations for reviews and data analysis. Use a separate Git worktree and branch for parallel implementation only after a stable baseline commit exists.
 
 See [`AGENTS.md`](AGENTS.md) for repository rules.
+
+## License
+
+SubCut is distributed under the [BSD 2-Clause License](LICENSE). Copyright notices for earlier contributions are retained in that file alongside the SubCut copyright notice.

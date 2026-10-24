@@ -1,6 +1,8 @@
-# 文档索引
+# SubCut 文档索引
 
-项目：Cosmic Princess Kaguya 字幕驱动的多模态 speaker labeling
+项目：**SubCut** — 字幕驱动的多模态说话人标注与角色片段导出工具，由 [quark-mac](https://github.com/quark-mac) 维护。
+
+仓库：[quark-mac/SubCut](https://github.com/quark-mac/SubCut)。`Cosmic Princess Kaguya` 是当前验证数据集和流程示例，具体数据目录与评估基线保持原名。
 
 ## 快速上手
 
