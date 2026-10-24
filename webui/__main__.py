@@ -10,7 +10,7 @@ import webbrowser
 
 
 def main():
-    parser = argparse.ArgumentParser(description="本机字幕校对工作台")
+    parser = argparse.ArgumentParser(description="SubCut 本机字幕校对工作台")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--workspace", type=Path)
     parser.add_argument("--no-browser", action="store_true")

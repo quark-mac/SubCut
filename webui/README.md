@@ -1,4 +1,6 @@
-# 本机字幕校对 WebUI
+# SubCut 字幕校对工作台
+
+[SubCut](https://github.com/quark-mac/SubCut) 的本机字幕编辑界面，由 [quark-mac](https://github.com/quark-mac) 维护。当前位于 `feat/webui` 分支。
 
 当前提供三种 SRT 解释模式、normalized JSONL、MOSS JSON 预览 → 创建工程或整体替换 → 原片播放定位与逐句/循环试听 → 正文/SRT 时间码/开放人物归属编辑 → 自动保存 → 菜单重开 → 四种字幕导出。支持会话内撤销/重做、有效输入提交与可靠保存；整体替换的条目、人物和来源一起撤销。新人物自动分配持久化的高区分度颜色；旧工程可在人物页签预览后确认“优化轨道配色”，一步撤销。深色中文工作区包括资源卡片、自有播放器、可搜索筛选的字幕列表与编辑器、独立视频/波形轨、字幕总览及可隐藏的说话人轨。操作栏使用 Lucide 线性图标，悬停显示名称，同时保留无障碍名称。
 
@@ -9,7 +11,7 @@
 需要现有 Python 3.10+、Node.js 22.12+（本次使用 24.16）、npm，以及 FFmpeg/ffprobe。默认复用 PATH 中的工具，也可用 `WEBUI_FFMPEG` / `WEBUI_FFPROBE` 分别指定现有可执行文件的绝对路径（不是命令行参数或工具目录）。使用已有 Python 环境；以下 PowerShell 命令在**当前 checkout 根目录**执行，Python 路径按本机环境调整：
 
 ```powershell
-$env:WEBUI_PYTHON = 'D:\whisper-diarization\env\python.exe'
+$env:WEBUI_PYTHON = (Resolve-Path '.\env\python.exe').Path
 & $env:WEBUI_PYTHON --version
 ffprobe -version
 ffmpeg -version
@@ -38,11 +40,11 @@ npm --prefix webui/frontend run build
 | `WinError 10048` / 端口占用 | 关闭自己先前的服务，或 `-Port` 选其他空闲端口；不要同时写同一 workspace |
 | 媒体工具缺失、生成失败 | 设置实际 `WEBUI_FFMPEG` / `WEBUI_FFPROBE`，重启服务后点击对应“重试生成…”；不要把 ffprobe 配成 ffmpeg |
 
-例如复用本机已有工具（不另装媒体栈）：
+例如指定本机已有工具（以下为示例路径，请替换为自己的实际安装位置）：
 
 ```powershell
-$env:WEBUI_FFMPEG = 'D:\whisper-diarization\MOSS-Transcribe-Diarize\ffmpeg\ffmpeg-9.0.2-full_build\bin\ffmpeg.exe'
-$env:WEBUI_FFPROBE = 'D:\whisper-diarization\MOSS-Transcribe-Diarize\ffmpeg\ffmpeg-9.0.2-full_build\bin\ffprobe.exe'
+$env:WEBUI_FFMPEG = 'C:\Tools\ffmpeg\bin\ffmpeg.exe'
+$env:WEBUI_FFPROBE = 'C:\Tools\ffmpeg\bin\ffprobe.exe'
 .\webui\start.ps1 -Python $env:WEBUI_PYTHON
 ```
 

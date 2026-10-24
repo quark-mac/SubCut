@@ -15,6 +15,7 @@ SubCut starts from existing subtitles, normalizes them, creates semantic scenes 
 
 ## Start Here
 
+- [`webui/README.md`](webui/README.md) - local subtitle editor: video playback, speaker tracks, timing edits, autosave, and subtitle import/export.
 - [`docs/CURRENT.md`](docs/CURRENT.md) - current stable contract, measured baseline, frozen decisions, next task.
 - [`docs/workflow.md`](docs/workflow.md) - operational PowerShell commands.
 - [`docs/README.md`](docs/README.md) - full documentation index.

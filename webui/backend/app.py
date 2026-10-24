@@ -46,7 +46,7 @@ async def lifespan(app):
         tasks.close()
 
 
-app = FastAPI(title="字幕校对 WebUI", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="SubCut 字幕校对 WebUI", version="0.1.0", lifespan=lifespan)
 
 
 @app.exception_handler(Problem)

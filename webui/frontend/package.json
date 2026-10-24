@@ -1,6 +1,18 @@
 {
-  "name": "subtitle-editing-webui",
+  "name": "subcut-webui",
   "version": "0.1.0",
+  "description": "SubCut local subtitle editor with speaker tracks and video playback",
+  "author": "quark-mac",
+  "license": "BSD-2-Clause",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/quark-mac/SubCut.git",
+    "directory": "webui/frontend"
+  },
+  "bugs": {
+    "url": "https://github.com/quark-mac/SubCut/issues"
+  },
+  "homepage": "https://github.com/quark-mac/SubCut#readme",
   "private": true,
   "type": "module",
   "scripts": {

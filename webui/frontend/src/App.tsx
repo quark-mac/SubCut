@@ -606,7 +606,7 @@ export function App() {
 
   return <div className="app">
     <header className="menubar">
-      <span className="brand">◈ 字幕校对</span>
+      <span className="brand">◈ SubCut</span>
       <div className="file-menu"><button onClick={() => setMenu(menu === 'file' ? null : 'file')} disabled={busy || session.saving}>文件</button>
         {menu === 'file' && <div className="menu-popup">
           <button onClick={() => void showDialog('new')}>新建工程…</button>
