@@ -1,5 +1,7 @@
 # Implementation Results
 
+> Historical two-stage experiment. The current implementation uses the official pipeline; see [official_pipeline_research.md](official_pipeline_research.md) and [subtitle_export_results.md](subtitle_export_results.md).
+
 ## Scope And Environment
 
 - Baseline HEAD: `c43643fc8920fa04ae26dc9573db48ca8d1aeec7`.

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="32.6.1">
+  <diagram id="subcut-with-subtitles-v1" name="带字幕 · 第一版">
+    <mxGraphModel dx="1120" dy="1740" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1120" pageHeight="1740" math="0" shadow="0" background="#ffffff">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="带字幕视频 · 自动标注与素材导出" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=28;fontStyle=1;fontColor=#1D2330;" vertex="1" parent="1">
+          <mxGeometry x="60" y="10" width="1000" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="scope" value="第一版 · 单视频 · MOSS + Diarize · 自动生成工程，人工校对后按需导出" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=15;fontColor=#596579;" vertex="1" parent="1">
+          <mxGeometry x="60" y="60" width="1000" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="hqp-HhNxBRnNQJFMFb9J-2" value="&lt;b&gt;单个视频 + 源字幕&lt;/b&gt;&lt;br&gt;选择音轨与字幕来源&lt;br&gt;登记原片及原音轨" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=1.5;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#222222;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="400" y="110" width="320" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="hqp-HhNxBRnNQJFMFb9J-6" value="&lt;b&gt;提取 / 规范化源字幕&lt;/b&gt;&lt;br&gt;可提取的内嵌文本字幕&lt;br&gt;或外挂字幕" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#222222;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="270" width="320" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="vocal-separation" value="&lt;b&gt;调用现有人声分离工具&lt;/b&gt;&lt;br&gt;输入选定的原音轨&lt;br&gt;记录输出路径与时间偏移" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;dashed=1;dashPattern=5 3;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#222222;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="680" y="270" width="320" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle-baseline" value="&lt;b&gt;源字幕基线&lt;/b&gt;&lt;br&gt;正文 / 时间 / 稳定条目 ID&lt;br&gt;保留来源与原有标记" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=1.5;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#222222;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="440" width="320" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="hqp-HhNxBRnNQJFMFb9J-8" value="&lt;b&gt;纯人声&lt;/b&gt;&lt;br&gt;保留原片时间基准&lt;br&gt;供两路分析与后续导出复用" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;strokeWidth=1.5;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#222222;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="680" y="440" width="320" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="hqp-HhNxBRnNQJFMFb9J-11" value="&lt;b&gt;MOSS&lt;/b&gt;&lt;br&gt;ASR 转录 + 匿名说话人&lt;br&gt;输出文本、时间与原始标签" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#222222;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="430" y="610" width="260" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="2OoNG_CMy94tck8mjbBl-1" value="&lt;b&gt;Diarize&lt;/b&gt;&lt;br&gt;音频说话人分段&lt;br&gt;输出时间段与匿名标签" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#222222;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="790" y="610" width="260" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="hqp-HhNxBRnNQJFMFb9J-32" value="&lt;b&gt;对齐两路结果 + 冲突检查&lt;/b&gt;&lt;br&gt;以源字幕为基线匹配分析结果&lt;br&gt;建立匿名标签候选对应&lt;br&gt;保留未匹配、多候选与覆盖不足" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#222222;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="400" y="820" width="320" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="editing-project" value="&lt;b&gt;自动生成可校对工程&lt;/b&gt;&lt;br&gt;工作字幕 + 两路证据 + 待复核标记&lt;br&gt;关联原片 / 原音轨 / 纯人声&lt;br&gt;&lt;b&gt;自动流程在此结束&lt;/b&gt;" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#222222;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="380" y="1010" width="360" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="hqp-HhNxBRnNQJFMFb9J-23" value="&lt;b&gt;字幕编辑器 · 人工校对并保存&lt;/b&gt;&lt;br&gt;核对冲突、文字和时间&lt;br&gt;确认归属、重命名或合并说话人" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=1.5;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#222222;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="380" y="1200" width="360" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="hqp-HhNxBRnNQJFMFb9J-42" value="&lt;b&gt;按需导出 · 人工触发&lt;/b&gt;&lt;br&gt;读取已保存工程与关联媒体&lt;br&gt;选择角色 / 格式，生成统一切片计划" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=1.5;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#222222;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="380" y="1370" width="360" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="hqp-HhNxBRnNQJFMFb9J-24" value="&lt;b&gt;最终素材与字幕&lt;/b&gt;&lt;br&gt;纯人声 WAV · 原音轨视频片段 · 人声音轨视频片段&lt;br&gt;带说话人标记的 SRT / JSONL · 导出清单" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=1.5;fontFamily=Microsoft YaHei;fontSize=16;fontColor=#222222;spacing=12;" vertex="1" parent="1">
+          <mxGeometry x="280" y="1540" width="560" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="attribution-note" value="&lt;b&gt;标注约定&lt;/b&gt;&lt;br&gt;&lt;br&gt;两路匿名编号按来源区分。&lt;br&gt;候选对应只用于结果对比。&lt;br&gt;冲突或无法匹配交人工确认。&lt;br&gt;真实角色名称由人工确认。" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontFamily=Microsoft YaHei;fontSize=15;fontColor=#596579;spacing=5;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1010" width="280" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="export-note" value="&lt;b&gt;媒体与导出约定&lt;/b&gt;&lt;br&gt;&lt;br&gt;原片、原音轨和人声关联到工程。&lt;br&gt;分析结果统一回到原片时间轴。&lt;br&gt;人工校对并保存后才按需导出。&lt;br&gt;三种媒体共用同一切片范围。" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontFamily=Microsoft YaHei;fontSize=15;fontColor=#596579;spacing=5;" vertex="1" parent="1">
+          <mxGeometry x="790" y="1010" width="280" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="&lt;font color=&quot;#666666&quot;&gt;■&lt;/font&gt; 输入 / 中间数据　 &lt;font color=&quot;#6c8ebf&quot;&gt;■&lt;/font&gt; 自动处理　 &lt;font color=&quot;#d79b00&quot;&gt;■&lt;/font&gt; 人工校对　 &lt;font color=&quot;#82b366&quot;&gt;■&lt;/font&gt; 工程 / 交付物　｜　虚线框：外部工具调用" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=14;fontColor=#596579;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1680" width="1040" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-input-subtitles" edge="1" parent="1" source="hqp-HhNxBRnNQJFMFb9J-2" target="hqp-HhNxBRnNQJFMFb9J-6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;endSize=8;strokeColor=#596579;strokeWidth=1.5;exitX=0;exitY=0.5;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="240" y="155" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="edge-input-separation" edge="1" parent="1" source="hqp-HhNxBRnNQJFMFb9J-2" target="vocal-separation" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;endSize=8;strokeColor=#596579;strokeWidth=1.5;exitX=1;exitY=0.5;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="840" y="155" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="edge-subtitle-baseline" edge="1" parent="1" source="hqp-HhNxBRnNQJFMFb9J-6" target="subtitle-baseline" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;endSize=8;strokeColor=#596579;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-separation-vocals" edge="1" parent="1" source="vocal-separation" target="hqp-HhNxBRnNQJFMFb9J-8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;endSize=8;strokeColor=#596579;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-vocals-moss" edge="1" parent="1" source="hqp-HhNxBRnNQJFMFb9J-8" target="hqp-HhNxBRnNQJFMFb9J-11" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;endSize=8;strokeColor=#596579;strokeWidth=1.5;exitX=0.25;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="760" y="570" /><mxPoint x="560" y="570" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="edge-vocals-diarize" edge="1" parent="1" source="hqp-HhNxBRnNQJFMFb9J-8" target="2OoNG_CMy94tck8mjbBl-1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;endSize=8;strokeColor=#596579;strokeWidth=1.5;exitX=0.75;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-baseline-alignment" edge="1" parent="1" source="subtitle-baseline" target="hqp-HhNxBRnNQJFMFb9J-32" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;endSize=8;strokeColor=#596579;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="240" y="880" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="edge-moss-alignment" edge="1" parent="1" source="hqp-HhNxBRnNQJFMFb9J-11" target="hqp-HhNxBRnNQJFMFb9J-32" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;endSize=8;strokeColor=#596579;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-diarize-alignment" edge="1" parent="1" source="2OoNG_CMy94tck8mjbBl-1" target="hqp-HhNxBRnNQJFMFb9J-32" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;endSize=8;strokeColor=#596579;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.85;entryY=0;">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="920" y="765" /><mxPoint x="672" y="765" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="edge-alignment-project" edge="1" parent="1" source="hqp-HhNxBRnNQJFMFb9J-32" target="editing-project" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;endSize=8;strokeColor=#596579;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-project-editor" edge="1" parent="1" source="editing-project" target="hqp-HhNxBRnNQJFMFb9J-23" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;endSize=8;strokeColor=#d79b00;strokeWidth=2;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-editor-export" edge="1" parent="1" source="hqp-HhNxBRnNQJFMFb9J-23" target="hqp-HhNxBRnNQJFMFb9J-42" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;endSize=8;strokeColor=#596579;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge-export-deliverables" edge="1" parent="1" source="hqp-HhNxBRnNQJFMFb9J-42" target="hqp-HhNxBRnNQJFMFb9J-24" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;endSize=8;strokeColor=#596579;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

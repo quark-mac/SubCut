@@ -1,47 +1,39 @@
 # SubCut 文档索引
 
-项目：**SubCut** — 字幕驱动的多模态说话人标注与角色片段导出工具，由 [quark-mac](https://github.com/quark-mac) 维护。
+SubCut 用于字幕说话人标注、人工校对和角色素材导出。`Cosmic Princess Kaguya` 是验证数据集和流程示例。
 
-仓库：[quark-mac/SubCut](https://github.com/quark-mac/SubCut)。`Cosmic Princess Kaguya` 是当前验证数据集和流程示例，具体数据目录与评估基线保持原名。
+## 入口
 
-## 快速上手
+- [当前状态](CURRENT.md)：已实现能力、管理界面方向、Kaguya 数据基线。
+- [字幕编辑器](../webui/README.md)：安装、使用、工程格式与验证。
+- [操作手册](operator_workflow.md)：运行、检查和恢复现有工具。
+- [CLI 命令](workflow.md)：规范化、场景、Gemini、评估及切片。
+- [开发约定](development.md)：工作树、验证、实验和交接。
 
-- **[CURRENT.md](CURRENT.md)** — 当前稳定状态、Gold 基线、冻结决策、下一项任务。新对话先看这份。
-- **[workflow.md](workflow.md)** — 完整操作流程、所有命令、关键概念。如果只看一份文档，看这份。
-- **[operator_workflow.md](operator_workflow.md)** — 面向流程操作 agent 的逐步状态机：预检、停点、API/覆盖确认、恢复与编程 agent 交接。
-- **[development.md](development.md)** — 单写入者、多对话审查、实验目录和提交策略。
-- 场景划分由 `scene_segmenter.py` 通过 `sub/llm/config.json` 调用 DeepSeek；脚本不再提供固定时长、字幕数或 gap 的机械分段模式。
-- 人工编辑后的 `scene_segments.srt` 使用独立的 `scene_srt_to_json.py` 映射回 JSON。
+## 管理界面第一版
 
-## 设计说明
+单视频，调用现有人声分离工具，使用 MOSS + Diarize 生成可校对工程，人工校对后按需导出。当前为设计稿：
 
-- **[design/pipeline_explorer.html](design/pipeline_explorer.html)** — 完整交互演示：DeepSeek 边界请求/refine、Python scene 组装、Gemini batching/媒体构造和 speaker 写回。
-- **[design/scene_segmentation.md](design/scene_segmentation.md)** — DeepSeek 如何分批判断边界、两轮 refine、缓存恢复、校验与人工 SRT 回写。
-- **[design/prompt.md](design/prompt.md)** — Gemini 收到的完整 prompt 结构、角色资料分层、判断规则。
-- **[design/batching.md](design/batching.md)** — entry / scene / batch / compact video / context 的概念和关系。
-- **[design/media_windows.html](design/media_windows.html)** — 可交互切换连续/compact 模式，直观看前后扩展、窗口合并和 compact 时间重映射。
-- **[design/normalize_subtitle.md](design/normalize_subtitle.md)** — 字幕规范化流程。
-- **[design/mkv_subtitle_editing.md](design/mkv_subtitle_editing.md)** — MKV 内封字幕的轨道审查、编辑 policy、脚本实现规范和 Gemini 输入合同。
-- **[design/voice/two_stage_diarization.md](design/voice/two_stage_diarization.md)** — 长语音建立 cluster、短语音归类的两阶段声学规范。
-- **[design/voice/evaluation.md](design/voice/evaluation.md)** — Long purity、Short accuracy 和 UNKNOWN rate 的简化评估。
-- **[design/voice/implementation_handoff.md](design/voice/implementation_handoff.md)** — 下一实现会话的范围、顺序、验收和停止条件。
+- [带字幕流程](design/flows/流程（带字幕）-v1.drawio)
+- [不带字幕流程](design/flows/流程（不带字幕）-v1.drawio)
 
-## 经验和参考
+## 模块设计
 
-- **[reference/lessons_learned.md](reference/lessons_learned.md)** — 试过什么、哪些有效、哪些不有效。
-- **[reference/evaluation.md](reference/evaluation.md)** — Gold Set 标签规范、覆盖范围和 batching A/B 评估方案。
-- **[reference/role_component_ab.md](reference/role_component_ab.md)** — 角色资料字段的重复 A/B、跨窗口回归和默认保留项。
-- **[reference/current_issues.md](reference/current_issues.md)** — 当前 Gemini/标准化问题、已实施改进和后续实验。
-- **[reference/voice_backend.md](reference/voice_backend.md)** — 可选 FoxNoseTech/diarize 声学后端的隔离和集成计划。
-- **[reference/offmute-v2.md](reference/offmute-v2.md)** — 对 offmute-v2 的分析和迁移启发。
+- [WebUI](design/webui.md) · [领域术语](../GLOSSARY.md) · [设计决定](adr/)
+- [Voice 使用与验证](../voice/README.md) · [官方推理依据](design/voice/official_pipeline_research.md) · [字幕对齐验证](design/voice/subtitle_export_results.md)
+- [字幕规范化](design/normalize_subtitle.md) · [MKV 字幕轨处理](design/mkv_subtitle_editing.md)
+- [DeepSeek 场景](design/scene_segmentation.md) · [Gemini 提示词](design/prompt.md) · [分批概念](design/batching.md)
+- [流水线交互演示](design/pipeline_explorer.html) · [媒体窗口演示](design/media_windows.html)
 
-## 技能文档
+## 参数与评估
 
-- **[skills/normalize_subtitle.md](skills/normalize_subtitle.md)**
-- **[skills/extract_simple.md](skills/extract_simple.md)**
-- **[skills/build_speaker_aliases.md](skills/build_speaker_aliases.md)**
-- **[skills/build_role_descriptions.md](skills/build_role_descriptions.md)** — 角色范围追问、证据规范、实际 prompt 字段和 Gemini `--speakers` 校验。
+- [规范化操作](skills/normalize_subtitle.md) · [切片导出](skills/extract_simple.md)
+- [说话人别名](skills/build_speaker_aliases.md) · [角色资料](skills/build_role_descriptions.md)
+- [Gold 评估与历史指标](reference/evaluation.md) · [角色资料 A/B](reference/role_component_ab.md)
+- [已知标注问题](reference/current_issues.md) · [经验记录](reference/lessons_learned.md)
+- [Voice 集成现状](reference/voice_backend.md) · [offmute-v2 参考](reference/offmute-v2.md)
 
-## 归档
+## Agent 与历史资料
 
-- **[future_plans/](future_plans/)** — 早期的 plan A/B/C 方案，已被当前多模态流程取代。
+- [Matt skills 适配](agents/matt-skills.md) · [本地任务](agents/issue-tracker.md) · [领域文档规则](agents/domain.md)
+- [早期方案](future_plans/) · [两阶段 voice 实验记录](design/voice/implementation_results.md)

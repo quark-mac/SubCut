@@ -1,282 +1,109 @@
-# 操作流程
+# CLI 操作参考
 
-> 最后更新：2026-07-19
-> 当前模型：DeepSeek 文字 LLM + `gemini-3.5-flash` via `api.dawclaudecode.com/v1`
+本页记录已有命令行工具。当前产品进度和管理界面第一版范围见 [CURRENT.md](CURRENT.md)，执行与恢复流程见 [operator_workflow.md](operator_workflow.md)。命令在仓库根目录运行，Python 使用现有 `env\python.exe`。
 
-## 目标
+## 字幕校对与声学标注
 
-为 `Cosmic Princess Kaguya` 全片字幕标注实际说话人。输出干净 SRT `[Speaker] text`，支持后续按角色导出片段。
+- 编辑器启动、导入和工程保存：[webui/README.md](../webui/README.md)。
+- Diarize 推理、字幕对齐、映射与诊断：[voice/README.md](../voice/README.md)。
+- 角色别名与 Gemini 资料：[别名说明](skills/build_speaker_aliases.md)、[角色资料说明](skills/build_role_descriptions.md)。
 
-## 完整流程
+以下 DeepSeek / Gemini 流程用于已有多模态 CLI 的运行和实验。
 
-2026-10-03 基线更新：normalized 已重生为 2101 条；唯一 Gold 为 `final_gold_set.srt`（2085 条）。现存 scene JSON 与 Gemini 输出属于旧输入，先重建 scene 才能继续标注。下文 2106 条、164 scene 和 91.30% 统计均为历史运行记录，当前状态以 `CURRENT.md` 为准。
-
-```text
-源字幕 + 源视频
-  -> normalize/normalize_sdh.py  → normalized.srt / normalized.jsonl
-  -> scene_segmenter.py  → scene_segments_llm.srt / .json
-  -> [可选] 字幕软件调整 scene 边界
-  -> [可选] scene_srt_to_json.py  → 人工时间线重新生成 JSON
-  -> gemini_segment_diarize.py  → results.jsonl + report.md + segment_labeled.srt
-  -> extract_simple.py  → 按角色导出片段
-```
-
-## 环境
-
-```powershell
-env\python.exe
-```
-
-## 步骤
-
-### 1. 规范化字幕
+## 1. 规范化字幕
 
 ```powershell
 env\python.exe sub\normalize\normalize_sdh.py "Cosmic Princess Kaguya"
 ```
 
-显式 speaker 标签会保留并做 alias 归一化；无 speaker 标签的对白统一输出为 `[?]`，不再根据前后字幕继承，由 Gemini 逐条判断实际 speaker。
+输出 `normalized.srt`、`normalized.jsonl`、`normalize_report.json`。显式人物标签按别名归一，未标注对白保留 `?`。已有同名输出会被重写，运行前核对目标文件。
 
-输出：
+ASS/SDH 规则见 [规范化说明](skills/normalize_subtitle.md)；MKV 字幕轨选择与 policy 见 [MKV 设计](design/mkv_subtitle_editing.md)。
 
-```text
-sub/intermediate/Cosmic Princess Kaguya/normalized.srt
-sub/intermediate/Cosmic Princess Kaguya/normalized.jsonl
-```
+## 2. 语义场景
 
-### 2. 生成 LLM Scene Timeline（推荐）
+先检查请求计划，再执行 DeepSeek 调用。`<scene-run>` 替换为本次独立输出目录，两步使用相同路径：
 
 ```powershell
-env\python.exe sub\llm\scene_segmenter.py "Cosmic Princess Kaguya" --llm-window-entries 80 --llm-context-entries 20 --llm-refine --llm-refine-passes 2 --dump-llm-prompts
+env\python.exe sub\llm\scene_segmenter.py "Cosmic Princess Kaguya" --srt "sub/intermediate/Cosmic Princess Kaguya/normalized.srt" --llm-plan-only --output-dir "<scene-run>"
+
+env\python.exe sub\llm\scene_segmenter.py "Cosmic Princess Kaguya" --srt "sub/intermediate/Cosmic Princess Kaguya/normalized.srt" --llm-window-entries 80 --llm-context-entries 20 --llm-refine --llm-refine-passes 2 --dump-llm-prompts --output-dir "<scene-run>"
 ```
 
-输出：
+DeepSeek 决定事件级语义边界；Python 组装场景并检查覆盖。refine 默认按 75 秒复核超长场景，按字幕条数细分为实验选项。场景标题用于编辑。
 
-```text
-sub/intermediate/Cosmic Princess Kaguya/scene_segments_llm/scene_segments.srt
-sub/intermediate/Cosmic Princess Kaguya/scene_segments_llm/scene_segments.json
-```
-
-LLM 使用 `sub/llm/config.json` 的 DeepSeek 配置。模型只判断候选字幕之后是否是自然语义边界，Python 负责按 idx 重新组装完整 scene，并校验每条目标字幕恰好覆盖一次。`--llm-window-entries` 是单次请求中的候选边界数量，不是强制 scene 大小。整部电影不会放入同一个上下文；每批只发送本批候选及前后少量上下文。
-
-完整实现说明见 [design/scene_segmentation.md](design/scene_segmentation.md)，包括：
-
-- 每个候选边界如何只归一个请求负责
-- 请求窗口前后上下文如何衔接
-- 越权 `after_idx` 为什么会被忽略
-- 两轮 refine 如何添加和删除边界
-- prompt/response 缓存和断点续跑
-- 覆盖校验与超长 scene 告警
-
-全片运行前可只检查请求规划，不调用 API：
+输出 `scene_segments.srt` 和 `scene_segments.json`。人工修改 scene SRT 后回写：
 
 ```powershell
-env\python.exe sub\llm\scene_segmenter.py "Cosmic Princess Kaguya" --llm-plan-only
+env\python.exe sub\llm\scene_srt_to_json.py "Cosmic Princess Kaguya" "<scene-run>/scene_segments.srt"
 ```
 
-当前全片 2106 条目标字幕会拆成 27 个独立请求；单批 prompt 约 4,172 到 10,535 个字符，远低于常见 DeepSeek 上下文限制。`--llm-max-prompt-chars 50000` 会在字幕异常长时自动继续拆批。
+回写时核对输入字幕版本与完整覆盖。参数、缓存和边界规则见 [scene_segmentation.md](design/scene_segmentation.md)。
 
-`--warn-scene-seconds 120` 只报告异常长的 scene，不会自动改变 DeepSeek 生成的边界。
+## 3. Gemini 请求计划与媒体准备
 
-可加 `--llm-refine` 进行第二遍局部复核：只重审超长、极短、单条和第一遍可疑 scene，并允许删除第一遍的错误切点。默认迭代两轮。scene 以语义完整和约 20-75 秒为目标，字幕条数不作为切分依据。
+`<scene-json>` 使用与所选字幕对应的场景文件；下面各输出占位符替换为独立运行目录。
 
-默认输出到 `scene_segments_llm` 目录。`--dump-llm-prompts` 会保留每批实际 prompt 和原始响应，方便检查边界理由。
-
-如需人工调整 scene 边界，用字幕软件编辑 `scene_segments.srt`，然后：
+请求计划检查，使用 CLI 默认分组参数：
 
 ```powershell
-env\python.exe sub\llm\scene_srt_to_json.py "Cosmic Princess Kaguya" "sub/intermediate/Cosmic Princess Kaguya/scene_segments_llm/scene_segments.srt"
+env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --segments-json "<scene-json>" --compact-video --plan-only --max-segments 0 --output-dir "<plan-run>"
 ```
 
-转换脚本按每条原字幕的时间中点归属 scene。默认要求每条目标字幕恰好落入一个 scene，并拒绝重复覆盖、遗漏字幕、空 scene、重复 scene_id 和时间逆序。局部测试时间线可加 `--allow-partial`。
-
-### 3. 准备检查（不调用 Gemini）
-
-Gemini 正常处理必须显式传入 `--segments-json`。脚本不再按时长、字幕数或间隔自行生成 scene，也不再提供分段 preset。`--report-only` 只读取已有结果，不需要 scene JSON。
-
-使用 `--start-idx`、`--end-idx` 或 `--max-segments > 0` 属于局部运行，必须显式提供新的干净 `--output-dir`。目录可以不存在、为空，或只有 `plan.md`；不能已有 `results.jsonl`、`report.md`、`segment_labeled.srt`、Prompt 文件或 clips。`--overwrite-clips` 不能绕过局部运行保护，因为它无法合并已有的局部/全片结果。
+局部媒体准备，显式使用历史单场景实验的分组参数：
 
 ```powershell
-env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --segments-json "sub/intermediate/Cosmic Princess Kaguya/scene_segments_llm/scene_segments.json" --compact-video --segments-per-request 1 --max-request-scenes 1 --max-request-entries 0 --max-request-duration 0 --max-segments 8 --prepare-only --output-dir "sub/intermediate/Cosmic Princess Kaguya/prepare_test_v2"
+env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --segments-json "<scene-json>" --compact-video --segments-per-request 1 --max-request-scenes 1 --max-request-entries 0 --max-request-duration 0 --max-segments 8 --prepare-only --output-dir "<prepare-run>"
 ```
 
-检查 `results.jsonl` 和生成的 clips，确认：
+两条命令均不调用 Gemini；第二条生成 clips。检查目标条目、声音/画面、compact 时间映射及输出清单。
 
-- 每条目标 idx 都有 compact 映射
-- clip 时长合理
-- 没有重复对白
+## 4. Gemini 标注
 
-### 4. 小范围真实测试
-
-局部运行始终使用新的干净 `--output-dir`。全片运行如果发现 `output_dir/clips` 中已有 MP4，也会在生成媒体或调用 API 前停止；只有确认要重新生成完整运行的 clips 时才传 `--overwrite-clips`。`--plan-only` 和 `--report-only` 不读取 clips，不受这些检查影响。
+局部调用示例，分组参数与上一节媒体准备一致：
 
 ```powershell
-env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --segments-json "sub/intermediate/Cosmic Princess Kaguya/scene_segments_llm/scene_segments.json" --compact-video --segments-per-request 1 --max-request-scenes 1 --max-request-entries 0 --max-request-duration 0 --max-segments 8 --write-srt --output-dir "sub/intermediate/Cosmic Princess Kaguya/gemini_test_v2"
+env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --segments-json "<scene-json>" --compact-video --segments-per-request 1 --max-request-scenes 1 --max-request-entries 0 --max-request-duration 0 --max-segments 8 --write-srt --dump-prompts --output-dir "<gemini-run>"
 ```
 
-### 5. 全片
+全片运行将 `--max-segments` 设为 `0`，使用新的输出目录。输入默认选择 `normalized.srt`，缺失时回退到 `llm_corrected.srt`；选择其他文件时显式传入 `--srt`。
+
+既有行为约定：
+
+- 每条字幕输出一个说话人；Gemini 输出契约排除 `OVERLAP`。
+- `OTHER` 写回具体 `speaker_raw`；保留模型的 `?` 和 `NONSPEECH` 决定。
+- `--explicit-anchor`、`--explicit-lock` 默认 `none`；`canonical/all` 用于已审核源标签的实验。
+- SRT 默认输出干净的 `[Speaker] text`；`--keep-tags` 保留输入已有 tags。
+- 角色资料默认 `--role-detail baseline`；`selected/full` 及额外组件用于实验。
+- CLI 默认最多 2 个场景、30 条字幕、90 秒组成请求；上面的单场景参数来自历史实验。
+- 局部运行要求干净的显式输出目录。已有 clips 的完整重建使用明确的 `--overwrite-clips`；该参数仅控制 clips。
+
+标注输出 `results.jsonl`、`report.md` 和 `segment_labeled.srt`。检查缺失/重复条目、解析错误及重点人物。提示词和字段说明见 [prompt.md](design/prompt.md)，分组概念见 [batching.md](design/batching.md)。
+
+## 5. 报告与评估
+
+从已有结果重建报告：
 
 ```powershell
-env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --segments-json "sub/intermediate/Cosmic Princess Kaguya/scene_segments_llm/scene_segments.json" --compact-video --segments-per-request 1 --max-request-scenes 1 --max-request-entries 0 --max-request-duration 0 --max-segments 0 --write-srt --dump-prompts --output-dir "sub/intermediate/Cosmic Princess Kaguya/gemini_single_scene_full"
+env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --output-dir "<gemini-run>" --report-only
 ```
 
-最新全片结果：
-
-```text
-scene: 164
-Gemini requests: 164
-target/model results: 2106 / 2106
-missing/duplicate/parse errors: 0
-Gold accuracy: 91.30%
-```
-
-当前最佳测得结果使用显式 `1 scene/request` 参数。CLI 代码默认仍是最多 2 scene、30 entries、90 秒；尚未提升为默认，因为 single-scene 全片同时包含 prompt、输入源和输出契约变化，不是纯 grouping A/B。生产复现当前 91.30% 基线时使用上面的显式单 scene 命令。
-
-### 6. 导出角色片段
+按时间与文本对齐当前 Gold：
 
 ```powershell
-env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" --speakers Iroha --output-type audio --shape clips
+env\python.exe sub\llm\evaluate_gemini_gold.py "<gemini-run>/results.jsonl" "sub/intermediate/Cosmic Princess Kaguya/final_gold_set.srt" --final-srt "<gemini-run>/segment_labeled.srt" --output "<gemini-run>/gold_evaluation.md" --json-output "<gemini-run>/gold_evaluation.json"
 ```
 
-## 人工校对
+以上两步均为本地操作。数据版本、重点角色及历史指标见 [evaluation.md](reference/evaluation.md)。
 
-### Gold Set 状态
+## 6. 角色素材切片
 
-`final_gold_set.srt` 是唯一金标准，包含 speaker、时间轴、合并/拆分修正。它有 2085 条，当前 normalized 有 2101 条，因此评估必须按时间和文本对齐。
-
-旧双 scene 基线：
-
-```text
-总体 accuracy: 88.40%
-canonical accuracy: 89.84%
-Iroha/Kaguya/Yachiyo/FUSHI: 92.17%
-```
-
-当前单 scene 基线：
-
-```text
-总体 accuracy: 91.30%
-canonical accuracy: 91.57%
-Iroha/Kaguya/Yachiyo/FUSHI: 92.03%
-```
-
-旧 `human.srt` 只能作为粗略参考：
-
-- 缺少源字幕 `idx=1879`
-- 存在旧版跨 speaker 继承错误
-- 使用 `女の子`、`赤ちゃん`、`2人`、`?` 等描述性标签
-- 部分音乐、音效和台词混在同一个 speaker 字段
-
-后续 batching、prompt 和模型 A/B 以 `final_gold_set.srt` 为正式语义基准。详细规范和回归结果见 [reference/evaluation.md](reference/evaluation.md)。
-
-### 用 report.md
-
-```text
-output_dir/report.md
-```
-
-报告并列显示每条字幕的 SRT speaker、Gemini speaker、最终 speaker 和 reason。重点检查：
-
-- speaker 与 SRT 不一致的行
-- OTHER / NONSPEECH / ?
-- 短语气词
-- 多人对话
-- Yachiyo 旁白附近的主角反应
-
-### 用 segment_labeled.srt
-
-在字幕软件或播放器中对照原视频看。
-
-## 重新生成报告（不重新调 Gemini）
+指定校对后的说话人 SRT 与媒体：
 
 ```powershell
-env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --output-dir "output_dir" --report-only
+env\python.exe sub\extract_simple.py "Cosmic Princess Kaguya" --srt "<reviewed.srt>" --media "<source-media>" --speakers "Iroha,Kaguya" --output-type audio --shape clips --output "<export-root>"
 ```
 
-## 保存 prompt 用于诊断
+`--output-type` 选择 `audio/video/both`；`--shape` 选择 `clips/merged/both`。同角色片段合并、时长过滤、重叠处理、采样率和编码参数见 [extract_simple.md](skills/extract_simple.md)。
 
-```powershell
---dump-prompts
-```
-
-每个 batch 会保存 `prompt_batchXXXX.txt`。不影响模型输入内容。
-
-## 核心参数
-
-| 参数 | 建议值 | 说明 |
-|---:|---:|---|
-| `--llm-window-entries 80` | 80 | 每批让 DeepSeek 判断的候选边界数 |
-| `--llm-context-entries 20` | 20 | 候选边界前后附加的字幕上下文 |
-| `--llm-max-prompt-chars 50000` | 50000 | 单批字符安全上限，超出自动拆批 |
-| `--llm-plan-only` | off | 只报告全片请求规模，不调用 API |
-| `--warn-scene-seconds 120` | 120 | 超长 scene 只告警，不自动拆分 |
-| `--llm-refine` | off | 二次局部复核异常 scene |
-| `--llm-refine-passes 2` | 2 | 二次复核迭代轮数 |
-| `--llm-refine-max-seconds 75` | 75 | 超过该时长的 scene 进入语义重审 |
-| `--llm-refine-max-entries 0` | 0 | 默认不按字幕数细分；实验性参数 |
-| `--dump-llm-prompts` | off | 保存场景边界 prompt 和原始响应 |
-| `--segments-json PATH` | 正常处理必填 | DeepSeek 生成或人工回写的 scene JSON；`--report-only` 可省略 |
-| `--context-before 15` | 15 | 前文秒数，不作为目标 |
-| `--compact-video` | on | 剪掉空白，保留有声窗口 |
-| `--segments-per-request 2` | 2 | CLI 默认；复现当前最佳基线时显式传 1 |
-| `--max-request-duration 90` | 90 | CLI 默认；single-scene 基线显式传 0 |
-| `--max-request-entries 30` | 30 | CLI 默认；single-scene 基线显式传 0 |
-| `--max-request-scenes 2` | 2 | CLI 默认；single-scene 基线显式传 1 |
-| `--max-segments N` | 按需 | 限制 scene 数；`0`=全片，`N>0` 属于局部运行并要求干净输出目录 |
-| `--write-srt` | on | 输出 segment_labeled.srt |
-| `--keep-tags` | off | 仅保留输入字幕原有 tags；不新增 `MM_REVIEW`、`MM_UNCLEAR` 或 `MM_VERIFIED` |
-| `--overwrite-clips` | 按需 | 允许完整运行重新生成已有 clips；不能绕过局部运行的干净目录要求 |
-| `--prepare-only` | off | 只生成视频不调 API |
-| `--dump-prompts` | off | 保存每个 batch 的文字 prompt |
-| `--report-only` | off | 从已有 JSONL 重生成报告 |
-| `--include-current-speaker` | off | 调试用：把全部 SRT speaker/tags 发给 Gemini，默认关闭 |
-| `--explicit-anchor none` | none | 默认不向 Prompt 发送锁定标签；可选 canonical/all 做实验 |
-| `--explicit-lock none` | none | 默认完全采用 Gemini 写回；可选 canonical/all 保留源标签 |
-
-## 实验参数（默认关闭）
-
-| 参数 | 说明 |
-|---:|---|
-| `--speakers "Iroha,Yachiyo,Kaguya"` | 限制 canonical speaker 为三人 |
-| `--use-speaker-images` | 附加 SPKS 目录下的角色参考图 |
-| `--use-speaker-audio` | 附加三角色语音参考（需配合 `--speakers`） |
-
-## 关键概念
-
-详见 [design/batching.md](design/batching.md)。
-
-- **entry**：一条字幕，有唯一 `idx`、原始时间、文本
-- **scene**：一组 entry 组成的人工可编辑段落
-- **batch**：一次 Gemini 请求，可包含多个 scene
-- **compact video**：把 batch 内有声窗口拼接成的短视频
-- **context**：batch 第一条 target 前的字幕，不要求 Gemini 输出
-- **compact map**：每个 idx 在 compact video 中的时间位置
-
-Gemini 只收到：
-
-```text
-idx + compact time + text
-```
-
-原始时间只保留在本地 results.jsonl 和报告里，用于人工校对。
-
-## 当前全片数据
-
-```text
-entries: 2106
-DeepSeek semantic scenes: 164
-预算细分实验: 169 scenes，Gold 准确率下降，未采用
-当前单 scene Gemini results: 2106
-```
-
-最新 scene JSON：
-
-```text
-sub/intermediate/Cosmic Princess Kaguya/scene_segments_llm/scene_segments.json
-```
-
-最新全片 Gemini 输出：
-
-```text
-sub/intermediate/Cosmic Princess Kaguya/gemini_single_scene_full/
-```
+输出位于 `<export-root>/<project>/`。检查 `extract_report.json`、音视频文件清单及抽样片段。当前切片器以 SRT 为输入，管理界面的工程驱动导出正在设计。

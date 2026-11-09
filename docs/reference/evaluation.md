@@ -108,12 +108,12 @@ Iroha/Kaguya/Yachiyo/FUSHI: 92.17%
 - batch >=120 秒：83.73%，明显低于 <60 秒的 94.76%
 - batch >=35 entries：85.81%，低于 15-24 entries 的 92.20%
 
-## 当前 Single Scene 基线
+## 历史 Single Scene 基线
 
-使用 `gemini_single_scene_full/results.jsonl`：
+使用 `gemini_single_scene_full/results.jsonl`，164 次请求覆盖旧输入的 2106 条目标字幕，按旧版 2104 条 Gold 评估：
 
 ```text
-总体 accuracy: 91.30%
+总体 accuracy: 1921/2104 = 91.30%
 canonical accuracy: 91.57%
 Iroha/Kaguya/Yachiyo/FUSHI: 92.03%
 Mami/Roka: 77.66%
@@ -122,7 +122,7 @@ Koto: 100.00%
 FUSHI semantic variants: 75.00%
 ```
 
-当前最终 SRT 写回后仍为 91.30%，与 raw results 一致。
+该次最终 SRT 写回后仍为 91.30%，与 raw results 一致；缺失、重复和解析错误均为 0。
 
 ## 首轮提示词回归
 

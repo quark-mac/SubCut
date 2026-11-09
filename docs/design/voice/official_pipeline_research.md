@@ -2,7 +2,7 @@
 
 ## Current Baseline
 
-The supported voice path is `voice/diarize_example.py`, which directly calls `diarize.diarize()` from installed `diarize==0.1.2`. The removed two-stage adapter was materially worse on the controlled fixture and is not part of the workflow.
+The supported voice path is `voice/diarize_audio.py`, which directly calls `diarize.diarize()` from installed `diarize==0.1.2`. `voice/diarize_example.py` is a compatibility entry point. The official pipeline was selected after the controlled comparison with the two-stage adapter.
 
 On the 62-second 16 kHz vocal fixture with `num_speakers=2`, official diarize reached 81.82% short assignment accuracy (18/22), versus 36.36% for the removed adapter. The fixture is too small to claim production quality.
 

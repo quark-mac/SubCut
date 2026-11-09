@@ -1,121 +1,35 @@
 # AGENTS.md
 
-## Project Purpose
+SubCut 用于字幕说话人标注、人工校对和角色素材导出。`Cosmic Princess Kaguya` 是验证数据集与操作示例。
 
-This repository is a subtitle-driven multimodal speaker-labeling toolkit for the `Cosmic Princess Kaguya` project. It is not a general Whisper/NeMo diarization project.
+## 按任务读取
 
-Primary goals:
+开始任务时读 [docs/CURRENT.md](docs/CURRENT.md)，了解已实现能力和当前工作方向，再按需读取：
 
-- Normalize SDH subtitles.
-- Generate editable semantic scene timelines with DeepSeek-style text LLMs.
-- Use Gemini-style multimodal models to assign one speaker per subtitle entry.
-- Evaluate model output against a structurally edited Gold Set.
-- Export clean speaker-labeled SRT files and role-specific media clips.
+| 任务 | 文档 |
+| --- | --- |
+| 实现、验证、实验 | [开发约定](docs/development.md) |
+| 编辑器、工程格式、播放、导入导出 | [WebUI 使用与验证](webui/README.md)、[设计](docs/design/webui.md) |
+| 管理界面流程 | [第一版流程图](docs/README.md#管理界面第一版) |
+| Diarize 推理、字幕对齐 | [voice/README.md](voice/README.md)、[算法依据](docs/design/voice/official_pipeline_research.md) |
+| 字幕规范化 | [操作说明](docs/skills/normalize_subtitle.md)；MKV 另读 [轨道处理](docs/design/mkv_subtitle_editing.md) |
+| 场景划分、Gemini | [场景设计](docs/design/scene_segmentation.md)、[提示词契约](docs/design/prompt.md) |
+| Gold 评估 | [评估规则](docs/reference/evaluation.md) |
+| 媒体切片 | [提取参数与规则](docs/skills/extract_simple.md) |
+| 用户要求运行、引导或恢复已有流程 | [操作手册](docs/operator_workflow.md) |
+| 使用 Matt skills | [项目适配](docs/agents/matt-skills.md) |
+| 规格、任务、审查 | [本地任务约定](docs/agents/issue-tracker.md) |
+| 领域术语、工程语义、设计决定 | [领域文档入口](docs/agents/domain.md) |
 
-## Stable Baseline
+## 工作约定
 
-Read these before changing production behavior:
+- 同一工作树保持一个写入任务；并行实现使用独立工作树和分支。
+- 每次改动围绕一个目标，沿用所在模块的结构与命名。
+- 使用已有 Python 环境；需要不同依赖栈的模型在独立环境运行。
+- 修改行为后执行对应模块的验证，记录实际结果。
 
-- `docs/CURRENT.md` - short current-state contract and next work item.
-- `docs/workflow.md` - operational commands.
-- `docs/design/scene_segmentation.md` - DeepSeek scene behavior.
-- `docs/design/prompt.md` - Gemini prompt contract.
-- `docs/reference/evaluation.md` - Gold alignment and metrics.
-- `docs/design/voice/implementation_handoff.md` - required scope and acceptance gates for two-stage voice clustering work.
+## 数据与配置
 
-Do not change production defaults from a single local result. Run the representative regression set first, then Gold evaluation. Record experimental flags explicitly instead of silently changing defaults.
-
-## Protected Paths
-
-Do not delete, rename, or bulk-modify these without explicit user approval:
-
-- `env/` - local Python environment.
-- `sub/input/` - source media, source subtitles, aliases, role descriptions, references.
-- `sub/intermediate/` - normalized subtitles, Gold Set, scene timelines, model results.
-- `sub/llm/config.json`, `sub/llm/gemini_config.json`, `sub/llm/.env` - private local configuration.
-
-Generated output under `sub/output/` can be regenerated, but ask before deleting large exports.
-
-## Production Modules
-
-For local subtitle-editor UI, import/export, playback, or WebUI test work, read `webui/README.md` (behavior and validation) and `docs/design/webui.md` (design); task records are under `.scratch/webui/`.
-
-- `sub/normalize/normalize_sdh.py` - source SDH subtitle to `normalized.srt` / JSONL.
-- `sub/normalize/normalize_mkv.py` - inspect, extract, and policy-filter MKV text subtitle tracks into candidate normalized files.
-- `sub/llm/scene_segmenter.py` - DeepSeek semantic scene generation and refine.
-- `sub/llm/scene_srt_to_json.py` - edited scene SRT to strict scene JSON.
-- `sub/llm/gemini_segment_diarize.py` - scene-level multimodal speaker labeling.
-- `sub/llm/evaluate_gemini_gold.py` - structure-aware Gold evaluation.
-- `sub/extract_simple.py` - role-specific media export.
-- `sub/_srt_io.py`, `sub/project_io.py` - shared subtitle and project I/O.
-- `voice/` - optional isolated acoustic diarization backend; not part of the production label path yet.
-
-## Supporting And Experimental Modules
-
-- `sub/llm/diarize_llm.py` - older text-LLM workflow plus shared config/role helpers.
-- `sub/llm/gemini_video_verify.py` - targeted multimodal verification experiment.
-- `sub/llm/target_verify_ab.py` - target verification A/B experiment.
-- `sub/llm/gemini_multimodal_diarize.py` - older multimodal workflow, not the production entry point.
-- `scripts/ocr_batch.py` - auxiliary OCR utility.
-- `voice/diarize_example.py` - PyPI `diarize` smoke/example wrapper.
-
-Experimental modules must not change production defaults or write into production result directories unless explicitly requested.
-
-The optional voice backend currently uses the main environment's CPU Torch 2.8.x stack because legacy GPU/NeMo consumers were removed. If a future component needs another Torch range, isolate that component rather than changing this environment casually. Voice anonymous clusters are auxiliary evidence, not canonical speaker labels.
-
-For two-stage voice work, edit only the `voice/` subsystem and its documentation, use public lower-level modules from pinned `diarize==0.1.2`, preserve the original audio timebase, and keep subtitle alignment and Gemini integration outside the first implementation task. Read all documents under `docs/design/voice/` before editing.
-
-## Current Behavioral Contracts
-
-- The sole Gold Set is `sub/intermediate/Cosmic Princess Kaguya/final_gold_set.srt`. The 2026-10-03 normalized revision has 2101 entries; existing scene timelines must be regenerated before using it with Gemini. See `docs/CURRENT.md`.
-- Production Gemini input defaults to `normalized.srt`; `llm_corrected.srt` is fallback only.
-- DeepSeek owns semantic scene boundaries. Python does not mechanically split production scenes by entry count.
-- Gemini outputs one speaker per subtitle entry. New output must not use `OVERLAP`.
-- `OTHER` writes `speaker_raw` to final SRT; `NONSPEECH` and `?` are preserved as model decisions.
-- Prompt anchors and output locks default to `none`. Use `canonical` or `all` only for audited source labels.
-- Final SRT is clean `[Speaker] text` unless `--keep-tags` is explicitly requested.
-- Scene titles are editing metadata, not speaker evidence.
-
-## Development Discipline
-
-When using the installed Matt Pocock engineering/productivity skills, read `docs/agents/matt-skills.md` for project adaptations, WIP review coverage, and initialization requirements.
-
-- One writable task at a time in the main worktree.
-- Other concurrent conversations should be read-only reviews or data analysis.
-- Use a Git worktree and separate branch for truly parallel implementation, after a stable baseline commit exists.
-- One task should modify one subsystem: normalization, scenes, Gemini, evaluation, or extraction.
-- Do not combine algorithm changes, default changes, directory cleanup, and documentation restructuring in one task.
-- API experiments must use a unique output directory and record model, prompt options, scene JSON, input SRT, and baseline commit.
-- Do not delete old experiment results unless the user explicitly approves the exact directories.
-
-## Agent skills
-
-### Issue tracker
-
-Use local Markdown for specs and tickets. Before planning, implementing, or reviewing tracked work, read `docs/agents/issue-tracker.md`.
-
-### Domain docs
-
-Use the root `GLOSSARY.md` and `docs/adr/` as a single context. Before domain-related exploration or design, read `docs/agents/domain.md`.
-
-## Validation
-
-For Python changes, at minimum run:
-
-```powershell
-env\python.exe -m py_compile <changed-python-files>
-```
-
-For scene changes, run without API calls first:
-
-```powershell
-env\python.exe sub\llm\scene_segmenter.py "Cosmic Princess Kaguya" --llm-plan-only
-```
-
-For Gemini changes, run a request plan first:
-
-```powershell
-env\python.exe sub\llm\gemini_segment_diarize.py "Cosmic Princess Kaguya" --segments-json "sub/intermediate/Cosmic Princess Kaguya/scene_segments_llm/scene_segments.json" --compact-video --plan-only --max-segments 0 --output-dir "sub/intermediate/Cosmic Princess Kaguya/gemini_plan_check"
-```
-
-Use `--prepare-only` before paid API calls when media construction changed. Use `evaluate_gemini_gold.py` for any claimed accuracy change.
+- `env/`、`sub/input/`、`sub/intermediate/`、`webui/workspace/` 及自定义 workspace 承载本地环境或用户数据；删除、重命名、批量改写须获得明确同意。
+- 私有配置位于 `sub/llm/config.json`、`sub/llm/gemini_config.json`、`sub/llm/.env`；共享文档和日志中使用脱敏信息。
+- 清理历史实验或 `sub/output/` 大型导出时，先确认具体目录。

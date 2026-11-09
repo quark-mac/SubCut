@@ -1,149 +1,39 @@
-# Current Stable State
+# 当前项目状态
 
-> Input baseline confirmed 2026-10-03 against HEAD `c43643f` plus uncommitted work. This file is the short contract for new development conversations.
+更新：2026-11-09。代码参照 `75c3454`（`feat/webui`）；验证记录见各模块文档。
 
-## Production Pipeline
+## 已有能力
 
-```text
-source ASS / SDH
-  -> sub/normalize/normalize_sdh.py
-  -> normalized.srt
-  -> sub/llm/scene_segmenter.py
-  -> scene_segments_llm/scene_segments.json
-  -> sub/llm/gemini_segment_diarize.py
-  -> results.jsonl + segment_labeled.srt
-  -> sub/llm/evaluate_gemini_gold.py
-  -> Gold metrics
-```
+- **字幕编辑器**：可导入 SRT、normalized JSONL、MOSS JSON，编辑文字、时间和说话人，支持拆分合并、撤销重做、自动保存、轨道管理及字幕导出。播放预览、波形和缩略图已有后台生成任务。入口：[webui/README.md](../webui/README.md)。
+- **Diarize**：`voice/diarize_audio.py` 调用官方推理流程；`export_speaker.py` 将匿名分段关联到字幕，`workflow.py` 串联两步并输出诊断与映射文件。已有短片验证，详见 [验证记录](design/voice/subtitle_export_results.md)。
+- **命令行工具**：已有字幕规范化、DeepSeek 场景划分、Gemini 标注、Gold 评估和 SRT 驱动的角色切片工具。多模态模块仍待完善，命令见 [workflow.md](workflow.md)。
+- **MOSS**：本地有独立检出，编辑器已支持其字幕交换格式；自动调用与工程生成属于待集成工作。
 
-Manual scene edits use `scene_srt_to_json.py`. Role clip export uses `extract_simple.py`.
+## 当前方向：单视频管理界面
 
-## Stable Inputs And Results
+第一版范围已确认，处于流程设计阶段：
 
-```text
-Production subtitle input:
-sub/intermediate/Cosmic Princess Kaguya/normalized.srt
+1. 管理界面调用用户已有的人声分离工具。
+2. 使用 MOSS 和 Diarize 生成匿名说话人结果；有字幕时使用源字幕基线，无字幕时由 MOSS 建立基线。
+3. 对齐两路结果，生成可校对工程并保留候选与冲突标记。
+4. 用户在现有编辑器中校对并保存，再按需导出素材。
 
-Gold Set:
-sub/intermediate/Cosmic Princess Kaguya/final_gold_set.srt
+自动处理的终点是生成编辑工程。角色名称由人工确认；多模态识别留待后续接入。
 
-Historical scene JSON (stale after normalized regeneration; rebuild before use):
-sub/intermediate/Cosmic Princess Kaguya/scene_segments_llm/scene_segments.json
+预期交付格式：纯人声 WAV、原音轨视频片段、人声音轨视频片段、说话人 SRT 和 JSONL。
 
-Historical single-scene evaluation (deferred):
-sub/intermediate/Cosmic Princess Kaguya/gemini_single_scene_full/
-```
+流程图：[带字幕](design/flows/流程（带字幕）-v1.drawio) · [不带字幕](design/flows/流程（不带字幕）-v1.drawio)。
 
-The sole Gold Set, `final_gold_set.srt`, contains 2085 cues and includes manual timeline fixes, merges, and splits. Its contents were preserved. The obsolete `gold_set.srt` and `gold_set_dedup.srt` were deleted by user request.
+下一步细化人声分离工具接口、MOSS/Diarize 对齐规则、工程交接和工程驱动的切片导出。
 
-Regenerated `normalized.srt` / JSONL contain 2101 entries, including 1270 unknown speakers and zero INHERITED tags. SRT/JSONL round-trip, nonempty text, positive durations, source references and continuous idx were checked. Input/code hashes and the structural changes are recorded locally in `sub/intermediate/Cosmic Princess Kaguya/baseline_confirmation.json`.
+## Kaguya 数据基线
 
-Evaluation must align by timestamp and normalized text; do not compare by shifted idx alone. Existing scenes and Gemini runs refer to the old 2106-entry input and are not the baseline for this revision.
+2026-10-03 确认的本地输入：
 
-The user's current goal is clear attribution of who said what, with clear speech boundaries. Detailed acceptance thresholds remain undecided.
+- `sub/intermediate/Cosmic Princess Kaguya/normalized.srt` / JSONL：2101 条，其中 1270 条未标注，INHERITED 标签为 0。
+- `sub/intermediate/Cosmic Princess Kaguya/final_gold_set.srt`：2085 条，含人工时间轴修正、拆分和合并；评估按时间与文本对齐。
+- `baseline_confirmation.json` 记录输入/代码哈希及当次结构校验。
 
-## Historical Measured Baseline — Deferred
+旧场景和 Gemini 全片结果对应此前的 2106 条输入。恢复该流程时，先针对所选字幕重新生成场景并检查请求计划。
 
-Historical full single-scene Gemini run, using the retired 2104-cue Gold:
-
-```text
-requests: 164
-target/results entries: 2106 / 2106
-missing/duplicate/parse errors: 0
-forbidden OVERLAP outputs: 0
-raw Gold accuracy: 1921/2104 = 91.30%
-canonical accuracy: 91.57%
-main-character accuracy: 92.03%
-Mami/Roka: 77.66%
-Koto: 100.00%
-Otaku as OTHER: 95.08%
-FUSHI semantic variants: 75.00%
-```
-
-The corrected final SRT has the same 91.30% Gold accuracy as raw results. The earlier writer bug that discarded `OTHER` decisions is fixed.
-
-These numbers are historical evidence only. Reproduction against current prompt defaults is deferred by user request; no new accuracy claim accompanies the input refresh.
-
-## Current Production Defaults
-
-Gemini:
-
-```text
-input SRT: normalized.srt
-scene input: --segments-json is required for labeling; report-only is exempt
-existing clips: fail unless --overwrite-clips; prefer a clean output directory
-partial runs: explicit clean output directory required; overwrite cannot bypass
-OVERLAP: forbidden
-explicit anchor: none
-explicit output lock: none
-final OTHER: speaker_raw identity
-keep-tags: preserve input tags only; no MM_* status tags
-role detail: baseline (old selected fields)
-role detail selected/full and role-extra components: experiment-only
-code-default grouping: up to 2 scenes / 30 entries / 90 seconds
-```
-
-The best measured full run used explicit `1 scene/request` flags and reached 91.30%. That result has not yet been promoted to the CLI default because it also used the current prompt/output changes and was not a pure grouping-only A/B.
-
-Repeated role-component A/B initially showed gains from `age/gender`, but two additional preselected windows produced one tie and one -10 point regression. Across five windows the macro mean gain was only +2.4 points with high window variance, so it was not promoted to the production default. All extra role components remain experiment-only; see `docs/reference/role_component_ab.md`.
-
-Scene generation:
-
-```text
-DeepSeek semantic boundaries
-default refine max seconds: 75
-entry-count budget refine: disabled
-Python mechanical scene splitting: disabled
-```
-
-The 30-entry/90-second forced scene-refine experiment reduced Gold accuracy from 94.87% to 92.95% on the affected sample and is not the production default.
-
-## Known Weak Areas
-
-- Yachiyo narration can collapse into Kaguya within a scene.
-- Mami/Roka still swap on short or visually ambiguous lines.
-- FUSHI system/tutorial voice continuity remains inconsistent.
-- NONSPEECH recall is weak when model-only output is used.
-- Named multi-speaker Gold cues are difficult after removing `OVERLAP`.
-- Normalization expands multi-speaker blocks with shared source timing; source-label errors, duplicate short fragments, and some source timeline errors remain.
-- Normalization does not inherit unlabeled speaker identities; unlabeled dialogue remains `[?]` for Gemini.
-
-See `docs/reference/current_issues.md` for details.
-
-## Optional Voice Backend
-
-`voice/` contains an optional integration for `diarize==0.1.2`, currently installed in the main `env` after removing unused legacy Torch consumers. It uses CPU Torch/Torchaudio 2.8.0 and produces anonymous acoustic evidence only; it is not part of the production label path yet.
-
-The next voice task is specified, not implemented: long VAD segments (default at least 3 seconds) establish frozen anonymous cluster centroids, then shorter VAD segments are assigned to those clusters or `UNKNOWN`. The output and three-metric evaluation contracts are under `docs/design/voice/`. Full-film inference and Gemini integration wait until those acceptance gates pass.
-
-## Frozen Decisions
-
-Do not change these without a dedicated Gold A/B task:
-
-- Do not re-enable Gemini `OVERLAP`.
-- Do not enable prompt anchors or output locks by default.
-- Do not mechanically split DeepSeek scenes by entry count.
-- Do not use `llm_corrected.srt` as the normal Gemini input.
-- Use `final_gold_set.srt` and structural alignment for future evaluation; `human.srt` is historical reference only.
-
-## Next Recommended Work
-
-Regenerate the semantic scene timeline against the new 2101-entry normalized revision, then inspect the Gemini request plan. Scene generation requires a separately authorized API run; it was not performed during baseline confirmation.
-
-Working-tree changes remain uncommitted. Confirm the intended WIP scope before creating a baseline commit.
-
-## New Conversation Checklist
-
-Provide:
-
-```text
-baseline commit hash
-single task statement
-allowed files
-forbidden files
-API budget (usually zero initially)
-validation command
-Gold metric that must not regress
-```
-
-Only one conversation writes to the main worktree at a time.
+历史单场景运行的 91.30% 准确率使用旧版 2104 条 Gold；当前 Gold 上的复测待安排。历史指标与方法见 [评估文档](reference/evaluation.md)，问题记录见 [current_issues.md](reference/current_issues.md)。

@@ -1,46 +1,17 @@
-# Voice Backend
+# Voice 后端集成现状
 
-## External Package
+## 实现
 
-The optional acoustic backend is [`FoxNoseTech/diarize`](https://github.com/FoxNoseTech/diarize), currently pinned as:
+`voice/diarize_audio.py` 调用 `diarize.diarize()`；`export_speaker.py` 将匿名说话人时间段关联到字幕；`workflow.py` 串联推理和字幕导出。命令、格式及诊断字段以 [voice/README.md](../../voice/README.md) 为准。
 
-```text
-diarize==0.1.2
-```
+当前依赖固定在 `voice/requirements.txt`，本机环境使用 CPU Torch/Torchaudio 2.8.0。需要其他依赖栈的模型使用独立环境。
 
-It uses Silero VAD, WeSpeaker embeddings, speaker-count estimation, and spectral clustering. It is CPU-only, Apache-2.0 licensed, and returns anonymous `SPEAKER_XX` segments.
+输入音频保留原片时间基准；短片通过显式 offset 关联全片字幕。匿名标签与人工角色映射按单次推理运行管理。
 
-## Environment
+## 验证与后续接入
 
-The package is currently installed in the main `env` because the repository no longer uses its former NeMo/pyannote/Demucs stack. Its package metadata requires:
+官方推理与字幕导出已完成 62 秒素材的端到端验证，详见 [字幕对齐验证](../design/voice/subtitle_export_results.md)。算法选择依据见 [官方流程研究](../design/voice/official_pipeline_research.md)。
 
-```text
-torch>=1.13,<2.9
-torchaudio>=0.13,<2.9
-```
+两阶段聚类方案已结束，相关 [实验结果](../design/voice/implementation_results.md) 保留作历史记录。
 
-Installation replaced the previous CUDA Torch 2.9.1 installation with CPU Torch/Torchaudio 2.8.0. `diarize` is CPU-only. If GPU Torch is needed for a future unrelated component, move the voice backend to a separate environment rather than adding another Torch version to this environment.
-
-## Role In The Current Workflow
-
-```text
-normalized.srt
-  ├─> DeepSeek scenes
-  │     └─> Gemini character labels
-  └─> voice/diarize_example.py
-        └─> anonymous acoustic timeline
-```
-
-The voice backend is independent evidence. It must not directly replace Gemini labels, assign anonymous clusters to characters without validation, or change normalized subtitles.
-
-## First Integration Milestones
-
-1. Implement the two-stage anonymous clustering adapter specified in `docs/design/voice/two_stage_diarization.md`.
-2. Validate it on a short audio fixture before any full-film run.
-3. Implement the simplified Gold evaluation in `docs/design/voice/evaluation.md`.
-4. Compare the two-stage result with the original one-stage `diarize()` baseline.
-5. Consider subtitle alignment only after the two-stage acceptance gates pass.
-
-Do not build automatic cluster-to-character mapping until these checks show stable project-specific value.
-
-The implementation task is packaged for another session in `docs/design/voice/implementation_handoff.md`.
+下一步在单视频管理界面中接入当前 voice 流程，与 MOSS 字幕进行候选对应和冲突检查。总体范围见 [CURRENT.md](../CURRENT.md#当前方向单视频管理界面)。
